@@ -1,0 +1,16 @@
+rank 0 {
+	l0: start
+	l1: compute 100
+	l2: put 8b to 1
+	l3: compute 100
+	l2 requires l1
+	l3 requires l2
+}
+
+rank 1 {
+	l0: start
+	l1: compute 50
+	l2: compute 200
+	l2 requires l1
+	l2 requires 0:l2
+}

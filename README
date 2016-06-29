@@ -1,0 +1,4 @@
+This is a simulator for the alpha_p, alpha_r, bandwidth, compute model
+simulator.
+
+Use priorityqueue to implement event based

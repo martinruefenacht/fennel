@@ -5,95 +5,52 @@ from networkx import *
 import cairo
 
 from tasks import *
+import visual
 
 class Machine:
 	def __init__(self, size):
 		self.size = size
-
-		self.alpha_p = 1500
-		self.alpha_r = 1500
-		self.beta = 30
-
 		self.procs = [0] * self.size
 
 class Simulator:
 	def __init__(self):
 		self.taskqueue = []
 
-		# generate noise array
-		#noisef = betaprime.rvs(2, 2, scale=25,size=1000)
-		#self.noise = [int(round(i)) for i in noisef]
-
 	def run(self, machine, program):
-		# initiate program
+		# find all nodes in program without dependencies
 		for nid, deg in program.in_degree_iter():
 			if deg == 0:
+				# insert into task queue
 				heappush(self.taskqueue, program.node[nid]['task'])
 
-		# initiate visualization
-		pdf = cairo.PDFSurface("test.pdf", 550, machine.size*36)
-		ctx = cairo.Context(pdf)
-		ctx.set_antialias(cairo.ANTIALIAS_GRAY)
-		ctx.set_source_rgb(0,0,0)
-		ctx.set_line_width(0.5)
-		ctx.set_font_size(4)
-	
-		# proc lines
-		for i in range(machine.size):
-			ctx.move_to(10, 18+i*36)
-			ctx.rel_line_to(500, 0)
-			ctx.stroke()
-		# time line
-		ctx.move_to(10,2)
-		ctx.rel_line_to(500, 0)
-		ctx.stroke()
-
-		for i in range(51):
-			if i % 5 == 0:
-				# draw number
-				ctx.move_to(10+i*10, 10)
-				ctx.show_text(str(i*100))
-			ctx.move_to(10+i*10, 2)
-			ctx.rel_line_to(0, 4)
-			ctx.stroke()
-		
 		# process entire queue
 		while self.taskqueue:
 			# retrieve next global clock event
 			task = heappop(self.taskqueue)
 
 			# execute task
-			time = task.execute(machine, ctx)
+			time = task.execute(machine)
 
-			# check for fail
+			# check for reschedule
 			if time is None:
-				# reschedule
+				# reinsert into task queue
 				heappush(self.taskqueue, task)
-				continue
+			else:
+				# push sucessors
+				for sid in program.successors_iter(task.name):
+					suc = program.node[sid]['task']
 
-			# push sucessors
-			for sid in program.successors_iter(task.name):
-				suc = program.node[sid]['task']
+					# increment dependencies
+					suc.dependencies += 1
 
-				# increment dependencies
-				suc.dependencies += 1
+					# latest dependency
+					suc.time = max(time, suc.time)
 
-				# latest dependency
-				suc.time = max(time, suc.time)
-
-				# check for complete dependencies
-				if suc.dependencies == program.in_degree(sid):
-					heappush(self.taskqueue, suc)
-			#print(machine.procs)
-			#print()
-
-		ctx.show_page()
-		print(machine.procs)
-
+					# check for complete dependencies
+					if suc.dependencies == program.in_degree(sid):
+						heappush(self.taskqueue, suc)
 
 if __name__ == "__main__":
-	# parse YAML config
-
 	# 
 	machine = Machine(4)
 
@@ -223,3 +180,5 @@ if __name__ == "__main__":
 	simulator = Simulator()
 	
 	simulator.run(machine, program)
+
+	visual.outputPDF('test.pdf', machine, program)

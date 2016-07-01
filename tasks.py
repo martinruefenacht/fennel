@@ -1,6 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from random import choice
-from scipy.stats import betaprime
 
 class Task(metaclass=ABCMeta):
 	task_counter = 0	
@@ -21,16 +19,27 @@ class Task(metaclass=ABCMeta):
 			return self.time < task.time
 
 	@abstractmethod
-	def execute(self, machine, context=None):
+	def execute(self, machine):
 		pass
 
 class StartTask(Task):
-	def __init__(self, name, proc, time=0):
+	def __init__(self, name, proc, time=None, noise=None):
 		super().__init__(name, proc)
-		self.time = time
 
-	def execute(self, machine, context=None):
-		return self.time
+		# set start time
+		if time is not None:
+			self.time = time
+		else:
+			self.time = 0
+
+		# add noise to start time
+		if noise is not None:
+			self.noise = noise.generate()
+		else:
+			self.noise = 0
+
+	def execute(self, machine):
+		return self.time + self.noise
 
 class ComputeTask(Task):
 	gamma = 10
@@ -47,9 +56,6 @@ class ComputeTask(Task):
 		else:
 			print('ComputeTask was not constructed properly.')
 
-		# setup noise profile
-		self.noise = [int(round(i)) for i in betaprime.rvs(2, 3, loc=0, scale=20, size=1000)]
-
 	def execute(self, machine, context=None):
 		# check if proc is available
 		if self.time >= machine.procs[self.proc]:
@@ -57,29 +63,25 @@ class ComputeTask(Task):
 			delay = self.delay
 		
 			# add noise
-			if self.noise is not None:
-				noise = choice(self.noise)
-			else:
-				noise = 0
+			#if self.noise is not None:
+			#	noise = choice(self.noise)
+			#else:
+			#	noise = 0
 	
 			# forward proc
-			machine.procs[self.proc] = self.time + delay + noise
+			#machine.procs[self.proc] = self.time + delay + noise
+			machine.procs[self.proc] = self.time + delay
 
 			# visualize
-			if context:
-				# draw delay
-				context.rectangle(10+self.time/10, 18-2+36*self.proc, delay/10, 4)
-				context.fill()
-				
-				# draw noise
-				context.set_source_rgb(1.0, 0.0, 0.0)
-				if noise != 0:
-					context.rectangle(10+self.time/10+delay/10, 18-2+36*self.proc, noise/10, 4)
-					context.fill()
-				context.set_source_rgb(0.0, 0.0, 0.0)
+			#	# draw noise
+			#	context.set_source_rgb(1.0, 0.0, 0.0)
+			#	if noise != 0:
+			#		context.rectangle(10+self.time/10+delay/10, 18-2+36*self.proc, noise/10, 4)
+			#		context.fill()
+			#	context.set_source_rgb(0.0, 0.0, 0.0)
 			
 			# next event time 
-			return self.time + delay + noise
+			return self.time + delay
 		# proc not available
 		else:
 			# delay event until proc available
@@ -98,61 +100,45 @@ class PutTask(Task):
 		self.target = target
 		self.size = size
 
-		self.local_noise = [int(round(i)) for i in betaprime.rvs(2, 3, loc=10, scale=20, size=1000)]
-		self.remote_noise = [int(round(i)) for i in betaprime.rvs(2, 3, loc=10, scale=20, size=1000)]
-	
-	def execute(self, machine, context=None):
+	def execute(self, machine):
 		if self.time >= machine.procs[self.proc]:
 			# local time occupied
-			local = PutTask.alpha_r
+			self.local = PutTask.alpha_r
 
-			if self.local_noise is not None:
-				lnoise = choice(self.local_noise)
-			else:
-				lnoise = 0
+			#if self.local_noise is not None:
+			#	lnoise = choice(self.local_noise)
+			#else:
+			#	lnoise = 0
 
 			# remote arrival time
-			remote = local + PutTask.alpha_p
+			self.remote = self.local + PutTask.alpha_p
 			
-			if self.remote_noise is not None:
-				rnoise = choice(self.remote_noise)
-			else:
-				rnoise = 0
+			#if self.remote_noise is not None:
+			#	rnoise = choice(self.remote_noise)
+			#else:
+			#	rnoise = 0
 
 			# visualize
-			if context:
-				context.rectangle(10+self.time/10, 18-1+36*self.proc, local/10, 2)
-				context.fill()
+			#	context.set_source_rgb(1,0,0)
+			#	if lnoise != 0:
+			#		context.rectangle(10+self.time/10+local/10,18-1+36*self.proc, lnoise/10, 2)
+			#		context.fill()
 
-				if self.target - self.proc > 0:
-					diff = 3
-				else:
-					diff = -3
-
-				context.move_to(10+(self.time+local)/10, 18+36*self.proc)
-				context.line_to(10+(self.time+local)/10,18+36*self.proc+diff)
-				context.line_to(10+(self.time+remote)/10, 18+36*(self.target)-diff)
-				context.line_to(10+(self.time+remote)/10, 18+36*self.target)
-				context.stroke()
-		
-				context.set_source_rgb(1,0,0)
-				if lnoise != 0:
-					context.rectangle(10+self.time/10+local/10,18-1+36*self.proc, lnoise/10, 2)
-					context.fill()
-
-				if rnoise != 0:
-					context.move_to(10+(self.time+local+lnoise)/10, 18+36*self.proc)
-					context.line_to(10+(self.time+local+lnoise)/10,18+36*self.proc+diff)
-					context.line_to(10+(self.time+remote+lnoise)/10, 18+36*self.target-diff)
-					context.line_to(10+(self.time+remote+lnoise+rnoise)/10, 18+36*(self.target)-diff)
-					context.line_to(10+(self.time+remote+lnoise+rnoise)/10, 18+36*self.target)
-					context.stroke()
-				
-				context.set_source_rgb(0,0,0)
+			#	if rnoise != 0:
+			#		context.move_to(10+(self.time+local+lnoise)/10, 18+36*self.proc)
+			#		context.line_to(10+(self.time+local+lnoise)/10,18+36*self.proc+diff)
+			#		context.line_to(10+(self.time+remote+lnoise)/10, 18+36*self.target-diff)
+			#		context.line_to(10+(self.time+remote+lnoise+rnoise)/10, 18+36*(self.target)-diff)
+			#		context.line_to(10+(self.time+remote+lnoise+rnoise)/10, 18+36*self.target)
+			#		context.stroke()
+			#	
+			#	context.set_source_rgb(0,0,0)
 
 			# modify state
-			machine.procs[self.proc] = self.time + local + lnoise
-			return self.time + remote + lnoise + rnoise
+			#machine.procs[self.proc] = self.time + local + lnoise
+			machine.procs[self.proc] = self.time + self.local
+			#return self.time + remote + lnoise + rnoise
+			return self.time + self.remote
 		else:
 			self.time = machine.procs[self.proc]
 			return None

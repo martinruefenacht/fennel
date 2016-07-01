@@ -30,6 +30,9 @@ def outputPDF(filename, machine, program):
 
 	# draw process lines
 	for proc in range(machine.size):
+		ctx.move_to(xmargin - 5, ymargin + proc * pheight + 1)
+		ctx.show_text(str(proc))
+		
 		ctx.move_to(xmargin, ymargin + proc * pheight) 
 		ctx.rel_line_to((width - xmargin * 2), 0)
 		ctx.stroke()

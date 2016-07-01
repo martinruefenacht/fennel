@@ -23,7 +23,7 @@ class Task(metaclass=ABCMeta):
 		pass
 
 class StartTask(Task):
-	def __init__(self, name, proc, time=None, noise=None):
+	def __init__(self, name, proc, time=None):
 		super().__init__(name, proc)
 
 		# set start time
@@ -31,12 +31,6 @@ class StartTask(Task):
 			self.time = time
 		else:
 			self.time = 0
-
-		# add noise to start time
-		if noise is not None:
-			self.noise = noise.generate()
-		else:
-			self.noise = 0
 
 	def execute(self, machine):
 		return self.time + self.noise
@@ -56,7 +50,7 @@ class ComputeTask(Task):
 		else:
 			print('ComputeTask was not constructed properly.')
 
-	def execute(self, machine, context=None):
+	def execute(self, machine):
 		# check if proc is available
 		if self.time >= machine.procs[self.proc]:
 			# calculate forward time
@@ -72,14 +66,6 @@ class ComputeTask(Task):
 			#machine.procs[self.proc] = self.time + delay + noise
 			machine.procs[self.proc] = self.time + delay
 
-			# visualize
-			#	# draw noise
-			#	context.set_source_rgb(1.0, 0.0, 0.0)
-			#	if noise != 0:
-			#		context.rectangle(10+self.time/10+delay/10, 18-2+36*self.proc, noise/10, 4)
-			#		context.fill()
-			#	context.set_source_rgb(0.0, 0.0, 0.0)
-			
 			# next event time 
 			return self.time + delay
 		# proc not available
@@ -105,35 +91,9 @@ class PutTask(Task):
 			# local time occupied
 			self.local = PutTask.alpha_r
 
-			#if self.local_noise is not None:
-			#	lnoise = choice(self.local_noise)
-			#else:
-			#	lnoise = 0
-
 			# remote arrival time
 			self.remote = self.local + PutTask.alpha_p + PutTask.beta * self.size
 			
-			#if self.remote_noise is not None:
-			#	rnoise = choice(self.remote_noise)
-			#else:
-			#	rnoise = 0
-
-			# visualize
-			#	context.set_source_rgb(1,0,0)
-			#	if lnoise != 0:
-			#		context.rectangle(10+self.time/10+local/10,18-1+36*self.proc, lnoise/10, 2)
-			#		context.fill()
-
-			#	if rnoise != 0:
-			#		context.move_to(10+(self.time+local+lnoise)/10, 18+36*self.proc)
-			#		context.line_to(10+(self.time+local+lnoise)/10,18+36*self.proc+diff)
-			#		context.line_to(10+(self.time+remote+lnoise)/10, 18+36*self.target-diff)
-			#		context.line_to(10+(self.time+remote+lnoise+rnoise)/10, 18+36*(self.target)-diff)
-			#		context.line_to(10+(self.time+remote+lnoise+rnoise)/10, 18+36*self.target)
-			#		context.stroke()
-			#	
-			#	context.set_source_rgb(0,0,0)
-
 			# modify state
 			#machine.procs[self.proc] = self.time + local + lnoise
 			machine.procs[self.proc] = self.time + self.local

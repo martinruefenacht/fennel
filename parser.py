@@ -43,10 +43,7 @@ def parseGOAL(filename):
 					# start
 					name = 'r'+str(current_rank)+'l'+str(match.group(1))
 
-					if len(match.groups()) == 2:
-						task = StartTask(name, current_rank, int(match.group(2)))
-					else:
-						task = StartTask(name, current_rank)
+					task = StartTask(name, current_rank)
 
 					program.add_node(name, {'task':task})
 

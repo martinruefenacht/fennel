@@ -1,0 +1,19 @@
+rank 0 {
+	l1: start 0ns
+	l2: compute 256b
+	l3: put 8b to r1
+
+	l2 > l1
+	l2 > r1:l2
+	l3 > l1
+}
+
+rank 1 {
+	l1: start 0ns
+	l2: put 256b to r0
+	l3: compute 8b
+
+	l2 > l1
+	l3 > l1
+	l3 > r0:l3
+}

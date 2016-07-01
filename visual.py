@@ -52,34 +52,38 @@ def outputPDF(filename, machine, program):
 		ctx.move_to(xmargin + tick / scale, ymargin/3)
 		ctx.rel_line_to(0, 4)
 		ctx.stroke()
-	
-	# draw program
+
+	# draw machine program
 	for node, data in program.nodes_iter(data=True):
 		task = data['task']
 
 		if isinstance(task, StartTask):
-			ctx.move_to(xmargin + (task.time+task.noise)*scale, ymargin + pheight * task.proc - sheight/2)
+			time = machine.record[node]
+			ctx.move_to(xmargin + time*scale, ymargin + pheight * task.proc - sheight/2)
 			ctx.rel_line_to(0, sheight)
 			ctx.stroke()
 
 		elif isinstance(task, PutTask):
 			# draw put task
 			# draw local block
-			ctx.rectangle(xmargin + task.time * scale, ymargin + pheight * task.proc - theight/2, task.local * scale, theight) 
+			record = machine.record[node]
+			
+			ctx.rectangle(xmargin + record[0] * scale, ymargin + pheight * task.proc - theight/2, record[1] * scale, theight) 
 			ctx.fill()
 			
 			# draw transfer
 			direct = tline if (task.target - task.proc) > 0 else -tline
 
-			ctx.move_to(xmargin + task.time * scale + task.local * scale, ymargin + pheight * task.proc)
+			ctx.move_to(xmargin + record[0] * scale + record[1] * scale, ymargin + pheight * task.proc)
 			ctx.rel_line_to(0, direct)
-			ctx.line_to(xmargin + task.time * scale + task.remote * scale, ymargin + pheight * task.target - direct)
+			ctx.line_to(xmargin + (record[0]+record[1]+record[2])*scale, ymargin + pheight * task.target - direct)
 			ctx.rel_line_to(0, direct)
 			ctx.stroke()
 
 		elif isinstance(task, ComputeTask):
 			# draw compute task
-			ctx.rectangle(xmargin + task.time*scale, ymargin + pheight * task.proc - cheight/2, task.delay*scale, cheight) 
+			time = machine.record[node]
+			ctx.rectangle(xmargin + time*scale, ymargin + pheight * task.proc - cheight/2, task.delay*scale, cheight) 
 			ctx.fill()
 			
 		else:

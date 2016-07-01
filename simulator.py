@@ -16,34 +16,30 @@ class Simulator:
 		for nid, deg in program.in_degree_iter():
 			if deg == 0:
 				# insert into task queue
-				heappush(self.taskqueue, program.node[nid]['task'])
+				heappush(self.taskqueue, (0, nid))
 
 		# process entire queue
 		while self.taskqueue:
 			# retrieve next global clock event
-			task = heappop(self.taskqueue)
+			time_in, nid = heappop(self.taskqueue)
+
+			# retrieve task from program
+			#task = program.getTask(nid)
+			task = program.node[nid]['task']
 
 			# execute task
-			time = task.execute(machine)
+			success, time_out = task.execute(machine, time_in)
 
-			# check for reschedule
-			if time is None:
-				# reinsert into task queue
-				heappush(self.taskqueue, task)
+			# check success
+			if success:
+				successors = machine.markComplete(program, nid, time_out)
+
+				# push all available successors to queue
+				for successor in successors:
+					heappush(self.taskqueue, successor)
 			else:
-				# push sucessors
-				for sid in program.successors_iter(task.name):
-					suc = program.node[sid]['task']
-
-					# increment dependencies
-					suc.dependencies += 1
-
-					# latest dependency
-					suc.time = max(time, suc.time)
-
-					# check for complete dependencies
-					if suc.dependencies == program.in_degree(sid):
-						heappush(self.taskqueue, suc)
+				# reinsert into task queue
+				heappush(self.taskqueue, (time_out, nid))
 
 if __name__ == "__main__":
 	# parse program

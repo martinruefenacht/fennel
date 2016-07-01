@@ -6,8 +6,10 @@ def outputPDF(filename, machine, program):
 	xmargin = 10
 	ymargin = 20
 	pheight = 36
-	cheight = 4
+	cheight = 3
 	theight = 2
+	sheight = 5 
+	tline = 4
 	scale = 1/10
 
 	height = ymargin * 2 + pheight * (machine.size-1)
@@ -53,7 +55,9 @@ def outputPDF(filename, machine, program):
 		task = data['task']
 
 		if isinstance(task, StartTask):
-			pass
+			ctx.move_to(xmargin + (task.time+task.noise)*scale, ymargin + pheight * task.proc - sheight/2)
+			ctx.rel_line_to(0, sheight)
+			ctx.stroke()
 
 		elif isinstance(task, PutTask):
 			# draw put task
@@ -62,7 +66,7 @@ def outputPDF(filename, machine, program):
 			ctx.fill()
 			
 			# draw transfer
-			direct = 3 if (task.target - task.proc) > 0 else -3
+			direct = tline if (task.target - task.proc) > 0 else -tline
 
 			ctx.move_to(xmargin + task.time * scale + task.local * scale, ymargin + pheight * task.proc)
 			ctx.rel_line_to(0, direct)

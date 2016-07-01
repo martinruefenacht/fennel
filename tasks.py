@@ -52,7 +52,7 @@ class ComputeTask(Task):
 		if size is None and delay is not None:
 			self.delay = delay
 		elif size is not None and delay is None:
-			self.delay = gamma * size
+			self.delay = ComputeTask.gamma * size
 		else:
 			print('ComputeTask was not constructed properly.')
 
@@ -111,7 +111,7 @@ class PutTask(Task):
 			#	lnoise = 0
 
 			# remote arrival time
-			self.remote = self.local + PutTask.alpha_p
+			self.remote = self.local + PutTask.alpha_p + PutTask.beta * self.size
 			
 			#if self.remote_noise is not None:
 			#	rnoise = choice(self.remote_noise)

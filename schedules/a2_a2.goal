@@ -1,0 +1,66 @@
+# lines with # are comments
+# noise does not get described in schedule, noise is property of machine
+# this is purely control-flow / data-flow
+
+rank 0 {
+	l1: start 0ns
+	l2: put 8b to r1
+	l3: compute 100ns
+	l4: put 8b to r2
+	l5: compute 100ns
+
+	l2 > l1
+	l3 > l1
+	# LogGOPSim handles this through msg and recv & tag
+	# we are lower level and treat all schedules as one
+	# we have multitree DAG
+	l3 > r1:l2
+	l4 > l3
+	l5 > r2:l4
+	l5 > l3
+}
+
+rank 1 {
+	l1: start 0ns
+	l2: put 8b to r0
+	l3: compute 100ns
+	l4: put 8b to r3
+	l5: compute 100ns
+	
+	l2 > l1
+	l3 > l1
+	l3 > r0:l2
+	l4 > l3
+	l5 > r3:l4
+	l5 > l3
+}
+
+rank 2 {
+	l1: start 0ns
+	l2: put 8b to r3
+	l3: compute 100ns
+	l4: put 8b to r0
+	l5: compute 100ns
+
+	l2 > l1
+	l3 > r3:l2
+	l3 > l1
+	l4 > l3
+	l5 > r0:l4
+	l5 > l3
+}
+
+rank 3 {
+	l1: start 0ns
+	l2: put 8b to r2
+	l3: compute 100ns
+	l4: put 8b to r1
+	l5: compute 100ns
+
+	l2 > l1
+	l3 > r2:l2
+	l3 > l1
+	l4 > l3
+	l5 > r1:l4
+	l5 > l3
+}

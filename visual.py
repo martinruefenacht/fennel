@@ -40,8 +40,8 @@ def outputPDF(filename, machine, program):
 
 	# draw max time line
 	ctx.set_source_rgb(1,0,0)
-	ctx.move_to(xmargin + maxtime * scale, ymargin)
-	ctx.rel_line_to(0, height - ymargin*2) 
+	ctx.move_to(xmargin + maxtime * scale, ymargin/3)
+	ctx.rel_line_to(0, height - ymargin*4/3) 
 	ctx.stroke()
 	ctx.set_source_rgb(0,0,0)
 
@@ -93,6 +93,14 @@ def outputPDF(filename, machine, program):
 			record = machine.record[node]
 			ctx.rectangle(xmargin + record[0]*scale, ymargin + pheight * task.proc - cheight/2, record[1]*scale, cheight) 
 			ctx.fill()
+
+		elif isinstance(task, SleepTask):
+			record = machine.record[node]
+
+			# draw sleep
+			ctx.move_to(xmargin + record[0]*scale, ymargin + pheight * task.proc - cheight/3)
+			ctx.rel_line_to(record[1]*scale, 0)
+			ctx.stroke()
 			
 		else:
 			print('Unknown task type:', task)

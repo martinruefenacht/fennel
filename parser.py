@@ -6,9 +6,10 @@ from tasks import *
 patterns = [
 			r'\s*rank (\d+) {$',
 			r'\s*}',
-			r'\s*l(\d+): start (?:(\d+)ns)?$',
+			r'\s*l(\d+): start$',
 			r'\s*l(\d+): put (\d+)b to r(\d+)$',
 			r'\s*l(\d+): compute (\d+)(ns|b)$',
+			r'\s*l(\d+): sleep (\d+)ns$',
 			r'\s*l(\d+) > (?:r(\d+):)?l(\d+)$'
 			]
 
@@ -71,8 +72,18 @@ def parseGOAL(filename):
 					else:
 						task = ComputeTask(name, current_rank, delay=int(match.group(2)))
 					program.add_node(name, {'task':task})
-					
+				
 				elif idx == 5:
+					# sleep
+					if current_rank == -1:
+						print('Invalid format due to missing rank block')
+						break
+
+					name = 'r'+str(current_rank)+'l'+str(match.group(1))
+					task = SleepTask(name, current_rank, int(match.group(2)))
+					program.add_node(name, {'task':task})
+					
+				elif idx == 6:
 					# dependency
 					# cache for later once all nodes are read
 					dependencies.append((current_rank, match))	
@@ -91,9 +102,3 @@ def parseGOAL(filename):
 		program.add_edge(b, a)
 	
 	return program
-
-		
-
-def parse_YAML(filename):
-	pass
-

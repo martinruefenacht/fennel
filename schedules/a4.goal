@@ -1,5 +1,5 @@
 rank 0 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r1
 	l3: put 8b to r2
 	l4: put 8b to r3
@@ -15,7 +15,7 @@ rank 0 {
 }
 
 rank 1 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r0
 	l3: put 8b to r2
 	l4: put 8b to r3
@@ -31,7 +31,7 @@ rank 1 {
 }
 
 rank 2 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r3
 	l3: put 8b to r1
 	l4: put 8b to r0
@@ -47,7 +47,7 @@ rank 2 {
 }
 
 rank 3 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r2
 	l3: put 8b to r1
 	l4: put 8b to r0

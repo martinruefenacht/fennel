@@ -26,6 +26,24 @@ class StartTask(Task):
 		
 		return (True, time)
 
+class SleepTask(Task):
+	def __init__(self, node, proc, delay):
+		super().__init__(node, proc)
+
+		self.delay = delay
+
+	def execute(self, machine, time):
+		rank_time = machine.getRankTime(self.proc)
+	
+		if time >= rank_time:
+			machine.record[self.node] = [time, self.delay]
+
+			machine.setRankTime(self.proc, time + self.delay)
+
+			return (True, time + self.delay)
+		else:
+			return (False, rank_time)
+
 class ComputeTask(Task):
 	def __init__(self, node, proc, delay=None, size=None):
 		# initialize task

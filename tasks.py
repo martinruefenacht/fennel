@@ -27,8 +27,6 @@ class StartTask(Task):
 		return (True, time)
 
 class ComputeTask(Task):
-	gamma = 10
-
 	def __init__(self, node, proc, delay=None, size=None):
 		# initialize task
 		super().__init__(node, proc)
@@ -36,8 +34,10 @@ class ComputeTask(Task):
 		# initialize compute task
 		if size is None and delay is not None:
 			self.delay = delay
+			self.size = None 
 		elif size is not None and delay is None:
-			self.delay = ComputeTask.gamma * size
+			self.size = size
+			self.delay = None
 		else:
 			print('ComputeTask was not constructed properly.')
 
@@ -45,25 +45,24 @@ class ComputeTask(Task):
 		rank_time = machine.getRankTime(self.proc)
 		
 		if time >= rank_time:
-			# TODO add noise machine
+			# calculate delay for compute based on machine
+			delay = self.delay
+			if delay is None:
+				delay = self.size * machine.gamma
 
 			# forward rank in time
-			machine.setRankTime(self.proc, time + self.delay)
+			machine.setRankTime(self.proc, time + delay)
 
 			# record task time for machine
-			machine.record[self.node] = time
+			machine.record[self.node] = [time, delay]
 
 			# can forward
-			return (True, time + self.delay)
+			return (True, time + delay)
 		else:
 			# delay
 			return (False, rank_time) 
 			
 class PutTask(Task):
-	alpha_p = 1600
-	alpha_r = 400
-	beta = 10
-
 	def __init__(self, node, proc, target, size):
 		super().__init__(node, proc)
 		self.target = target
@@ -74,8 +73,8 @@ class PutTask(Task):
 
 		if time >= rank_time:
 			# local time occupied
-			local = PutTask.alpha_r
-			remote = PutTask.alpha_p + PutTask.beta * self.size
+			local = machine.alpha_r
+			remote = machine.alpha_p + machine.beta * self.size
 
 			# record	
 			machine.record[self.node] = [time, local, remote]

@@ -1,0 +1,70 @@
+rank 0 {
+	l1: start 0ns
+	l2: put 8b to r1
+	l3: put 8b to r2
+	l4: put 8b to r3
+	l5: put 8b to r4
+
+	l2 > l1
+	l3 > l1
+	l4 > l1
+	l5 > l1
+}
+
+rank 1 {
+	l1: start 0ns
+	l2: put 8b to r5
+	l3: put 8b to r6
+	
+	l2 > l1
+	l2 > r0:l2
+	l3 > r0:l2
+}
+
+rank 2 {
+	l1: start 0ns
+	l2: put 8b to r7
+
+	l2 > l1
+	l2 > r0:l3
+}
+
+rank 3 {
+	l1: start 0ns
+	l2: compute 8b
+	
+	l2 > l1
+	l2 > r0:l4
+}
+
+rank 4 {
+	l1: start 0ns
+	l2: compute 8b
+	
+	l2 > l1
+	l2 > r0:l5
+}
+
+rank 5 {
+	l1: start 0ns
+	l2: compute 8b
+	
+	l2 > l1
+	l2 > r1:l2
+}
+
+rank 6 {
+	l1: start 0ns
+	l2: compute 8b
+	
+	l2 > l1
+	l2 > r1:l3
+}
+
+rank 7 {
+	l1: start 0ns
+	l2: compute 8b
+	
+	l2 > l1
+	l2 > r2:l2
+}

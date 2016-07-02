@@ -12,8 +12,9 @@ def outputPDF(filename, machine, program):
 	tline = 4
 	scale = 1/10
 
+	maxtime = max(machine.procs)
 	height = ymargin * 2 + pheight * (machine.size-1)
-	width  = xmargin * 2 + int(math.ceil(max(machine.procs) / 1000.0)) * 1000 * scale
+	width  = xmargin * 2 + int(math.ceil(maxtime / 1000.0)) * 1000 * scale
 
 	# create surface
 	pdf = cairo.PDFSurface(filename, width, height) 
@@ -36,6 +37,13 @@ def outputPDF(filename, machine, program):
 		ctx.move_to(xmargin, ymargin + proc * pheight) 
 		ctx.rel_line_to((width - xmargin * 2), 0)
 		ctx.stroke()
+
+	# draw max time line
+	ctx.set_source_rgb(1,0,0)
+	ctx.move_to(xmargin + maxtime * scale, ymargin)
+	ctx.rel_line_to(0, height - ymargin*2) 
+	ctx.stroke()
+	ctx.set_source_rgb(0,0,0)
 
 	# draw timeline
 	ctx.move_to(xmargin, ymargin/3)
@@ -82,8 +90,8 @@ def outputPDF(filename, machine, program):
 
 		elif isinstance(task, ComputeTask):
 			# draw compute task
-			time = machine.record[node]
-			ctx.rectangle(xmargin + time*scale, ymargin + pheight * task.proc - cheight/2, task.delay*scale, cheight) 
+			record = machine.record[node]
+			ctx.rectangle(xmargin + record[0]*scale, ymargin + pheight * task.proc - cheight/2, record[1]*scale, cheight) 
 			ctx.fill()
 			
 		else:

@@ -1,6 +1,10 @@
 from scipy.stats import betaprime
 
 class Machine:
+	alpha_r = 400
+	alpha_p = 1600
+	beta = 10
+	gamma = 10
 	def __init__(self, program):
 		#self.size = program.getSize()
 		self.size = 0
@@ -56,16 +60,6 @@ class Machine:
 
 	def getHostNoise(self, duration):
 		return 0
-
-	def getNetworkNoise(self, duration):
-		return 0
-
-def HostNoiseMachine(Machine):
-	def __init__(self, program):
-		super().__init__(program)
-
-	def getHostNoise(self, duration):
-		return int(round(betaprime.rvs(2, 2, loc=0, scale=20)[0]))
 
 	def getNetworkNoise(self, duration):
 		return 0

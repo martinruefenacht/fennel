@@ -58,4 +58,5 @@ if __name__ == "__main__":
 
 	s.run(m, p)
 
-	visual.outputPDF('rd.pdf', m, p)
+	print(max(m.procs))
+

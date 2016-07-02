@@ -15,16 +15,9 @@ class Machine:
 		# store cpu times
 		self.procs = [0] * self.size
 
-		# topology will need to be in here
-		# a-b 1us, a-c 2us, c-d 1us
-		# weighted all-to-all network
-
-		# network congestion would require switch based simulation
-		# with topology network
-
-		# nic congestion, we need to treat the nic seperately similarly to LogP
-		
+		# dependency counters
 		self.dependencies = {}
+		# dependency arrivals
 		self.dtimes = {}
 
 		# for drawing / analysis
@@ -59,6 +52,13 @@ class Machine:
 		return successors
 
 	def getHostNoise(self, time, duration):
+		return 0
+
+	def getNetworkNoise(self, time, duration):
+		return 0
+
+class NoisyMachine(Machine):
+	def getHostNoise(self, time, duration):
 		#noise = betaprime.rvs(3, 2, scale=10)))
 		
 		noise = betaprime.rvs(3, 2, scale=duration/20)
@@ -70,3 +70,4 @@ class Machine:
 		noise = betaprime.rvs(3, 2, scale=duration/15)
 		
 		return int(round(noise))
+

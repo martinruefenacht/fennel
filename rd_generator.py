@@ -98,6 +98,9 @@ def recursive_doubling_program(size):
 				ctask = ComputeTask(cname, rproc, delay=100)
 				program.add_node(cname, {'task':ctask})
 
+				# this is staged behaviour not task based times
+				#program.add_edge('r1d0', pname)
+
 				# compute dependent on previous compute
 				program.add_edge('r'+str(rproc)+'d'+str(stage), cname)
 				# put dependent on previous compute

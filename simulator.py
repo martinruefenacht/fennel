@@ -16,38 +16,40 @@ class Simulator:
 		for nid, deg in program.in_degree_iter():
 			if deg == 0:
 				# insert into task queue
-				heappush(self.taskqueue, (0, nid))
+				#heappush(self.taskqueue, (0, nid))
+				heappush(self.taskqueue, (0, program.node[nid]['task']))
 
 		# process entire queue
 		while self.taskqueue:
 			# retrieve next global clock event
-			time_in, nid = heappop(self.taskqueue)
+			time_in, task = heappop(self.taskqueue)
 
 			# retrieve task from program
 			#task = program.getTask(nid)
-			task = program.node[nid]['task']
+			#task = program.node[nid]['task']
 
 			# execute task
 			success, time_out = task.execute(machine, time_in)
 
 			# check success
 			if success:
-				successors = machine.markComplete(program, nid, time_out)
+				#successors = machine.markComplete(program, nid, time_out)
+				successors = machine.markComplete(program, task, time_out)
 
 				# push all available successors to queue
 				for successor in successors:
 					heappush(self.taskqueue, successor)
 			else:
 				# reinsert into task queue
-				heappush(self.taskqueue, (time_out, nid))
+				heappush(self.taskqueue, (time_out, task))
 
 if __name__ == "__main__":
 	# parse program
 	program = parser.parseGOAL(sys.argv[1])
 
 	# create machine for program
-	#machine = machine.Machine(program, recording=True)
-	machine = machine.NoisyMachine(program, recording=True)
+	machine = machine.Machine(program, recording=True)
+	#machine = machine.NoisyMachine(program, recording=True)
 
 	# simulate
 	simulator = Simulator()

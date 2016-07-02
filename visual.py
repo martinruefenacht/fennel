@@ -83,6 +83,9 @@ def outputPDF(filename, machine, program):
 			ctx.rectangle(xmargin + record[0] * scale, ymargin + pheight * task.proc - theight/2, record[1] * scale, theight) 
 			ctx.fill()
 
+			ctx.move_to(xmargin + record[0]*scale, ymargin + pheight*task.proc + theight +2)
+			ctx.show_text(task.node)
+
 			ctx.set_source_rgb(1,0,0)
 			ctx.rectangle(xmargin + (record[0]+record[1])*scale, ymargin + pheight*task.proc - theight/2, record[3]*scale, theight)
 			ctx.fill()
@@ -116,6 +119,9 @@ record[2]*scale, cheight)
 			ctx.fill()
 			ctx.set_source_rgb(0,0,0)
 
+			ctx.move_to(xmargin+record[0]*scale, ymargin+pheight*task.proc+cheight+2)
+			ctx.show_text(task.node)
+
 		elif isinstance(task, SleepTask):
 			record = machine.record[node]
 
@@ -128,6 +134,9 @@ record[2]*scale, cheight)
 			ctx.rel_line_to(record[2]*scale, 0)
 			ctx.stroke()
 			ctx.set_source_rgb(0,0,0)
+	
+		elif isinstance(task, ProxyTask):
+			pass
 			
 		else:
 			print('Unknown task type:', task)

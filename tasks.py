@@ -30,8 +30,18 @@ class StartTask(Task):
 		# should probably be definable
 
 		machine.recordTask(self.node, [time])
+
+		machine.setRankTime(self.proc, time)
 		
 		#return (True, time + self.skew)
+		return (True, time)
+
+class ProxyTask(Task):
+	def __init__(self, node, proc):
+		super().__init__(node, proc)
+
+	def execute(self, machine, time):
+		machine.setRankTime(self.proc, time)
 		return (True, time)
 
 class SleepTask(Task):

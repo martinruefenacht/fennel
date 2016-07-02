@@ -35,10 +35,10 @@ class Machine:
 	def setRankTime(self, rank, time):
 		self.procs[rank] = time
 
-	def markComplete(self, program, nid, time):
+	def markComplete(self, program, task, time):
 		successors = []
 
-		for successor in program.successors_iter(nid):
+		for successor in program.successors_iter(task.node):
 			# increment completed dependencies for successor
 			if successor in self.dependencies:
 				self.dependencies[successor] += 1
@@ -53,7 +53,9 @@ class Machine:
 
 			# check for completion
 			if self.dependencies[successor] == program.in_degree(successor):
-				successors.append((self.dtimes[successor], successor))
+				#successors.append((self.dtimes[successor], successor))
+				successors.append((self.dtimes[successor], program.node[successor]['task']))
+				
 
 		return successors
 

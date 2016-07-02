@@ -1,8 +1,8 @@
 from scipy.stats import betaprime
 
 class Machine:
-	alpha_r = 400
-	alpha_p = 1600
+	alpha_r = 320
+	alpha_p = 690
 	beta = 10
 	gamma = 10
 	def __init__(self, program):

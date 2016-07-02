@@ -58,8 +58,8 @@ class Machine:
 
 		return successors
 
-	def getHostNoise(self, duration):
-		return 0
+	def getHostNoise(self, time, duration):
+		return betaprime.rvs(3, 2, scale=10)
 
-	def getNetworkNoise(self, duration):
-		return 0
+	def getNetworkNoise(self, time, duration):
+		return betaprime.rvs(3, 2, scale=20)

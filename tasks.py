@@ -36,6 +36,8 @@ class SleepTask(Task):
 		rank_time = machine.getRankTime(self.proc)
 	
 		if time >= rank_time:
+			# TODO noise
+			
 			machine.record[self.node] = [time, self.delay]
 
 			machine.setRankTime(self.proc, time + self.delay)
@@ -49,7 +51,7 @@ class ComputeTask(Task):
 		# initialize task
 		super().__init__(node, proc)
 
-		# initialize compute task
+		# initialize copute task
 		if size is None and delay is not None:
 			self.delay = delay
 			self.size = None 
@@ -68,14 +70,17 @@ class ComputeTask(Task):
 			if delay is None:
 				delay = self.size * machine.gamma
 
+			# get noise
+			noise = machine.getHostNoise(time, delay)
+
 			# forward rank in time
-			machine.setRankTime(self.proc, time + delay)
+			machine.setRankTime(self.proc, time + delay + noise)
 
 			# record task time for machine
-			machine.record[self.node] = [time, delay]
+			machine.record[self.node] = [time, delay, noise]
 
-			# can forward
-			return (True, time + delay)
+			# next task time
+			return (True, time + delay + noise)
 		else:
 			# delay
 			return (False, rank_time) 
@@ -93,13 +98,15 @@ class PutTask(Task):
 			# local time occupied
 			local = machine.alpha_r
 			remote = machine.alpha_p + machine.beta * self.size
+			lnoise = machine.getHostNoise(time, local)
+			rnoise = machine.getNetworkNoise(time, remote)
 
 			# record	
-			machine.record[self.node] = [time, local, remote]
+			machine.record[self.node] = [time, local, remote, lnoise, rnoise]
 	
 			# modify state
-			machine.setRankTime(self.proc, time + local)
+			machine.setRankTime(self.proc, time + local + lnoise)
 
-			return (True, time + local + remote)
+			return (True, time + local + lnoise + remote + rnoise)
 		else:
 			return (False, rank_time)

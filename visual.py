@@ -39,7 +39,7 @@ def outputPDF(filename, machine, program):
 		ctx.stroke()
 
 	# draw max time line
-	ctx.set_source_rgb(1,0,0)
+	ctx.set_source_rgb(0,0,1)
 	ctx.move_to(xmargin + maxtime * scale, ymargin/3)
 	ctx.rel_line_to(0, height - ymargin*4/3) 
 	ctx.stroke()
@@ -78,21 +78,39 @@ def outputPDF(filename, machine, program):
 			
 			ctx.rectangle(xmargin + record[0] * scale, ymargin + pheight * task.proc - theight/2, record[1] * scale, theight) 
 			ctx.fill()
+
+			ctx.set_source_rgb(1,0,0)
+			ctx.rectangle(xmargin + (record[0]+record[1])*scale, ymargin + pheight*task.proc - theight/2, record[3]*scale, theight)
+			ctx.fill()
+			ctx.set_source_rgb(0,0,0)
 			
 			# draw transfer
 			direct = tline if (task.target - task.proc) > 0 else -tline
 
-			ctx.move_to(xmargin + record[0] * scale + record[1] * scale, ymargin + pheight * task.proc)
+			ctx.move_to(xmargin + (record[0]+record[1]+record[3]) * scale, ymargin + pheight * task.proc)
 			ctx.rel_line_to(0, direct)
-			ctx.line_to(xmargin + (record[0]+record[1]+record[2])*scale, ymargin + pheight * task.target - direct)
+			ctx.line_to(xmargin + (record[0]+record[1]+record[2]+record[3])*scale, ymargin + pheight * task.target - direct)
 			ctx.rel_line_to(0, direct)
 			ctx.stroke()
+
+			ctx.set_source_rgb(1,0,0)
+			ctx.move_to(xmargin + (record[0]+record[1]+record[2]+record[3])*scale, ymargin + pheight * task.target - direct)
+			ctx.rel_line_to(record[4]*scale, 0)
+			ctx.rel_line_to(0, direct)
+			ctx.stroke()
+			ctx.set_source_rgb(0,0,0)
 
 		elif isinstance(task, ComputeTask):
 			# draw compute task
 			record = machine.record[node]
 			ctx.rectangle(xmargin + record[0]*scale, ymargin + pheight * task.proc - cheight/2, record[1]*scale, cheight) 
 			ctx.fill()
+
+			ctx.set_source_rgb(1,0,0)
+			ctx.rectangle(xmargin+(record[0]+record[1])*scale, ymargin+pheight*task.proc -cheight/2,
+record[2]*scale, cheight)
+			ctx.fill()
+			ctx.set_source_rgb(0,0,0)
 
 		elif isinstance(task, SleepTask):
 			record = machine.record[node]

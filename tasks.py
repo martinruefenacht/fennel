@@ -18,12 +18,20 @@ class Task(metaclass=ABCMeta):
 		pass
 
 class StartTask(Task):
-	def __init__(self, node, proc):
+	def __init__(self, node, proc, skew=None):
 		super().__init__(node, proc)
 
+		self.skew = skew
+
 	def execute(self, machine, time):
+		# TODO if time is not 0 something has gone terribly wrong		
+
+		# TODO incoming skew!!!
+		# should probably be definable
+
 		machine.record[self.node] = time
 		
+		#return (True, time + self.skew)
 		return (True, time)
 
 class SleepTask(Task):
@@ -36,13 +44,14 @@ class SleepTask(Task):
 		rank_time = machine.getRankTime(self.proc)
 	
 		if time >= rank_time:
-			# TODO noise
+			# get noise
+			noise = machine.getHostNoise(time, self.delay)
 			
-			machine.record[self.node] = [time, self.delay]
+			machine.record[self.node] = [time, self.delay, noise]
 
-			machine.setRankTime(self.proc, time + self.delay)
+			machine.setRankTime(self.proc, time + self.delay + noise)
 
-			return (True, time + self.delay)
+			return (True, time + self.delay + noise)
 		else:
 			return (False, rank_time)
 

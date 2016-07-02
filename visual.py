@@ -119,6 +119,11 @@ record[2]*scale, cheight)
 			ctx.move_to(xmargin + record[0]*scale, ymargin + pheight * task.proc - cheight/3)
 			ctx.rel_line_to(record[1]*scale, 0)
 			ctx.stroke()
+			ctx.set_source_rgb(1,0,0)
+			ctx.move_to(xmargin + (record[0]+record[1])*scale, ymargin + pheight * task.proc - cheight/3)
+			ctx.rel_line_to(record[2]*scale, 0)
+			ctx.stroke()
+			ctx.set_source_rgb(0,0,0)
 			
 		else:
 			print('Unknown task type:', task)

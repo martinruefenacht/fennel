@@ -17,7 +17,7 @@ if __name__ == "__main__":
 	
 	times = []
 
-	for sample in range(10000):
+	for sample in range(int(sys.argv[2])):
 		# create machine for program
 		m = machine.Machine(p)
 		

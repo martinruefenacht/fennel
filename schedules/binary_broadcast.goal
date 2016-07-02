@@ -1,5 +1,5 @@
 rank 0 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r1
 	l3: put 8b to r2
 
@@ -8,7 +8,7 @@ rank 0 {
 }
 
 rank 1 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r3
 	l3: put 8b to r4
 
@@ -17,7 +17,7 @@ rank 1 {
 }
 
 rank 2 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r5
 	l3: put 8b to r6
 
@@ -26,28 +26,28 @@ rank 2 {
 }
 
 rank 3 {
-	l1: start 0ns
+	l1: start
 	l2: compute 100ns
 	
 	l2 > r1:l2
 }
 
 rank 4 {
-	l1: start 0ns
+	l1: start
 	l2: compute 100ns
 	
 	l2 > r1:l3
 }
 
 rank 5 {
-	l1: start 0ns
+	l1: start
 	l2: compute 100ns
 	
 	l2 > r2:l2
 }
 
 rank 6 {
-	l1: start 0ns
+	l1: start
 	l2: compute 100ns
 	
 	l2 > r2:l3

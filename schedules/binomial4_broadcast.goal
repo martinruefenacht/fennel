@@ -1,5 +1,5 @@
 rank 0 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r1
 	l3: put 8b to r2
 	l4: put 8b to r3
@@ -12,7 +12,7 @@ rank 0 {
 }
 
 rank 1 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r5
 	
 	l2 > l1
@@ -20,7 +20,7 @@ rank 1 {
 }
 
 rank 2 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r6
 
 	l2 > l1
@@ -28,7 +28,7 @@ rank 2 {
 }
 
 rank 3 {
-	l1: start 0ns
+	l1: start
 	l2: put 8b to r7
 	
 	l2 > l1
@@ -36,7 +36,7 @@ rank 3 {
 }
 
 rank 4 {
-	l1: start 0ns
+	l1: start
 	l2: compute 8b
 	
 	l2 > l1
@@ -44,7 +44,7 @@ rank 4 {
 }
 
 rank 5 {
-	l1: start 0ns
+	l1: start
 	l2: compute 8b
 	
 	l2 > l1
@@ -52,7 +52,7 @@ rank 5 {
 }
 
 rank 6 {
-	l1: start 0ns
+	l1: start
 	l2: compute 8b
 	
 	l2 > l1
@@ -60,7 +60,7 @@ rank 6 {
 }
 
 rank 7 {
-	l1: start 0ns
+	l1: start
 	l2: compute 8b
 	
 	l2 > l1

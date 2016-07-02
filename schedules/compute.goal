@@ -1,5 +1,5 @@
 rank 0 {
-	l1: start 0ns
+	l1: start
 	l2: compute 100ns
 
 	l2 > l1

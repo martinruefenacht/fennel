@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 	for sample in range(int(sys.argv[2])):
 		# create machine for program
-		m = machine.Machine(p)
+		m = machine.Machine(p, recording=False)
 		
 		simulator.run(m, p)
 

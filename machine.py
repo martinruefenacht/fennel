@@ -1,11 +1,17 @@
 from scipy.stats import betaprime
 
 class Machine:
-	alpha_r = 320
-	alpha_p = 690
-	beta = 10
-	gamma = 10
-	def __init__(self, program):
+	alpha_r = 300
+	alpha_p = 700
+	alpha_c = 400 # cost of targetting a different chassis
+	alpha_g = 500
+
+	beta = 12.5
+	gamma = 12.5
+
+	def __init__(self, program, recording=False):
+		self.recording = recording
+	
 		#self.size = program.getSize()
 		self.size = 0
 		for nid, deg in program.in_degree_iter():
@@ -57,6 +63,28 @@ class Machine:
 	def getNetworkNoise(self, time, duration):
 		return 0
 
+	def getNetworkTime(self, source, target, size):
+		sblade = source // 4
+		tblade = target // 4
+
+		if sblade == tblade:
+			return Machine.alpha_p + Machine.beta * size
+
+		schassis = sblade // 16
+		tchassis = tblade // 16
+
+		if schassis == tchassis:
+			return Machine.alpha_p + Machine.alpha_c + Machine.beta * size
+
+		sgroup = schassis // 6
+		tgroup = tchassis // 6
+
+		if sgroup == tgroup:
+			return Machine.alpha_p + Machine.alpha_c + Machine.alpha_g + Machine.beta * size
+	
+	def recordTask(self, node, record):
+		self.record[node] = record
+
 class NoisyMachine(Machine):
 	def getHostNoise(self, time, duration):
 		#noise = betaprime.rvs(3, 2, scale=10)))
@@ -67,7 +95,8 @@ class NoisyMachine(Machine):
 
 	def getNetworkNoise(self, time, duration):
 		#noise = betaprime.rvs(3, 2, scale=20)
-		noise = betaprime.rvs(3, 2, scale=duration/15)
+		noise = betaprime.rvs(3, 2, scale=duration/25)
 		
 		return int(round(noise))
+
 

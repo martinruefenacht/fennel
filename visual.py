@@ -2,6 +2,10 @@ import cairo, math
 from tasks import *
 
 def outputPDF(filename, machine, program):
+	if not machine.recording:
+		print('Machine was not recording! FAILED')
+		return
+	
 	# calculate resolution
 	xmargin = 10
 	ymargin = 20
@@ -66,7 +70,7 @@ def outputPDF(filename, machine, program):
 		task = data['task']
 
 		if isinstance(task, StartTask):
-			time = machine.record[node]
+			time = machine.record[node][0]
 			ctx.move_to(xmargin + time*scale, ymargin + pheight * task.proc - sheight/2)
 			ctx.rel_line_to(0, sheight)
 			ctx.stroke()

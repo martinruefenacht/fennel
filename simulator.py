@@ -46,7 +46,8 @@ if __name__ == "__main__":
 	program = parser.parseGOAL(sys.argv[1])
 
 	# create machine for program
-	machine = machine.Machine(program)
+	#machine = machine.Machine(program, recording=True)
+	machine = machine.NoisyMachine(program, recording=True)
 
 	# simulate
 	simulator = Simulator()

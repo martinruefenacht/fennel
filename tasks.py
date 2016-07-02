@@ -29,30 +29,37 @@ class StartTask(Task):
 		# TODO incoming skew!!!
 		# should probably be definable
 
-		machine.record[self.node] = time
+		machine.recordTask(self.node, [time])
 		
 		#return (True, time + self.skew)
 		return (True, time)
 
 class SleepTask(Task):
 	def __init__(self, node, proc, delay):
+		# initialize Task
 		super().__init__(node, proc)
 
+		# initialize SleepTask
 		self.delay = delay
 
 	def execute(self, machine, time):
+		# check for available host
 		rank_time = machine.getRankTime(self.proc)
-	
 		if time >= rank_time:
-			# get noise
+			# calculate host noise
 			noise = machine.getHostNoise(time, self.delay)
 			
-			machine.record[self.node] = [time, self.delay, noise]
+			# record task details
+			machine.recordTask(self.node, [time, self.delay, noise])
 
-			machine.setRankTime(self.proc, time + self.delay + noise)
+			# forward process
+			time_out = time + self.delay + noise
+			machine.setRankTime(self.proc, time_out)
 
-			return (True, time + self.delay + noise)
+			# next event time 
+			return (True, time_out)
 		else:
+			# reinsert task at process time
 			return (False, rank_time)
 
 class ComputeTask(Task):
@@ -86,7 +93,7 @@ class ComputeTask(Task):
 			machine.setRankTime(self.proc, time + delay + noise)
 
 			# record task time for machine
-			machine.record[self.node] = [time, delay, noise]
+			machine.recordTask(self.node, [time, delay, noise])
 
 			# next task time
 			return (True, time + delay + noise)
@@ -106,12 +113,15 @@ class PutTask(Task):
 		if time >= rank_time:
 			# local time occupied
 			local = machine.alpha_r
-			remote = machine.alpha_p + machine.beta * self.size
+
+			#remote = machine.alpha_p + machine.beta * self.size
+			remote = machine.getNetworkTime(self.proc, self.target, self.size)
+			
 			lnoise = machine.getHostNoise(time, local)
 			rnoise = machine.getNetworkNoise(time, remote)
 
 			# record	
-			machine.record[self.node] = [time, local, remote, lnoise, rnoise]
+			machine.recordTask(self.node, [time, local, remote, lnoise, rnoise])
 	
 			# modify state
 			machine.setRankTime(self.proc, time + local + lnoise)

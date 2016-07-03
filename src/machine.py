@@ -3,8 +3,8 @@ from scipy.stats import betaprime
 class Machine:
 	alpha_r = 300
 	alpha_p = 700
-	alpha_c = 400 # cost of targetting a different chassis
-	alpha_g = 500
+	alpha_c = 0 # cost of targetting a different chassis
+	alpha_g = 0
 
 	beta = 12.5
 	gamma = 12.5

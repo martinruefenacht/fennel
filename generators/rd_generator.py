@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import simulator, machine, visual
 
-def recursive_doubling_program(size):
+def recursive_doubling_program(block, size):
 	msgsize = 8
 	program = nx.DiGraph()
 
@@ -99,7 +99,8 @@ def recursive_doubling_program(size):
 				program.add_node(cname, {'task':ctask})
 
 				# this is staged behaviour not task based times
-				#program.add_edge('r1d0', pname)
+				if block == 'block':
+					program.add_edge('r1d0', pname)
 
 				# compute dependent on previous compute
 				program.add_edge('r'+str(rproc)+'d'+str(stage), cname)
@@ -132,11 +133,14 @@ def recursive_doubling_program(size):
 	return program
 
 if __name__ == "__main__":
-	p = recursive_doubling_program(int(sys.argv[1]))
+	if len(sys.argv) == 3:
+		p = recursive_doubling_program(sys.argv[1], int(sys.argv[2]))
+	else:
+		p = recursive_doubling_program('nonblock', int(sys.argv[1]))
 
-	#nx.draw_networkx(p)
+	#nx.draw_networkx(p, pos=nx.spectral_layout(p))
 	#plt.show()
-	
+
 	s = simulator.Simulator()
 
 	m = machine.Machine(p, recording=True)
@@ -144,6 +148,4 @@ if __name__ == "__main__":
 	s.run(m, p)
 
 	visual.outputPDF('test.pdf', m, p)
-
-	#print(max(m.procs))
 

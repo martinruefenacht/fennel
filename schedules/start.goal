@@ -1,0 +1,16 @@
+rank 0 {
+	l1: start
+}
+
+rank 1 {
+	l1: start 500ns
+}
+
+rank 2 {
+	l1: start
+}
+
+rank 3 {
+	l1: start
+}
+

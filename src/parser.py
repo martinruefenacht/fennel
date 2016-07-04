@@ -2,15 +2,16 @@ import re
 import networkx as nx
 
 from tasks import *
+from program import *
 
 patterns = [
 			r'\s*rank (\d+) {$',
 			r'\s*}',
-			r'\s*l(\d+): start$',
-			r'\s*l(\d+): put (\d+)b to r(\d+)$',
-			r'\s*l(\d+): compute (\d+)(ns|b)$',
-			r'\s*l(\d+): sleep (\d+)ns$',
-			r'\s*l(\d+) > (?:r(\d+):)?l(\d+)$'
+			r'\s*l(\d+):\s*start\s*(?:(\d+)ns)?$',
+			r'\s*l(\d+):\s*put\s*(\d+)b to r(\d+)$',
+			r'\s*l(\d+):\s*compute\s*(\d+)(ns|b)$',
+			r'\s*l(\d+):\s*sleep\s*(\d+)ns$',
+			r'\s*l(\d+)\s*>\s*(?:r(\d+):)?l(\d+)$'
 			]
 
 def parseGOAL(filename):
@@ -19,7 +20,8 @@ def parseGOAL(filename):
 
 	# create program
 	dependencies = []
-	program = nx.DiGraph()
+	#program = nx.DiGraph()
+	program = Program()
 	
 	current_rank = -1
 	
@@ -44,9 +46,12 @@ def parseGOAL(filename):
 					# start
 					name = 'r'+str(current_rank)+'l'+str(match.group(1))
 
-					task = StartTask(name, current_rank)
+					if match.group(2) == None:
+						task = StartTask(name, current_rank)
+					else:
+						task = StartTask(name, current_rank, skew=int(match.group(2)))
 
-					program.add_node(name, {'task':task})
+					program.dag.add_node(name, {'task':task})
 
 				elif idx == 3:
 					if current_rank == -1:
@@ -57,7 +62,7 @@ def parseGOAL(filename):
 					name = 'r'+str(current_rank)+'l'+str(match.group(1))
 					
 					task = PutTask(name, current_rank, int(match.group(3)), int(match.group(2)))
-					program.add_node(name, {'task':task})
+					program.dag.add_node(name, {'task':task})
 
 				elif idx == 4:
 					if current_rank == -1:
@@ -71,7 +76,7 @@ def parseGOAL(filename):
 						task = ComputeTask(name, current_rank, size=int(match.group(2)))
 					else:
 						task = ComputeTask(name, current_rank, delay=int(match.group(2)))
-					program.add_node(name, {'task':task})
+					program.dag.add_node(name, {'task':task})
 				
 				elif idx == 5:
 					# sleep
@@ -81,7 +86,7 @@ def parseGOAL(filename):
 
 					name = 'r'+str(current_rank)+'l'+str(match.group(1))
 					task = SleepTask(name, current_rank, int(match.group(2)))
-					program.add_node(name, {'task':task})
+					program.dag.add_node(name, {'task':task})
 					
 				elif idx == 6:
 					# dependency
@@ -99,6 +104,6 @@ def parseGOAL(filename):
 		else:
 			b = 'r'+str(rank)+'l'+str(match.group(3))
 
-		program.add_edge(b, a)
+		program.dag.add_edge(b, a)
 	
 	return program

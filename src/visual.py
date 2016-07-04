@@ -1,5 +1,6 @@
 import cairo, math
 from tasks import *
+from machine import *
 
 def outputPDF(filename, machine, program):
 	if not machine.recording:
@@ -86,26 +87,31 @@ def outputPDF(filename, machine, program):
 			#ctx.move_to(xmargin + record[0]*scale, ymargin + pheight*task.proc + theight +2)
 			#ctx.show_text(task.node)
 
-			ctx.set_source_rgb(1,0,0)
-			ctx.rectangle(xmargin + (record[0]+record[1])*scale, ymargin + pheight*task.proc - theight/2, record[3]*scale, theight)
-			ctx.fill()
-			ctx.set_source_rgb(0,0,0)
+			if record[1] != 0:
+				ctx.set_source_rgb(1,0,0)
+				ctx.rectangle(xmargin + (record[0]+record[1])*scale, ymargin + pheight*task.proc - theight/2, record[3]*scale, theight)
+				ctx.fill()
+				ctx.set_source_rgb(0,0,0)
 			
 			# draw transfer
 			direct = tline if (task.target - task.proc) > 0 else -tline
 
 			ctx.move_to(xmargin + (record[0]+record[1]+record[3]) * scale, ymargin + pheight * task.proc)
 			ctx.rel_line_to(0, direct)
+			ctx.rel_line_to(Machine.g_s*scale, 0)
 			ctx.line_to(xmargin + (record[0]+record[1]+record[2]+record[3])*scale, ymargin + pheight * task.target - direct)
+			#ctx.rel_line_to(Machine.g_r*scale, 0)
 			ctx.rel_line_to(0, direct)
 			ctx.stroke()
 
-			ctx.set_source_rgb(1,0,0)
-			ctx.move_to(xmargin + (record[0]+record[1]+record[2]+record[3])*scale, ymargin + pheight * task.target - direct)
-			ctx.rel_line_to(record[4]*scale, 0)
-			ctx.rel_line_to(0, direct)
-			ctx.stroke()
-			ctx.set_source_rgb(0,0,0)
+
+			if record[4] != 0:
+				ctx.set_source_rgb(1,0,0)
+				ctx.move_to(xmargin + (record[0]+record[1]+record[2]+record[3])*scale, ymargin + pheight * task.target - direct)
+				ctx.rel_line_to(record[4]*scale, 0)
+				ctx.rel_line_to(0, direct)
+				ctx.stroke()
+				ctx.set_source_rgb(0,0,0)
 
 		elif isinstance(task, ComputeTask):
 			# draw compute task
@@ -113,11 +119,13 @@ def outputPDF(filename, machine, program):
 			ctx.rectangle(xmargin + record[0]*scale, ymargin + pheight * task.proc - cheight/2, record[1]*scale, cheight) 
 			ctx.fill()
 
-			ctx.set_source_rgb(1,0,0)
-			ctx.rectangle(xmargin+(record[0]+record[1])*scale, ymargin+pheight*task.proc -cheight/2,
-record[2]*scale, cheight)
-			ctx.fill()
-			ctx.set_source_rgb(0,0,0)
+
+			if record[1] != 0:
+				ctx.set_source_rgb(1,0,0)
+				ctx.rectangle(xmargin+(record[0]+record[1])*scale, ymargin+pheight*task.proc -cheight/2,
+	record[2]*scale, cheight)
+				ctx.fill()
+				ctx.set_source_rgb(0,0,0)
 
 			#ctx.move_to(xmargin+record[0]*scale, ymargin+pheight*task.proc+cheight+2)
 			#ctx.show_text(task.node)
@@ -129,11 +137,13 @@ record[2]*scale, cheight)
 			ctx.move_to(xmargin + record[0]*scale, ymargin + pheight * task.proc - cheight/3)
 			ctx.rel_line_to(record[1]*scale, 0)
 			ctx.stroke()
-			ctx.set_source_rgb(1,0,0)
-			ctx.move_to(xmargin + (record[0]+record[1])*scale, ymargin + pheight * task.proc - cheight/3)
-			ctx.rel_line_to(record[2]*scale, 0)
-			ctx.stroke()
-			ctx.set_source_rgb(0,0,0)
+
+			if record[2] != 0:
+				ctx.set_source_rgb(1,0,0)
+				ctx.move_to(xmargin + (record[0]+record[1])*scale, ymargin + pheight * task.proc - cheight/3)
+				ctx.rel_line_to(record[2]*scale, 0)
+				ctx.stroke()
+				ctx.set_source_rgb(0,0,0)
 	
 		elif isinstance(task, ProxyTask):
 			pass

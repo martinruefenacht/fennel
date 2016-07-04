@@ -5,7 +5,9 @@ import networkx as nx
 from sympy.ntheory import factorint
 import math, sys
 import matplotlib.pyplot as plt
-import simulator, machine, visual
+import simulator, machine, visual, program
+
+
 from collections import Counter
 from itertools import * 
 import operator
@@ -13,7 +15,8 @@ from functools import reduce
 
 def schedule_to_program_generator(size, schedule):
 	msgsize = 8 
-	program = nx.DiGraph()
+	#program = nx.DiGraph()
+	p = program.Program()
 
 	positions = {}
 
@@ -21,7 +24,7 @@ def schedule_to_program_generator(size, schedule):
 	stage_mask = 1
 	for node in range(size):
 		name = 'r' + str(node) + 'c0'
-		program.add_node(name, {'task':StartTask(name, node)})
+		p.dag.add_node(name, {'task':StartTask(name, node)})
 		positions[name] = (node, 0)
 
 	# run through schedule
@@ -36,11 +39,11 @@ def schedule_to_program_generator(size, schedule):
 			# create compute
 			cname = 'r'+str(node)+'c'+str(sid)
 			ctask = ComputeTask(cname, node, delay=100)
-			program.add_node(cname, {'task':ctask})
+			p.dag.add_node(cname, {'task':ctask})
 			positions[cname] = (node, -sid)
 			
 			# compute is dependent on previous compute
-			program.add_edge('r'+str(node)+'c'+str(sid-1), cname)
+			p.dag.add_edge('r'+str(node)+'c'+str(sid-1), cname)
 
 			# for each peer
 			for idx in range(factor-1):
@@ -51,22 +54,22 @@ def schedule_to_program_generator(size, schedule):
 				# create put for peer
 				pname = 'r'+str(node)+'p'+str(sid)+str(idx)
 				ptask = PutTask(pname, node, peer, msgsize)
-				program.add_node(pname, {'task':ptask})
+				p.dag.add_node(pname, {'task':ptask})
 				positions[pname] = (node+0.1+idx/(factor-1), -sid+0.2)
 				
 				# depends on previous compute
-				program.add_edge('r'+str(node)+'c'+str(sid-1), pname)
+				p.dag.add_edge('r'+str(node)+'c'+str(sid-1), pname)
    				# add dependency for all follow computes
-				program.add_edge(pname, 'r'+str(peer)+'c'+str(sid)) 
+				p.dag.add_edge(pname, 'r'+str(peer)+'c'+str(sid)) 
 
 		# increment mask
 		stage_mask *= factor
 
 	# testing: draw graph
-	#nx.draw_networkx(program, pos=positions)
+	#nx.draw_networkx(p.dag, pos=positions)
 	#plt.show()
 
-	return program
+	return p
 
 if __name__ == "__main__":
 	size = int(sys.argv[1]) # N
@@ -112,18 +115,18 @@ if __name__ == "__main__":
 		print(idx,')', un)
 	sel = int(input('Select: '))
 
+	# TODO select ordering of stages
+
 	# program generator
 	p = schedule_to_program_generator(size, unique[sel])
 
-	# create simulator
-	s = simulator.Simulator()
-
 	# create machine
-	m = machine.Machine(p, recording=True)
+	m = machine.LogPMachine(p)
 
 	# run program on machine
-	s.run(m, p)
+	m.run()
+	print(m.procs)
 
 	# draw program execution
-	visual.outputPDF('test.pdf', m, p)
+	#visual.outputPDF('test.pdf', m, p)
 

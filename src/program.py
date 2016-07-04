@@ -4,8 +4,6 @@ class Program:
 	def __init__(self):
 		self.dag = nx.DiGraph()
 
-		self.procs = [0] * size
-
 	def getTask(self, nid):
 		return self.dag.node[nid]['task']
 
@@ -20,7 +18,14 @@ class Program:
 				size += 1
 
 		return size
-	
-	def findAllStartNodes(self):
-		pass
 
+	def getSuccessorTasks(self, node):
+		return self.dag.successors_iter(node)
+	
+	def getStartTasks(self):
+		# iterate all nodes
+		for nid, degree in self.dag.in_degree_iter():
+			# if no dependencies
+			if degree == 0:
+				# found start task
+				yield self.dag.node[nid]['task']

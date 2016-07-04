@@ -7,6 +7,8 @@ import math, sys
 import matplotlib.pyplot as plt
 import simulator, machine, visual, program
 
+from lbmachine import LBMachine
+
 
 from collections import Counter
 from itertools import * 
@@ -121,7 +123,8 @@ if __name__ == "__main__":
 	p = schedule_to_program_generator(size, unique[sel])
 
 	# create machine
-	m = machine.LogPMachine(p)
+	#m = machine.LogPMachine(p)
+	m = LBMachine(p, 1000, 0)
 
 	# run program on machine
 	m.run()

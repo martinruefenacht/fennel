@@ -43,6 +43,9 @@ class LogPMachine(Machine):
 		
 		return (True, task.time)
 
+	def executeProxyTask(self, task):
+		raise NotImplementedError	
+
 	def executeSleepTask(self, task):
 		if self.procs[task.proc] <= task.time:
 			self.procs[task.proc] = task.time + task.delay
@@ -65,7 +68,7 @@ class LogPMachine(Machine):
 		if self.procs[task.proc] <= task.time:
 			local = task.time + LogPMachine.o
 			
-			self.procs[task.proc] += local
+			self.procs[task.proc] = local
 
 			remote = local + LogPMachine.g + LogPMachine.L
 

@@ -1,6 +1,7 @@
 from machine import Machine
 from scipy.stats import betaprime
 from random import choice
+import math
 
 class LBMachine(Machine):
 	def __init__(self, program, latency, bandwidth):
@@ -17,17 +18,21 @@ class LBMachine(Machine):
 		self.host_noise = None
 		self.network_noise = None
 
-		# visual
-		self.context = None
-
 	def setHostNoise(a, b, s):
 		self.host_noise = betaprime.rvs(a, b, scale=s, size=1000) 
 
 	def setNetworkNoise(a, b, s):
 		self.network_noise = betaprime.rvs(a, b, scale=s, size=1000)
 
-	def setVisualContext(self, context):
-		self.context = context
+	def drawMachine(self):
+		# find max time
+		max_time = int(math.ceil(max(self.procs) / 1000)) * 1000
+
+		# draw time line
+		self.context.drawTimeLine(max_time)
+
+		# draw process lines
+		self.context.drawProcessLines(self.program.getSize(), max_time)
 
 	def executeStartTask(self, time, task):
 		# logic
@@ -45,6 +50,7 @@ class LBMachine(Machine):
 		# visual
 		if self.context is not None:
 			pass
+			#self.context.stroke(self.context.line())
 			# draw single |
 			
 		# 
@@ -105,6 +111,8 @@ class LBMachine(Machine):
 		return success, time_done
 
 	def executePutTask(self, time, task):
+		# puts under Latency-Bandwidth are always blocking
+		
 		# logic
 		if self.procs[task.proc] <= time:
 			# noise
@@ -119,8 +127,8 @@ class LBMachine(Machine):
 			remote = time + self.alpha + self.beta * task.size
 
 			# local completion time = RTT
-			# assume control message has not bandwidth
-			self.procs[task.proc] = time + self.alpha * 2
+			# assume control message has not bandwidth, small message
+			self.procs[task.proc] = remote + self.alpha * 2
 
 			success = True
 			time_done = remote
@@ -143,15 +151,22 @@ class LBPMachine(LBMachine):
 	def __init__(self, program, latency, bandwidth, pipelining):
 		super().__init__(program, latency, bandwidth)
 
-		self.kappa = issue
+		self.kappa = pipelining
 	
 	def executePutTask(self, time, task):
 		if self.procs[task.proc] <= time:
-			# TODO revise with blocking and non blocking
+			# issue
 			local = time + self.kappa
+
+			# remote arrival
 			remote = local + self.alpha + self.beta * task.size
 
-			self.procs[task.proc] = local
+			# ack
+
+			if task.block:
+				self.procs[task.proc] = remote + self.alpha
+			else:
+				self.procs[task.proc] = local
 			return True, remote
 		else:
 			return False, self.procs[task.proc]

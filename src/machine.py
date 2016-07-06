@@ -6,8 +6,21 @@ class Machine:
 	def __init__(self, program):
 		self.program = program
 
+
+		# fulfilled dependency counter
 		self.dependencies = {}
+
+		# max time of dependency, gives task begin time
+		# starts will not be included
 		self.dtimes = {}
+
+		self.context = None
+
+	def setVisual(self, context):
+		self.context = context
+
+	def drawMachine(self):
+		raise NotImplementedError
 
 	def run(self):
 		taskqueue = []
@@ -28,6 +41,10 @@ class Machine:
 			for successor in successors:
 				heappush(taskqueue, successor)
 
+		# visualize
+		if self.context is not None:
+			self.drawMachine()
+
 	def completeTask(self, task, time):
 		successors = []
 
@@ -41,8 +58,13 @@ class Machine:
 			# check for completion
 			if self.dependencies[successor] == self.program.dag.in_degree(successor):
 				successor_task = self.program.getTask(successor)
+				time_next = self.dtimes[successor]
+
+				# delete record of program
+				del self.dtimes[successor]
+				del self.dependencies[successor]
 				
-				successors.append((self.dtimes[successor], successor_task))
+				successors.append((time_next, successor_task))
 
 		return successors
 

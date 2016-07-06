@@ -1,8 +1,10 @@
 rank 0 {
 	l1: start
 	l2: put 8b to r1
+	l3: compute 50ns
 
 	l2 > l1
+	l3 > l1
 }
 
 rank 1 {

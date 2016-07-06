@@ -7,7 +7,7 @@ import math, sys
 import matplotlib.pyplot as plt
 import simulator, machine, visual, program
 
-from lbmachine import LBMachine
+from lbmachine import *
 
 
 from collections import Counter
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
 	# create machine
 	#m = machine.LogPMachine(p)
-	m = LBMachine(p, 1000, 0)
+	m = LBPMachine(p, 600, 0, 400)
 
 	# run program on machine
 	m.run()

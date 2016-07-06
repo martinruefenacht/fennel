@@ -8,7 +8,7 @@ patterns = [
 			r'\s*rank (\d+) {$',
 			r'\s*}',
 			r'\s*l(\d+):\s*start\s*(?:(\d+)ns)?$',
-			r'\s*l(\d+):\s*put\s*(\d+)b to r(\d+)$',
+			r'\s*l(\d+):\s*put\s*(\d+)b to r(\d+)\s*(blocking)?$',
 			r'\s*l(\d+):\s*compute\s*(\d+)(ns|b)$',
 			r'\s*l(\d+):\s*sleep\s*(\d+)ns$',
 			r'\s*l(\d+)\s*>\s*(?:r(\d+):)?l(\d+)$'
@@ -60,8 +60,10 @@ def parseGOAL(filename):
 
 					# put
 					name = 'r'+str(current_rank)+'l'+str(match.group(1))
-					
-					task = PutTask(name, current_rank, int(match.group(3)), int(match.group(2)))
+
+					blocking = match.group(4) is not None
+	
+					task = PutTask(name, current_rank, int(match.group(3)), int(match.group(2)), blocking)
 					program.dag.add_node(name, {'task':task})
 
 				elif idx == 4:

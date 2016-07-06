@@ -1,13 +1,68 @@
 import pyx, math
 
-class Canvas:
-	xmargin = 10
-	ymargin = 10
+class Visual:
+	xmargin = 0.5
+	ymargin = 1
+	
+	tl_ymargin = 0.5
+	tick_freq = 100 #ns
+	tick_height = 0.1
+
+	proc_height = 1
+
+	scale = 1/72
 
 	def __init__(self):
-		pass
-	
-	
+		self.canvas = pyx.canvas.canvas()
+		
+	def getProcessTransform(self, process):
+		return pyx.trafo.translate(xmargin, ymargin + process_height * process)
+
+	def drawTimeLine(self, max_time):
+		stmax = max_time * Visual.scale
+
+		# draw base time line
+		bx = Visual.xmargin
+		by = -Visual.tl_ymargin
+		base = pyx.path.line(bx, by, bx + stmax, by)
+		self.canvas.stroke(base)
+
+		# draw white frame line
+		# TODO move to drawProcessLines
+		bottom = pyx.path.line(0, 0, bx*2 + stmax, 0)
+		self.canvas.stroke(bottom, [pyx.color.rgb.white])
+
+		# draw ticks
+		tick_count = int((max_time / Visual.tick_freq) + 1)
+		for tid in range(tick_count):
+			tx = Visual.xmargin + tid * Visual.tick_freq * Visual.scale
+			ty = -Visual.tl_ymargin
+
+			tick = pyx.path.line(tx, ty, tx, ty - Visual.tick_height)
+			self.canvas.stroke(tick)
+
+			# draw numbers
+			if tid % 5 == 0:
+				self.canvas.text(tx - 0.1, ty - 0.4, str(int(tid * Visual.tick_freq)), [pyx.text.size.small])
+
+	def drawProcessLines(self, processes, max_time):
+		stmax = max_time * Visual.scale
+
+		# for each process
+		for pid in range(processes):
+			px = Visual.xmargin
+			py = -Visual.tl_ymargin -Visual.ymargin - pid * Visual.proc_height
+
+			procline = pyx.path.line(px, py, px + stmax, py) 
+			self.canvas.stroke(procline)
+
+		# draw white frame line
+		left = pyx.path.line(0, 0, 0, -Visual.ymargin*2 - (processes-1)*Visual.proc_height)
+		self.canvas.stroke(left, [pyx.color.rgb.white])
+
+	def savePDF(self, filename):
+		self.canvas.writePDFfile(filename)
+		
 	
 
 #def outputPDF(filename, machine, program):

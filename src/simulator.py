@@ -1,23 +1,24 @@
 #! /usr/bin/python3
 
-import sys, parser, lbmachine
+import sys, parser, lbmachine, visual
 
 if __name__ == "__main__":
 	# parse program
 	program = parser.parseGOAL(sys.argv[1])
 
 	# create machine for program
-	machine = lbmachine.LBMachine(program, 750, 0)
+	machine = lbmachine.LBPMachine(program, 600, 0, 400)
 
 	# set noise
 	#machine.setHostNoise()
 	#machine.setNetworkNoise()
 
 	# set visual
-	#machine.setVisual(visual)
+	visual = visual.Visual()
+	machine.setVisual(visual)
 
 	machine.run()
 
 	print(machine.procs)
 
-	#visual.outputPDF('test.pdf', machine, program)
+	visual.savePDF('test.pdf')

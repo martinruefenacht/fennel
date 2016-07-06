@@ -1,5 +1,8 @@
 import networkx as nx
 
+# Program purely has directed acyclic graph and functions for usablility, does not record
+# anything. Nor do the tasks change
+
 class Program:
 	def __init__(self):
 		self.dag = nx.DiGraph()

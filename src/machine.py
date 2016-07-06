@@ -14,15 +14,15 @@ class Machine:
 		
 		# insert all start tasks
 		for task in self.program.getStartTasks():
-			heappush(taskqueue, task)
+			heappush(taskqueue, (0, task))
 
 		# process entire queue
 		while taskqueue:
 			# retrieve next global clock event
-			task = heappop(taskqueue)
+			time, task = heappop(taskqueue)
 
 			# execute task
-			successors = self.execute(task)
+			successors = self.execute(time, task)
 
 			# insert all successor tasks
 			for successor in successors:
@@ -33,10 +33,7 @@ class Machine:
 
 		for successor in self.program.getSuccessorTasks(task.node):
 			# increment completed dependencies for successor
-			if successor in self.dependencies:
-				self.dependencies[successor] += 1
-			else:
-				self.dependencies[successor] = 1
+			self.dependencies[successor] = self.dependencies.get(successor, 0) + 1
 
 			# forward task to last dependency
 			self.dtimes[successor] = max(self.dtimes.get(successor, 0), time)
@@ -44,53 +41,59 @@ class Machine:
 			# check for completion
 			if self.dependencies[successor] == self.program.dag.in_degree(successor):
 				successor_task = self.program.getTask(successor)
-				successor_task.time = self.dtimes[successor]
 				
-				successors.append(successor_task)
+				successors.append((self.dtimes[successor], successor_task))
 
 		return successors
 
 
-	def execute(self, task):
+	def execute(self, time, task):
 		# StartTask
 		if isinstance(task, StartTask):
-			success, time = self.executeStartTask(task)
+			success, time_done = self.executeStartTask(time, task)
 		
 		# ProxyTask
 		elif isinstance(task, ProxyTask):
-			success, time = self.executeProxyTask(task)
+			success, time_done = self.executeProxyTask(time, task)
 		
 		# ComputeTask
 		elif isinstance(task, ComputeTask):
-			success, time = self.executeComputeTask(task)
+			success, time_done = self.executeComputeTask(time, task)
 		
 		# PutTask
 		elif isinstance(task, PutTask):
-			success, time = self.executePutTask(task)
+			success, time_done = self.executePutTask(time, task)
+
+		# GetTask
+		elif isinstance(task, GetTask):
+			success, time_done = self.executePutTask(time, task)
 
 		# Unknown
 		else:
-			print('Unknown task type:', task)
+			print('Unknown task type:', task, '@', time, 'on', task.proc)
 
 		# check task execution
 		if not success:
 			# reinsert task
-			return [task]
+			return [(time_done, task)]
 		else:
 			# insert successor tasks
-			return self.completeTask(task, time)
+			return self.completeTask(task, time_done)
 
-	def executeStartTask(self, task):
+	def executeStartTask(self, time, task):
 		raise NotImplementedError
 
-	def executeProxyTask(self, task):
+	def executeProxyTask(self, time, task):
 		raise NotImplementedError
 
-	def executeSleepTask(self, task):
+	def executeSleepTask(self, time, task):
 		raise NotImplementedError
 
-	def executeComputeTask(self, task):
+	def executeComputeTask(self, time, task):
 		raise NotImplementedError
 
-	def executePutTask(self, task):
+	def executePutTask(self, time, task):
+		raise NotImplementedError
+
+	def executeGetTask(self, time, task):
 		raise NotImplementedError

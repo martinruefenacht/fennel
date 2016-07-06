@@ -1,55 +1,157 @@
 from machine import Machine
+from scipy.stats import betaprime
+from random import choice
 
 class LBMachine(Machine):
 	def __init__(self, program, latency, bandwidth):
 		super().__init__(program)
 
+		# model parameters
 		self.alpha = latency
 		self.beta = bandwidth
 
+		# process times
 		self.procs = [0] * program.getSize()
 
-	def executeStartTask(self, task):
-		self.procs[task.proc] = task.time
+		# noise
+		self.host_noise = None
+		self.network_noise = None
 
-		return True, task.time
+		# visual
+		self.context = None
 
-	def executeProxyTask(self, task):
-		self.procs[task.proc] = task.time
+	def setHostNoise(a, b, s):
+		self.host_noise = betaprime.rvs(a, b, scale=s, size=1000) 
 
-		return True, task.time
+	def setNetworkNoise(a, b, s):
+		self.network_noise = betaprime.rvs(a, b, scale=s, size=1000)
 
-	def executeSleepTask(self, task):
-		if self.procs[task.proc] <= task.time:
-			self.procs[task.proc] = task.time + task.delay	
+	def setVisualContext(self, context):
+		self.context = context
 
-			return True, self.procs[task.proc]
-		else:
-			task.time = self.procs[task.proc]
-			return False, None
-		 
-	def executeComputeTask(self, task):
-		if self.procs[task.proc] <= task.time:
-			self.procs[task.proc] = task.time + task.delay
+	def executeStartTask(self, time, task):
+		# logic
+		if self.procs[task.proc] <= time:
+			# no noise
+
+			self.procs[task.proc] = time + task.skew
 			
-			return True, self.procs[task.proc]
+			success = True
+			time_done = time + task.skew
 		else:
-			task.time = self.procs[task.proc]
-			return False, None
+			success = False
+			time_done = time
 
-	def executePutTask(self, task):
-		if self.procs[task.proc] <= task.time:
-			local = task.time + self.alpha
-			remote = local + self.beta * task.size
+		# visual
+		if self.context is not None:
+			pass
+			# draw single |
+			
+		# 
+		return success, time_done
+
+	def executeProxyTask(self, time, task):
+		# logic
+		self.procs[task.proc] = time
+
+		# no noise
+
+		# no visual
+
+		#
+		return True, time
+
+	def executeSleepTask(self, time, task):
+		# logic
+		if self.procs[task.proc] <= time:
+			self.procs[task.proc] = time + task.delay
+
+			success = True
+			time_done = self.procs[task.proc]
+		else:
+			success = False
+			time_done = self.procs[task.proc]
+
+		# visual
+		if self.context is not None:
+			pass
+			# draw ==== parallel line to process line
+
+		#
+		return success, time_done
+		 
+	def executeComputeTask(self, time, task):
+		# logic
+		if self.procs[task.proc] <= time:
+			# noise
+			if self.host_noise is not None:
+				noise = choice(self.host_noise)
+				self.procs[task.proc] = time + task.delay + noise
+			else:
+				self.procs[task.proc] = time + task.delay
+			
+			success = True
+			time_done = self.procs[task.proc]
+		else:
+			success = False
+			time_done = self.procs[task.proc]
+
+		# visual
+		if self.context is not None:
+			pass
+			# draw rectange on process line
+
+		#
+		return success, time_done
+
+	def executePutTask(self, time, task):
+		# logic
+		if self.procs[task.proc] <= time:
+			# noise
+			if self.host_noise is not None:
+				# TODO implement network noise
+				pass
+			if self.network_noise is not None:
+				# TODO implement network noise
+				pass
+
+			# remote arrival time = RTT/2
+			remote = time + self.alpha + self.beta * task.size
+
+			# local completion time = RTT
+			# assume control message has not bandwidth
+			self.procs[task.proc] = time + self.alpha * 2
+
+			success = True
+			time_done = remote
+		else:
+			success = False
+			time_done = self.procs[task.proc]
+
+		# visual
+		if self.context is not None:
+			# draw |    network operation
+			#		\
+			#		 \
+			#		  |
+			pass
+
+		#
+		return success, time_done
+
+class LBPMachine(LBMachine):
+	def __init__(self, program, latency, bandwidth, pipelining):
+		super().__init__(program, latency, bandwidth)
+
+		self.kappa = issue
+	
+	def executePutTask(self, time, task):
+		if self.procs[task.proc] <= time:
+			# TODO revise with blocking and non blocking
+			local = time + self.kappa
+			remote = local + self.alpha + self.beta * task.size
 
 			self.procs[task.proc] = local
 			return True, remote
 		else:
-			task.time = self.procs[task.proc]
-			return False, None
-
-#class NoisyLBMachine(LBMachine):	
-
-#class VisualLBMachine(LBMachine):
-
-#class VisualNoisyLBMachine(LBMachine):
+			return False, self.procs[task.proc]

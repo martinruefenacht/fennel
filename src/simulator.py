@@ -1,17 +1,23 @@
 #! /usr/bin/python3
 
-import sys, parser, machine
+import sys, parser, lbmachine
 
 if __name__ == "__main__":
 	# parse program
 	program = parser.parseGOAL(sys.argv[1])
 
 	# create machine for program
-	machine = machine.Machine(program, recording=True)
+	machine = lbmachine.LBMachine(program, 750, 0)
+
+	# set noise
+	#machine.setHostNoise()
+	#machine.setNetworkNoise()
+
+	# set visual
+	#machine.setVisual(visual)
 
 	machine.run()
 
 	print(machine.procs)
-	
+
 	#visual.outputPDF('test.pdf', machine, program)
-	#visual.outputPDF('test.pdf', machine, record)

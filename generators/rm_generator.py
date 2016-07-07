@@ -123,13 +123,17 @@ if __name__ == "__main__":
 	p = schedule_to_program_generator(size, unique[sel])
 
 	# create machine
-	#m = machine.LogPMachine(p)
-	m = LBPMachine(p, 600, 0, 400)
+	if len(sys.argv) == 2:
+		m = LBPMachine(p, 500, 0, 400)
+	else:
+		if sys.argv[2] == 'block':
+			m = LBMachine(p, 700, 0)
+
+	v = visual.Visual()
+	m.setVisual(v)
 
 	# run program on machine
 	m.run()
-	print(m.procs)
+	print(m.getMaxTime())
 
-	# draw program execution
-	#visual.outputPDF('test.pdf', m, p)
-
+	v.savePDF('test.pdf')

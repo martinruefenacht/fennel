@@ -7,8 +7,8 @@ if __name__ == "__main__":
 	program = parser.parseGOAL(sys.argv[1])
 
 	# create machine for program
-	#machine = lbmachine.LBPMachine(program, 600, 0, 400)
-	machine = lbmachine.LBMachine(program, 1000, 0)
+	machine = lbmachine.LBPMachine(program, 500, 0, 400)
+	#machine = lbmachine.LBMachine(program, 700, 0)
 
 	# set noise
 	#machine.setHostNoise()

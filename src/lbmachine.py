@@ -48,10 +48,9 @@ class LBMachine(Machine):
 			time_done = time
 
 		# visual
-		if self.context is not None:
-			pass
-			#self.context.stroke(self.context.line())
-			# draw single |
+		if self.context is not None and success:
+			self.context.drawVLine(task.proc, time, 0.2, 0.2)
+			self.context.drawCircle(task.proc, time, -0.2, 0.075)
 			
 		# 
 		return success, time_done
@@ -79,9 +78,8 @@ class LBMachine(Machine):
 			time_done = self.procs[task.proc]
 
 		# visual
-		if self.context is not None:
-			pass
-			# draw ==== parallel line to process line
+		if self.context is not None and success:
+			self.context.drawHLine(task.proc, time, task.delay, -0.1)	
 
 		#
 		return success, time_done
@@ -90,11 +88,11 @@ class LBMachine(Machine):
 		# logic
 		if self.procs[task.proc] <= time:
 			# noise
-			if self.host_noise is not None:
-				noise = choice(self.host_noise)
-				self.procs[task.proc] = time + task.delay + noise
-			else:
-				self.procs[task.proc] = time + task.delay
+			#if self.host_noise is not None:
+			#	noise = choice(self.host_noise)
+			#	self.procs[task.proc] = time + task.delay + noise
+			#else:
+			self.procs[task.proc] = time + task.delay
 			
 			success = True
 			time_done = self.procs[task.proc]
@@ -103,9 +101,8 @@ class LBMachine(Machine):
 			time_done = self.procs[task.proc]
 
 		# visual
-		if self.context is not None:
-			pass
-			# draw rectange on process line
+		if self.context is not None and success:
+			self.context.drawRectangle(task.proc, time, task.delay)
 
 		#
 		return success, time_done
@@ -128,7 +125,7 @@ class LBMachine(Machine):
 
 			# local completion time = RTT
 			# assume control message has not bandwidth, small message
-			self.procs[task.proc] = remote + self.alpha * 2
+			self.procs[task.proc] = remote + self.alpha
 
 			success = True
 			time_done = remote
@@ -137,13 +134,16 @@ class LBMachine(Machine):
 			time_done = self.procs[task.proc]
 
 		# visual
-		if self.context is not None:
-			# draw |    network operation
-			#		\
-			#		 \
-			#		  |
-			pass
+		if self.context is not None and success:
+			# main message
+			self.context.drawVLine(task.proc, time, 0.0, 0.15)
+			self.context.drawSLine(task.proc, time, 0.15, task.target, time_done)
+			self.context.drawVLine(task.target, time_done, 0.0, -0.15)
 
+			# draw control message
+			self.context.drawSLine(task.target, time_done, -0.15, task.proc, self.procs[task.proc])
+			self.context.drawVLine(task.proc, self.procs[task.proc], 0.0, 0.15)
+			
 		#
 		return success, time_done
 

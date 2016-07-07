@@ -10,6 +10,10 @@ class Visual:
 
 	proc_height = 1
 
+	compute_height = 0.1
+	sleep_height = 0.1
+	start_height = 0.2
+
 	scale = 1/72
 
 	def __init__(self):
@@ -44,6 +48,57 @@ class Visual:
 			# draw numbers
 			if tid % 5 == 0:
 				self.canvas.text(tx - 0.1, ty - 0.4, str(int(tid * Visual.tick_freq)), [pyx.text.size.small])
+	
+	def drawCircle(self, pid, time, yoffset, radius):
+		time = time * Visual.scale
+		
+		cx = Visual.xmargin + time
+		cy = Visual.tl_ymargin + Visual.ymargin + yoffset + pid * Visual.proc_height
+
+		cir = pyx.path.circle(cx, -cy, radius)
+		self.canvas.fill(cir)
+
+	def drawRectangle(self, pid, time, duration):
+		duration = duration * Visual.scale
+
+		rx = Visual.xmargin + time * Visual.scale 
+		ry = Visual.tl_ymargin + Visual.ymargin + pid*Visual.proc_height - Visual.compute_height/2 
+
+		rect = pyx.path.rect(rx, -ry, duration, -Visual.compute_height)
+
+		self.canvas.fill(rect)
+
+	def drawVLine(self, pid, time, yoffset, height):
+		time = time * Visual.scale
+		
+		lx = Visual.xmargin + time
+		ly = Visual.tl_ymargin + Visual.ymargin - yoffset + pid*Visual.proc_height
+
+		line = pyx.path.line(lx, -ly, lx, -ly - height)
+		self.canvas.stroke(line)
+			
+	def drawHLine(self, pid, time, duration, yoffset): 
+		time = time * Visual.scale
+		duration = duration * Visual.scale
+
+		lx = Visual.xmargin + time
+		ly = Visual.tl_ymargin + Visual.ymargin - yoffset + pid*Visual.proc_height
+
+		line = pyx.path.line(lx, -ly, lx + duration, -ly)
+		self.canvas.stroke(line)
+
+	def drawSLine(self, pid, time, yoffset, target, time_done):
+		time = time * Visual.scale
+		time_done = time_done * Visual.scale
+
+		sx = Visual.xmargin + time
+		sy = Visual.tl_ymargin + Visual.ymargin + pid*Visual.proc_height + yoffset
+
+		ex = Visual.xmargin + time_done
+		ey = Visual.tl_ymargin + Visual.ymargin + target*Visual.proc_height - yoffset
+
+		line = pyx.path.line(sx, -sy, ex, -ey)
+		self.canvas.stroke(line)
 
 	def drawProcessLines(self, processes, max_time):
 		stmax = max_time * Visual.scale
@@ -55,6 +110,9 @@ class Visual:
 
 			procline = pyx.path.line(px, py, px + stmax, py) 
 			self.canvas.stroke(procline)
+			
+			# draw process number
+			# TODO
 
 		# draw white frame line
 		left = pyx.path.line(0, 0, 0, -Visual.ymargin*2 - (processes-1)*Visual.proc_height)

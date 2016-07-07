@@ -23,6 +23,7 @@ class Machine:
 		raise NotImplementedError
 
 	def run(self):
+		#TODO multi thread?
 		taskqueue = []
 		
 		# insert all start tasks
@@ -78,6 +79,10 @@ class Machine:
 		elif isinstance(task, ProxyTask):
 			success, time_done = self.executeProxyTask(time, task)
 		
+		# SleepTask
+		elif isinstance(task, SleepTask):
+			success, time_done = self.executeSleepTask(time, task)
+		
 		# ComputeTask
 		elif isinstance(task, ComputeTask):
 			success, time_done = self.executeComputeTask(time, task)
@@ -93,6 +98,7 @@ class Machine:
 		# Unknown
 		else:
 			print('Unknown task type:', task, '@', time, 'on', task.proc)
+			sys.exit()
 
 		# check task execution
 		if not success:

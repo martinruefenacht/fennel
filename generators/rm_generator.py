@@ -5,7 +5,7 @@ import networkx as nx
 from sympy.ntheory import factorint
 import math, sys
 import matplotlib.pyplot as plt
-import simulator, machine, visual, program
+import simulator, machine, visual, program, noise
 
 from lbmachine import *
 
@@ -15,9 +15,8 @@ from itertools import *
 import operator
 from functools import reduce
 
-def schedule_to_program_generator(size, schedule):
+def schedule_to_program_generator(size, schedule, block):
 	msgsize = 8 
-	#program = nx.DiGraph()
 	p = program.Program()
 
 	positions = {}
@@ -40,7 +39,7 @@ def schedule_to_program_generator(size, schedule):
 
 			# create compute
 			cname = 'r'+str(node)+'c'+str(sid)
-			ctask = ComputeTask(cname, node, delay=100)
+			ctask = ComputeTask(cname, node, delay=10)
 			p.dag.add_node(cname, {'task':ctask})
 			positions[cname] = (node, -sid)
 			
@@ -55,7 +54,7 @@ def schedule_to_program_generator(size, schedule):
 				
 				# create put for peer
 				pname = 'r'+str(node)+'p'+str(sid)+str(idx)
-				ptask = PutTask(pname, node, peer, msgsize)
+				ptask = PutTask(pname, node, peer, msgsize, block)
 				p.dag.add_node(pname, {'task':ptask})
 				positions[pname] = (node+0.1+idx/(factor-1), -sid+0.2)
 				
@@ -117,17 +116,26 @@ if __name__ == "__main__":
 		print(idx,')', un)
 	sel = int(input('Select: '))
 
+	if len(sys.argv) == 3:
+		block = True if sys.argv[2] == 'block' else False
+	else:
+		block = False
+
 	# TODO select ordering of stages
 
 	# program generator
-	p = schedule_to_program_generator(size, unique[sel])
+	p = schedule_to_program_generator(size, unique[sel], block)
+
 
 	# create machine
-	if len(sys.argv) == 2:
-		m = LBPMachine(p, 500, 0, 400)
-	else:
-		if sys.argv[2] == 'block':
-			m = LBMachine(p, 700, 0)
+	#m = LBPMachine(p, 500, 0, 400)
+	m = LBMachine(p, 700, 0)
+	#m = LogGMachine(p)
+
+	m.block_type = 'non'
+
+	m.host_noise = noise.BetaPrimeNoise(2,3)
+	m.network_noise = noise.BetaPrimeNoise(2,3)
 
 	v = visual.Visual()
 	m.setVisual(v)

@@ -3,6 +3,8 @@ from scipy.stats import betaprime
 from random import choice
 import math
 
+from visual import Visual
+
 class LBMachine(Machine):
 	def __init__(self, program, latency, bandwidth):
 		super().__init__(program)
@@ -10,20 +12,19 @@ class LBMachine(Machine):
 		# model parameters
 		self.alpha = latency
 		self.beta = bandwidth
+		self.block_type = 'ack'
+
+		# recording
+		self.recording = False
 
 		# process times
 		self.procs = [0] * program.getSize()
 
 		# noise
+		self.noise_record = {}
 		self.host_noise = None
 		self.network_noise = None
 
-	def setHostNoise(a, b, s):
-		self.host_noise = betaprime.rvs(a, b, scale=s, size=1000) 
-
-	def setNetworkNoise(a, b, s):
-		self.network_noise = betaprime.rvs(a, b, scale=s, size=1000)
-	
 	def getMaxTime(self):
 		return max(self.procs)	
 
@@ -55,7 +56,7 @@ class LBMachine(Machine):
 			start_height = self.context.start_height
 			start_radius = self.context.start_radius
 
-			self.context.drawVLine(task.proc, time, start_height, start_height)
+			self.context.drawVLine(task.proc, time, start_height, start_height, 'std')
 			self.context.drawCircle(task.proc, time, -start_height, start_radius)
 			
 		# 
@@ -85,7 +86,7 @@ class LBMachine(Machine):
 
 		# visual
 		if self.context is not None and success:
-			self.context.drawHLine(task.proc, time, task.delay, -self.context.sleep_height)	
+			self.context.drawHLine(task.proc, time, task.delay, -self.context.sleep_height, 'std')	
 
 		#
 		return success, time_done
@@ -94,11 +95,11 @@ class LBMachine(Machine):
 		# logic
 		if self.procs[task.proc] <= time:
 			# noise
-			#if self.host_noise is not None:
-			#	noise = choice(self.host_noise)
-			#	self.procs[task.proc] = time + task.delay + noise
-			#else:
-			self.procs[task.proc] = time + task.delay
+			if self.host_noise is not None:
+				noise = self.host_noise.generate(task.delay)
+				self.procs[task.proc] = time + task.delay + noise
+			else:
+				self.procs[task.proc] = time + task.delay
 			
 			success = True
 			time_done = self.procs[task.proc]
@@ -106,62 +107,98 @@ class LBMachine(Machine):
 			success = False
 			time_done = self.procs[task.proc]
 
+		# record
+		if self.recording:
+			self.noise_record[task.name] = [noise]
+
 		# visual
 		if self.context is not None and success:
-			self.context.drawRectangle(task.proc, time, task.delay, -self.context.compute_height/2, self.context.compute_height)
+			self.context.drawRectangle(task.proc, time, task.delay, -self.context.compute_height/2, self.context.compute_height, 'std')
+			if self.host_noise is not None:
+				self.context.drawRectangle(task.proc, time+task.delay, noise, -self.context.compute_height/2, self.context.compute_height, 'err')
 
 		#
 		return success, time_done
+
+	def getNetworkNoise(self, duration):
+		if self.network_noise:
+			return self.network_noise.generate(duration)
+		else:
+			return 0
 
 	def executePutTask(self, time, task):
-		# puts under Latency-Bandwidth are always blocking
-		
-		# logic
-		if self.procs[task.proc] <= time:
-			# noise
-			if self.host_noise is not None:
-				# TODO implement network noise
-				pass
-			if self.network_noise is not None:
-				# TODO implement network noise
-				pass
+		# 
+		if self.procs[task.proc] > time:
+			# fail
+			return False, self.procs[task.proc]
 
-			# remote arrival time = RTT/2
-			remote = time + self.alpha + self.beta * task.size
+		# put side
+		put_time = self.alpha + self.beta * task.size
+		noise_put = self.getNetworkNoise(put_time)
+		arrival = time + put_time
+		remote = arrival + noise_put
 
-			# local completion time = RTT
-			# assume control message has not bandwidth, small message
-			#self.procs[task.proc] = remote + self.alpha
-			self.procs[task.proc] = remote + self.alpha
+		# draw put side
+		self.drawPut(task, time, arrival, noise_put)
 
-			success = True
-			time_done = remote
-		else:
-			success = False
-			time_done = self.procs[task.proc]
-
-		# visual
-		if self.context is not None and success:
-			self.visualizePutTask(time, task, time_done)
-			
 		#
-		return success, time_done
+		if self.block_type == 'non':
+			self.procs[task.proc] = time
+			self.maximum_time = max(self.maximum_time, time, remote)
+			return True, remote 
 
-	def visualizePutTask(self, time, task, time_done):
-		yoffset = 0.15
+		# 
+		elif self.block_type == 'arr':
+			self.procs[task.proc] = remote
+			self.maximum_time = max(self.maximum_time, remote)
+			return True, remote 
 
-		if task.proc > task.target:
-			yoffset *= -1
+		#
+		else:
+			# ack msg
+			ack_time = self.alpha
+			noise_ack = self.getNetworkNoise(ack_time)
+			ack_recv = remote + ack_time
 
-		# main message
-		self.context.drawVLine(task.proc, time, 0.0, yoffset)
-		self.context.drawSLine(task.proc, time, 0.15, task.target, time_done)
+			# draw ack msg
+			self.drawAck(task, remote, ack_recv, noise_ack)
 
-		self.context.drawVLine(task.target, time_done, 0.0, -yoffset)
+			# 
+			self.procs[task.proc] = ack_recv + noise_ack
 
-		# draw control message
-		self.context.drawSLine(task.target, time_done, 0.15, task.proc, self.procs[task.proc], primary=False)
-		self.context.drawVLine(task.proc, self.procs[task.proc], 0.0, yoffset, primary=False)
+
+			self.maximum_time = max(self.maximum_time, ack_recv)
+
+			# 
+			return True, remote
+	
+	def drawPut(self, task, time, arrival, noise):
+		# check for visual context
+		if self.context:
+			side = 1 if task.proc < task.target else -1
+			
+			# draw put msg
+			self.context.drawVLine(task.proc, time, Visual.put_base, Visual.put_offset*side, 'std')
+			self.context.drawSLine(task.proc, time, Visual.put_offset, task.target, arrival, 'std')
+			self.context.drawVLine(task.target, arrival, Visual.put_base, Visual.put_offset*-side, 'std')
+		
+			# draw noise
+			if noise != 0:
+				self.context.drawHLine(task.target, arrival, noise, -Visual.put_offset*side, 'err')	
+				self.context.drawVLine(task.target, arrival+noise, Visual.put_base, -Visual.put_offset*side, 'err')
+			
+	def drawAck(self, task, time, arrival, noise):
+		# check for visual context
+		if self.context:
+			side = 1 if task.proc < task.target else -1
+	
+			# draw ack msg
+			self.context.drawSLine(task.target, time, Visual.put_offset, task.proc, arrival, 'sec')
+			self.context.drawVLine(task.proc, arrival, Visual.put_base, Visual.put_offset*side, 'sec')
+
+			if noise != 0:
+				self.context.drawHLine(task.proc, arrival, noise, Visual.put_offset*side, 'err')	
+				self.context.drawVLine(task.proc, arrival+noise, Visual.put_base, Visual.put_offset*side, 'err')
 
 class LBPMachine(LBMachine):
 	def __init__(self, program, latency, bandwidth, pipelining):
@@ -169,18 +206,24 @@ class LBPMachine(LBMachine):
 
 		self.kappa = pipelining
 
-		self.maxtime = 0
-
-	def getMaxTime(self):
-		return self.maxtime
-	
 	def executePutTask(self, time, task):
 		if self.procs[task.proc] <= time:
-			# issue
-			local = time + self.kappa
+			# issuing message
+			if self.host_noise:
+				lnoise = self.host_noise.generate(self.kappa)
+				local = time + self.kappa + lnoise
+			else:
+				local = time + self.kappa
 
 			# remote arrival
-			remote = local + self.alpha + self.beta * task.size
+			if self.network_noise:
+				noise_send = self.network_noise.generate(best)
+				noise_recv = self.network_noise.generate(self.alpha)
+
+				remote = local + self.alpha + self.beta * task.size
+				
+			else:
+				remote = local + self.alpha + self.beta * task.size
 
 			# ack
 
@@ -190,7 +233,7 @@ class LBPMachine(LBMachine):
 				self.procs[task.proc] = local
 
 			# max time including control messages
-			self.maxtime = max(self.maxtime, remote + self.alpha)
+			self.maximum_time = max(self.maximum_time, remote + self.alpha)
 			
 			success = True
 			time_done = remote
@@ -198,18 +241,18 @@ class LBPMachine(LBMachine):
 			success = False
 			time_done = self.procs[task.proc]
 
-		if self.context is not None and success:
-			self.visualizePutTask(time, task, time_done)
+		#if self.context is not None and success:
+		#	self.visualizePutTask(time, task, time_done)
 
 		return success, time_done
 			
-	def visualizePutTask(self, time, task, time_done):
+	def visualizePutTask(self, time, task, onoise, inoise):
 		yheight = self.context.put_height
 		yoffset = self.context.put_offset
 		
 		side = -1 if task.proc > task.target else 1
 
-		# pipelin
+		# pipeline
 		self.context.drawVLine(task.proc, time, 0.0, (yoffset+yheight)*side)
 		self.context.drawVLine(task.proc, time + self.kappa, 0.0, (yoffset+yheight)*side)
 		self.context.drawRectangle(task.proc, time, self.kappa, yoffset*side, yheight * side) 
@@ -218,6 +261,17 @@ class LBPMachine(LBMachine):
 		self.context.drawSLine(task.proc, time+self.kappa, yoffset+yheight, task.target, time_done)
 		self.context.drawVLine(task.target, time_done, 0.0, (yoffset+yheight)*-side)
 
+		if self.network_noise is not None:
+			# draw main message noise
+			self.context.drawHLine(task.target, time+best, onoise, -yoffset, 'err')	
+			self.context.drawVLine(task.target, time+best+onoise, 0.0, -yoffset, 'err')
+
 		# draw control message
-		self.context.drawSLine(task.target, time_done, yoffset+yheight, task.proc, time_done + self.alpha, primary=False)
-		self.context.drawVLine(task.proc, time_done+self.alpha, 0.0, (yoffset+yheight)*side, primary=False)
+		self.context.drawSLine(task.target, time_done, yoffset+yheight, task.proc, time_done + self.alpha, 'sec')
+		self.context.drawVLine(task.proc, time_done+self.alpha, 0.0, (yoffset+yheight)*side, 'err')
+
+		if self.network_noise is not None:
+			# draw network noise
+			self.context.drawHLine(task.proc, time+best+onoise+self.alpha, inoise, yoffset, 'err')	
+			self.context.drawVLine(task.proc, self.procs[task.proc], 0.0, yoffset, 'err')
+

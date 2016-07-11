@@ -6,16 +6,16 @@ import networkx as nx
 import math, sys
 import matplotlib.pyplot as plt
 
-import simulator, machine, visual
+import simulator, lbmachine, visual, program
 
-def recursive_doubling_program(block, size):
+def recursive_doubling_program(size):
 	msgsize = 8
-	program = nx.DiGraph()
+	p = program.Program()
 
 	# all starting nodes
 	for node in range(size):
 		name = 'r'+str(node)+'s'
-		program.add_node(name, {'task':StartTask(name, node)})
+		p.dag.add_node(name, {'task':StartTask(name, node)})
 	
 	stages = math.floor(math.log2(int(size)))
 	pof2 = 2**stages
@@ -31,27 +31,27 @@ def recursive_doubling_program(block, size):
 					# send to proc+1
 					name = 'r'+str(proc)+'c' 
 					task = PutTask(name, proc, proc+1, msgsize)
-					program.add_node(name, {'task':task})
-					program.add_edge('r'+str(proc)+'s', name)
+					p.dag.add_node(name, {'task':task})
+					p.dag.add_edge('r'+str(proc)+'s', name)
 					
 					mapping.append(-1)
 				else:
 					# create compute node
 					name = 'r'+str(proc)+'c'
 					task = ComputeTask(name, proc, delay=100)
-					program.add_node(name, {'task':task})
-					program.add_edge('r'+str(proc)+'s', name)
+					p.dag.add_node(name, {'task':task})
+					p.dag.add_edge('r'+str(proc)+'s', name)
 
 					# create edge
 					peer = 'r'+str(proc-1)+'c'
-					program.add_edge(peer, name)
+					p.dag.add_edge(peer, name)
 
 					# create proxy for RD
 					proxyname = 'r'+str(proc)+'d0'
 					proxytask = ProxyTask(proxyname, proc)
 					
-					program.add_node(proxyname, {'task':proxytask})
-					program.add_edge(name, proxyname)
+					p.dag.add_node(proxyname, {'task':proxytask})
+					p.dag.add_edge(name, proxyname)
 
 					mapping.append(proc // 2)
 			else:
@@ -59,8 +59,8 @@ def recursive_doubling_program(block, size):
 				proxyname = 'r'+str(proc)+'d0'
 				proxytask = ProxyTask(proxyname, proc)
 
-				program.add_node(proxyname, {'task':proxytask})
-				program.add_edge('r'+str(proc)+'s', proxyname)
+				p.dag.add_node(proxyname, {'task':proxytask})
+				p.dag.add_edge('r'+str(proc)+'s', proxyname)
 
 				mapping.append(proc - remainder)
 	else:
@@ -68,8 +68,8 @@ def recursive_doubling_program(block, size):
 			# create proxy
 			name = 'r'+str(proc)+'d0'
 			task = ProxyTask(name, proc)
-			program.add_node(name, {'task':task})
-			program.add_edge('r'+str(proc)+'s', 'r'+str(proc)+'d0')
+			p.dag.add_node(name, {'task':task})
+			p.dag.add_edge('r'+str(proc)+'s', 'r'+str(proc)+'d0')
 		
 			mapping.append(proc)
 
@@ -92,22 +92,18 @@ def recursive_doubling_program(block, size):
 				# create nodes
 				pname = 'r'+str(rproc)+'p'+str(stage+1)
 				ptask = PutTask(pname, rproc, rpeer, 8)
-				program.add_node(pname, {'task':ptask})
+				p.dag.add_node(pname, {'task':ptask})
 				
 				cname = 'r'+str(rproc)+'d'+str(stage+1)
 				ctask = ComputeTask(cname, rproc, delay=100)
-				program.add_node(cname, {'task':ctask})
-
-				# this is staged behaviour not task based times
-				if block == 'block':
-					program.add_edge('r1d0', pname)
+				p.dag.add_node(cname, {'task':ctask})
 
 				# compute dependent on previous compute
-				program.add_edge('r'+str(rproc)+'d'+str(stage), cname)
+				p.dag.add_edge('r'+str(rproc)+'d'+str(stage), cname)
 				# put dependent on previous compute
-				program.add_edge('r'+str(rproc)+'d'+str(stage), pname)
+				p.dag.add_edge('r'+str(rproc)+'d'+str(stage), pname)
 				# compute dependent on peer put
-				program.add_edge('r'+str(rpeer)+'p'+str(stage+1), cname)
+				p.dag.add_edge('r'+str(rpeer)+'p'+str(stage+1), cname)
 
 		# increment mask
 		mask <<= 1
@@ -120,32 +116,33 @@ def recursive_doubling_program(block, size):
 					# send to proc-1
 					name = 'r'+str(proc)+'e' 
 					task = PutTask(name, proc, proc-1, msgsize)
-					program.add_node(name, {'task':task})
-					program.add_edge(name, 'r'+str(proc-1)+'e')
-					program.add_edge('r'+str(proc)+'d'+str(stages), name)
+					p.add_node(name, {'task':task})
+					p.add_edge(name, 'r'+str(proc-1)+'e')
+					p.add_edge('r'+str(proc)+'d'+str(stages), name)
 
 				else:
 					# compute/replace
 					name = 'r'+str(proc)+'e'
 					task = ProxyTask(name, proc)
-					program.add_node(name, {'task':task})
+					p.add_node(name, {'task':task})
 					
-	return program
+	return p
 
 if __name__ == "__main__":
-	if len(sys.argv) == 3:
-		p = recursive_doubling_program(sys.argv[1], int(sys.argv[2]))
-	else:
-		p = recursive_doubling_program('nonblock', int(sys.argv[1]))
+	p = recursive_doubling_program(int(sys.argv[1]))
 
-	#nx.draw_networkx(p, pos=nx.spectral_layout(p))
-	#plt.show()
 
-	s = simulator.Simulator()
+	#if len(sys.argv) == 3:
+	#	m = lbmachine.LBMachine(p, 700, 0)
+	#else:
+	#	m = lbmachine.LBPMachine(p, 500, 0, 400)
 
-	m = machine.Machine(p, recording=True)
+	v = visual.Visual()
+	
+	m.setVisual(v)
+	m.run()
 
-	s.run(m, p)
+	print(m.getMaxTime())
 
-	visual.outputPDF('test.pdf', m, p)
+	v.savePDF('test.pdf')
 

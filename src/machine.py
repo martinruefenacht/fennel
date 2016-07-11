@@ -6,7 +6,6 @@ class Machine:
 	def __init__(self, program):
 		self.program = program
 
-
 		# fulfilled dependency counter
 		self.dependencies = {}
 
@@ -14,7 +13,14 @@ class Machine:
 		# starts will not be included
 		self.dtimes = {}
 
+		# maximum time
+		self.maximum_time = 0
+
+		# visual context
 		self.context = None
+
+	def getMaximumTime(self):
+		return self.maximum_time
 
 	def setVisual(self, context):
 		self.context = context

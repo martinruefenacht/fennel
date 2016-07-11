@@ -16,8 +16,9 @@ class Visual:
 	start_height = 0.3
 	start_radius = 0.075
 
+	put_base = 0
 	put_height = 0.1
-	put_offset = 0.2
+	put_offset = 0.1
 
 	scale = 1/72
 
@@ -63,7 +64,13 @@ class Visual:
 		cir = pyx.path.circle(cx, -cy, radius)
 		self.canvas.fill(cir)
 
-	def drawRectangle(self, pid, time, duration, yoffset, height):
+	def drawRectangle(self, pid, time, duration, yoffset, height, dtype):
+		if dtype == 'std':
+			color = pyx.color.rgb.black
+		elif dtype == 'err':
+			color = pyx.color.rgb.red
+
+
 		duration = duration * Visual.scale
 
 		rx = Visual.xmargin + time * Visual.scale 
@@ -71,13 +78,15 @@ class Visual:
 
 		rect = pyx.path.rect(rx, -ry, duration, -height)
 
-		self.canvas.fill(rect)
+		self.canvas.fill(rect, [color])
 
-	def drawVLine(self, pid, time, yoffset, height, primary=True):
-		if primary:
+	def drawVLine(self, pid, time, yoffset, height, dtype):
+		if dtype == 'std':
 			color = pyx.color.rgb.black
-		else:
+		elif dtype == 'sec':
 			color = pyx.color.cmyk.Gray
+		elif dtype == 'err':
+			color = pyx.color.rgb.red
 
 		time = time * Visual.scale
 		
@@ -87,7 +96,14 @@ class Visual:
 		line = pyx.path.line(lx, -ly, lx, -ly - height)
 		self.canvas.stroke(line, [color])
 			
-	def drawHLine(self, pid, time, duration, yoffset): 
+	def drawHLine(self, pid, time, duration, yoffset, dtype):
+		if dtype == 'std':
+			color = pyx.color.rgb.black
+		elif dtype == 'sec':
+			color = pyx.color.cmyk.Gray
+		elif dtype == 'err':
+			color = pyx.color.rgb.red
+
 		time = time * Visual.scale
 		duration = duration * Visual.scale
 
@@ -95,13 +111,15 @@ class Visual:
 		ly = Visual.tl_ymargin + Visual.ymargin + yoffset + pid*Visual.proc_height
 
 		line = pyx.path.line(lx, -ly, lx + duration, -ly)
-		self.canvas.stroke(line)
+		self.canvas.stroke(line, [color])
 
-	def drawSLine(self, pid, time, yoffset, target, time_done, primary=True):
-		if primary:
+	def drawSLine(self, pid, time, yoffset, target, time_done, dtype):
+		if dtype == 'std':
 			color = pyx.color.rgb.black
-		else:
+		elif dtype == 'sec':
 			color = pyx.color.cmyk.Gray
+		elif dtype == 'err':
+			color = pyx.color.rgb.red
 		
 		time = time * Visual.scale
 		time_done = time_done * Visual.scale

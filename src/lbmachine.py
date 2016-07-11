@@ -12,7 +12,6 @@ class LBMachine(Machine):
 		# model parameters
 		self.alpha = latency
 		self.beta = bandwidth
-		self.block_type = 'ack'
 
 		# recording
 		self.recording = False
@@ -144,37 +143,11 @@ class LBMachine(Machine):
 		# draw put side
 		self.drawPut(task, time, arrival, noise_put)
 
-		#
-		if self.block_type == 'non':
-			self.procs[task.proc] = time
-			self.maximum_time = max(self.maximum_time, time, time_put)
-			return True, time_put 
-
 		# 
-		elif self.block_type == 'arr':
-			self.procs[task.proc] = time_put
-			self.maximum_time = max(self.maximum_time, time_put)
-			return True, time_put 
+		self.procs[task.proc] = time_put
+		self.maximum_time = max(self.maximum_time, time_put)
+		return True, time_put 
 
-		#
-		else:
-			# ack msg
-			ack_time = self.alpha
-			noise_ack = self.getNetworkNoise(ack_time)
-			ack_recv = time_put + ack_time
-
-			# draw ack msg
-			self.drawAck(task, time_put, ack_recv, noise_ack)
-
-			# 
-			self.procs[task.proc] = ack_recv + noise_ack
-
-
-			self.maximum_time = max(self.maximum_time, ack_recv)
-
-			# 
-			return True, time_put
-	
 	def drawPut(self, task, time, arrival, noise):
 		# check for visual context
 		if self.context:
@@ -190,19 +163,6 @@ class LBMachine(Machine):
 				self.context.drawHLine(task.target, arrival, noise, -Visual.put_offset*side, 'err')	
 				self.context.drawVLine(task.target, arrival+noise, Visual.put_base, -Visual.put_offset*side, 'err')
 			
-	def drawAck(self, task, time, arrival, noise):
-		# check for visual context
-		if self.context:
-			side = 1 if task.proc < task.target else -1
-	
-			# draw ack msg
-			self.context.drawSLine(task.target, time, Visual.put_offset, task.proc, arrival, 'sec')
-			self.context.drawVLine(task.proc, arrival, Visual.put_base, Visual.put_offset*side, 'sec')
-
-			if noise != 0:
-				self.context.drawHLine(task.proc, arrival, noise, Visual.put_offset*side, 'err')	
-				self.context.drawVLine(task.proc, arrival+noise, Visual.put_base, Visual.put_offset*side, 'err')
-
 class LBPMachine(LBMachine):
 	def __init__(self, program, latency, bandwidth, pipelining):
 		super().__init__(program, latency, bandwidth)
@@ -232,30 +192,12 @@ class LBPMachine(LBMachine):
 		# draw put side
 		self.drawPut(task, time_pipe, arrival, noise_put)
 
-		#
-		if self.block_type == 'non':
-			self.procs[task.proc] = time_pipe
-			self.maximum_time = max(self.maximum_time, time_pipe)
-			return True, time_put 
+		# TODO blocking put returns on arrival
 
 		#
-		else:
-			# ack msg
-			ack_travel = self.alpha
-			noise_ack = self.getNetworkNoise(ack_travel)
-			time_ack = time_put + ack_travel
-
-			# draw ack msg
-			self.drawAck(task, time_put, time_ack, noise_ack)
-
-			# 
-			self.procs[task.proc] = time_ack + noise_ack
-
-
-			self.maximum_time = max(self.maximum_time, time_ack)
-
-			# 
-			return True, time_put
+		self.procs[task.proc] = time_pipe
+		self.maximum_time = max(self.maximum_time, time_pipe)
+		return True, time_put 
 
 	def drawPipe(self, task, time, delay, noise):
 		#
@@ -283,17 +225,3 @@ class LBPMachine(LBMachine):
 			if noise != 0:
 				self.context.drawHLine(task.target, arrival, noise, -Visual.put_offset*side, 'err')	
 				self.context.drawVLine(task.target, arrival+noise, Visual.put_base, -Visual.put_offset*side, 'err')
-			
-	def drawAck(self, task, time, arrival, noise):
-		# check for visual context
-		if self.context:
-			side = 1 if task.proc < task.target else -1
-	
-			# draw ack msg
-			self.context.drawSLine(task.target, time, Visual.put_offset, task.proc, arrival, 'sec')
-			self.context.drawVLine(task.proc, arrival, Visual.put_base, Visual.put_offset*side, 'sec')
-
-			if noise != 0:
-				self.context.drawHLine(task.proc, arrival, noise, Visual.put_offset*side, 'err')	
-				self.context.drawVLine(task.proc, arrival+noise, Visual.put_base, Visual.put_offset*side, 'err')
-

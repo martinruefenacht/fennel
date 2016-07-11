@@ -132,8 +132,6 @@ if __name__ == "__main__":
 	#m = LBMachine(p, 700, 0)
 	#m = LogGMachine(p)
 
-	m.block_type = 'non'
-
 	#m.host_noise = noise.BetaPrimeNoise(2,3)
 	#m.network_noise = noise.BetaPrimeNoise(2,3)
 

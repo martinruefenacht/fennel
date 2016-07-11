@@ -143,6 +143,8 @@ class LBMachine(Machine):
 		# draw put side
 		self.drawPut(task, time, arrival, noise_put)
 
+		# blocking put and put and same under LB machine
+
 		# 
 		self.procs[task.proc] = time_put
 		self.maximum_time = max(self.maximum_time, time_put)
@@ -192,10 +194,11 @@ class LBPMachine(LBMachine):
 		# draw put side
 		self.drawPut(task, time_pipe, arrival, noise_put)
 
-		# TODO blocking put returns on arrival
-
 		#
-		self.procs[task.proc] = time_pipe
+		if task.block:
+			self.procs[task.proc] = time_put
+		else:
+			self.procs[task.proc] = time_pipe
 		self.maximum_time = max(self.maximum_time, time_pipe)
 		return True, time_put 
 

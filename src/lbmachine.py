@@ -95,11 +95,8 @@ class LBMachine(Machine):
 		# logic
 		if self.procs[task.proc] <= time:
 			# noise
-			if self.host_noise is not None:
-				noise = self.host_noise.generate(task.delay)
-				self.procs[task.proc] = time + task.delay + noise
-			else:
-				self.procs[task.proc] = time + task.delay
+			noise = self.getHostNoise(task.delay)
+			self.procs[task.proc] = time + task.delay + noise
 			
 			success = True
 			time_done = self.procs[task.proc]
@@ -120,6 +117,12 @@ class LBMachine(Machine):
 		#
 		return success, time_done
 
+	def getHostNoise(self, duration):
+		if self.host_noise:
+			return self.host_noise.generate(duration)
+		else:
+			return 0
+
 	def getNetworkNoise(self, duration):
 		if self.network_noise:
 			return self.network_noise.generate(duration)
@@ -136,7 +139,7 @@ class LBMachine(Machine):
 		put_time = self.alpha + self.beta * task.size
 		noise_put = self.getNetworkNoise(put_time)
 		arrival = time + put_time
-		remote = arrival + noise_put
+		time_put = arrival + noise_put
 
 		# draw put side
 		self.drawPut(task, time, arrival, noise_put)
@@ -144,24 +147,24 @@ class LBMachine(Machine):
 		#
 		if self.block_type == 'non':
 			self.procs[task.proc] = time
-			self.maximum_time = max(self.maximum_time, time, remote)
-			return True, remote 
+			self.maximum_time = max(self.maximum_time, time, time_put)
+			return True, time_put 
 
 		# 
 		elif self.block_type == 'arr':
-			self.procs[task.proc] = remote
-			self.maximum_time = max(self.maximum_time, remote)
-			return True, remote 
+			self.procs[task.proc] = time_put
+			self.maximum_time = max(self.maximum_time, time_put)
+			return True, time_put 
 
 		#
 		else:
 			# ack msg
 			ack_time = self.alpha
 			noise_ack = self.getNetworkNoise(ack_time)
-			ack_recv = remote + ack_time
+			ack_recv = time_put + ack_time
 
 			# draw ack msg
-			self.drawAck(task, remote, ack_recv, noise_ack)
+			self.drawAck(task, time_put, ack_recv, noise_ack)
 
 			# 
 			self.procs[task.proc] = ack_recv + noise_ack
@@ -170,7 +173,7 @@ class LBMachine(Machine):
 			self.maximum_time = max(self.maximum_time, ack_recv)
 
 			# 
-			return True, remote
+			return True, time_put
 	
 	def drawPut(self, task, time, arrival, noise):
 		# check for visual context
@@ -207,71 +210,90 @@ class LBPMachine(LBMachine):
 		self.kappa = pipelining
 
 	def executePutTask(self, time, task):
-		if self.procs[task.proc] <= time:
-			# issuing message
-			if self.host_noise:
-				lnoise = self.host_noise.generate(self.kappa)
-				local = time + self.kappa + lnoise
-			else:
-				local = time + self.kappa
-
-			# remote arrival
-			if self.network_noise:
-				noise_send = self.network_noise.generate(best)
-				noise_recv = self.network_noise.generate(self.alpha)
-
-				remote = local + self.alpha + self.beta * task.size
-				
-			else:
-				remote = local + self.alpha + self.beta * task.size
-
-			# ack
-
-			if task.block:
-				self.procs[task.proc] = remote + self.alpha
-			else:
-				self.procs[task.proc] = local
-
-			# max time including control messages
-			self.maximum_time = max(self.maximum_time, remote + self.alpha)
-			
-			success = True
-			time_done = remote
-		else:
-			success = False
-			time_done = self.procs[task.proc]
-
-		#if self.context is not None and success:
-		#	self.visualizePutTask(time, task, time_done)
-
-		return success, time_done
-			
-	def visualizePutTask(self, time, task, onoise, inoise):
-		yheight = self.context.put_height
-		yoffset = self.context.put_offset
-		
-		side = -1 if task.proc > task.target else 1
+		# 
+		if self.procs[task.proc] > time:
+			# fail
+			return False, self.procs[task.proc]
 
 		# pipeline
-		self.context.drawVLine(task.proc, time, 0.0, (yoffset+yheight)*side)
-		self.context.drawVLine(task.proc, time + self.kappa, 0.0, (yoffset+yheight)*side)
-		self.context.drawRectangle(task.proc, time, self.kappa, yoffset*side, yheight * side) 
+		pipe_time = self.kappa
+		noise_pipe = self.getHostNoise(pipe_time)
+		time_pipe = time + pipe_time + noise_pipe
 
-		# main message
-		self.context.drawSLine(task.proc, time+self.kappa, yoffset+yheight, task.target, time_done)
-		self.context.drawVLine(task.target, time_done, 0.0, (yoffset+yheight)*-side)
+		# draw pipeline
+		self.drawPipe(task, time, self.kappa, noise_pipe)
 
-		if self.network_noise is not None:
-			# draw main message noise
-			self.context.drawHLine(task.target, time+best, onoise, -yoffset, 'err')	
-			self.context.drawVLine(task.target, time+best+onoise, 0.0, -yoffset, 'err')
+		# put side
+		put_time = self.alpha + self.beta * task.size
+		noise_put = self.getNetworkNoise(put_time)
+		arrival = time_pipe + put_time
+		time_put = arrival + noise_put
 
-		# draw control message
-		self.context.drawSLine(task.target, time_done, yoffset+yheight, task.proc, time_done + self.alpha, 'sec')
-		self.context.drawVLine(task.proc, time_done+self.alpha, 0.0, (yoffset+yheight)*side, 'err')
+		# draw put side
+		self.drawPut(task, time_pipe, arrival, noise_put)
 
-		if self.network_noise is not None:
-			# draw network noise
-			self.context.drawHLine(task.proc, time+best+onoise+self.alpha, inoise, yoffset, 'err')	
-			self.context.drawVLine(task.proc, self.procs[task.proc], 0.0, yoffset, 'err')
+		#
+		if self.block_type == 'non':
+			self.procs[task.proc] = time_pipe
+			self.maximum_time = max(self.maximum_time, time_pipe)
+			return True, time_put 
+
+		#
+		else:
+			# ack msg
+			ack_travel = self.alpha
+			noise_ack = self.getNetworkNoise(ack_travel)
+			time_ack = time_put + ack_travel
+
+			# draw ack msg
+			self.drawAck(task, time_put, time_ack, noise_ack)
+
+			# 
+			self.procs[task.proc] = time_ack + noise_ack
+
+
+			self.maximum_time = max(self.maximum_time, time_ack)
+
+			# 
+			return True, time_put
+
+	def drawPipe(self, task, time, delay, noise):
+		#
+		if self.context:
+			side = 1 if task.proc < task.target else -1
+
+			# TODO offset from center
+			# TODO draw line parallel
+			self.context.drawRectangle(task.proc, time, delay, 0, Visual.put_height, 'std')
+			
+			if noise != 0:
+				self.context.drawRectangle(task.proc, time+delay, noise, 0, Visual.put_height, 'err')
+	
+	def drawPut(self, task, time, arrival, noise):
+		# check for visual context
+		if self.context:
+			side = 1 if task.proc < task.target else -1
+			
+			# draw put msg
+			self.context.drawVLine(task.proc, time, Visual.put_base, Visual.put_offset*side, 'std')
+			self.context.drawSLine(task.proc, time, Visual.put_offset, task.target, arrival, 'std')
+			self.context.drawVLine(task.target, arrival, Visual.put_base, Visual.put_offset*-side, 'std')
+		
+			# draw noise
+			if noise != 0:
+				self.context.drawHLine(task.target, arrival, noise, -Visual.put_offset*side, 'err')	
+				self.context.drawVLine(task.target, arrival+noise, Visual.put_base, -Visual.put_offset*side, 'err')
+			
+	def drawAck(self, task, time, arrival, noise):
+		# check for visual context
+		if self.context:
+			side = 1 if task.proc < task.target else -1
+	
+			# draw ack msg
+			self.context.drawSLine(task.target, time, Visual.put_offset, task.proc, arrival, 'sec')
+			self.context.drawVLine(task.proc, arrival, Visual.put_base, Visual.put_offset*side, 'sec')
+
+			if noise != 0:
+				self.context.drawHLine(task.proc, arrival, noise, Visual.put_offset*side, 'err')	
+				self.context.drawVLine(task.proc, arrival+noise, Visual.put_base, Visual.put_offset*side, 'err')
 

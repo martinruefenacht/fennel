@@ -70,7 +70,6 @@ class Visual:
 		elif dtype == 'err':
 			color = pyx.color.rgb.red
 
-
 		duration = duration * Visual.scale
 
 		rx = Visual.xmargin + time * Visual.scale 

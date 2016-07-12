@@ -91,6 +91,8 @@ class LogPMachine(Machine):
 	
 			self.procs[task.proc] = time + LogPMachine.o + noise_cpu
 			self.send_nic[task.proc] = time + LogPMachine.g + noise_nic
+			
+			# return MsgTask, pointing to put task, which then completes when MsgTaskComplete
 		else:
 			return False, max(self.procs[task.proc], self.nics[task.proc])
 

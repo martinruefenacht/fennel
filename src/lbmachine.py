@@ -221,11 +221,10 @@ class LBPMachine(LBMachine):
 			side = 1 if task.proc < task.target else -1
 
 			self.context.drawVLine(task.proc, time, Visual.put_base, Visual.put_height*side, 'std')
-			#self.context.drawHLine(task.proc, time, delay, Visual.put_offset*side, 'std')
 			
-			height = Visual.put_height - Visual.put_offset
-			offset = height + Visual.put_offset/2
-			self.context.drawRectangle(task.proc, time, delay, offset*side, height, 'std')
+			boxheight = Visual.put_height - Visual.put_offset
+			offset = boxheight/2 + Visual.put_offset
+			self.context.drawRectangle(task.proc, time, delay, offset*side, boxheight, 'std')
 			
 			if noise != 0:
 				self.context.drawHLine(task.proc, time+delay, noise, Visual.put_height*side, 'err')

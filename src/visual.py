@@ -19,8 +19,8 @@ class Visual:
 	start_radius = 0.075
 
 	put_base = 0.0
-	put_height = 0.2
-	put_offset = 0.1
+	put_height = 0.15
+	put_offset = 0.075
 
 	scale = 1/72
 

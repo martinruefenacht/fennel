@@ -18,7 +18,7 @@ class Visual:
 
 	put_base = 0
 	put_height = 0.1
-	put_offset = 0.1
+	put_offset = 0.15
 
 	scale = 1/72
 

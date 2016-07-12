@@ -207,12 +207,11 @@ class LBPMachine(LBMachine):
 		if self.context:
 			side = 1 if task.proc < task.target else -1
 
-			# TODO offset from center
-			# TODO draw line parallel
-			self.context.drawRectangle(task.proc, time, delay, 0, Visual.put_height, 'std')
+			self.context.drawVLine(task.proc, time, Visual.put_base, Visual.put_offset*side, 'std')
+			self.context.drawHLine(task.proc, time, delay, Visual.put_offset*side, 'std')
 			
 			if noise != 0:
-				self.context.drawRectangle(task.proc, time+delay, noise, 0, Visual.put_height, 'err')
+				self.context.drawHLine(task.proc, time+delay, noise, Visual.put_offset*side, 'err')
 	
 	def drawPut(self, task, time, arrival, noise):
 		# check for visual context
@@ -220,7 +219,6 @@ class LBPMachine(LBMachine):
 			side = 1 if task.proc < task.target else -1
 			
 			# draw put msg
-			self.context.drawVLine(task.proc, time, Visual.put_base, Visual.put_offset*side, 'std')
 			self.context.drawSLine(task.proc, time, Visual.put_offset, task.target, arrival, 'std')
 			self.context.drawVLine(task.target, arrival, Visual.put_base, Visual.put_offset*-side, 'std')
 		

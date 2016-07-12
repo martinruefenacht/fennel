@@ -124,6 +124,7 @@ if __name__ == "__main__":
 	# TODO select ordering of stages
 
 	# program generator
+	print('Schedule:', unique[sel])
 	p = schedule_to_program_generator(size, unique[sel], block)
 
 

@@ -11,14 +11,16 @@ class Visual:
 	proc_height = 2
 
 	compute_height = 0.1
+	compute_base = 0.0
+
 	sleep_height = 0.1
 
 	start_height = 0.3
 	start_radius = 0.075
 
-	put_base = 0
-	put_height = 0.1
-	put_offset = 0.15
+	put_base = 0.0
+	put_height = 0.2
+	put_offset = 0.1
 
 	scale = 1/72
 
@@ -64,7 +66,7 @@ class Visual:
 		cir = pyx.path.circle(cx, -cy, radius)
 		self.canvas.fill(cir)
 
-	def drawRectangle(self, pid, time, duration, yoffset, height, dtype):
+	def drawRectangle(self, pid, time, duration, centerline, height, dtype):
 		if dtype == 'std':
 			color = pyx.color.rgb.black
 		elif dtype == 'err':
@@ -73,9 +75,9 @@ class Visual:
 		duration = duration * Visual.scale
 
 		rx = Visual.xmargin + time * Visual.scale 
-		ry = Visual.tl_ymargin + Visual.ymargin + pid*Visual.proc_height + yoffset 
+		ry = Visual.tl_ymargin + Visual.ymargin + pid*Visual.proc_height + centerline + height/2
 
-		rect = pyx.path.rect(rx, -ry, duration, -height)
+		rect = pyx.path.rect(rx, -ry, duration, height)
 
 		self.canvas.fill(rect, [color])
 

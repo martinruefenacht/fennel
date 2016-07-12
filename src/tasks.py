@@ -46,3 +46,7 @@ class PutTask(Task):
 		self.target = target
 		self.size = size
 		self.block = block
+
+class MsgTask(Task):
+	def __init__(self, source, target, size):
+		pass

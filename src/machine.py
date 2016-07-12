@@ -84,17 +84,8 @@ class Machine:
 		# search all task handlers for task
 		for tasktype, handler in self.task_handlers.items():
 			if isinstance(task, tasktype):
-				handled = True
-				success, time_done = handler(time, task)
-
-		if not handled:
-			print('Unknown task type given.')
-			raise NotImplementedError
-
-		# check task execution
-		if not success:
-			# reinsert task
-			return [(time_done, task)]
-		else:
-			# insert successor tasks
-			return self.completeTask(task, time_done)
+				# TODO need to more array return of tasks into handler
+				return handler(time, task)
+		
+		print('Unknown task type:', task)
+		raise NotImplementedError

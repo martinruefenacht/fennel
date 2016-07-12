@@ -1,4 +1,5 @@
 from machine import Machine
+from tasks import *
 
 class LogPMachine(Machine):
 	# LogP model parameters
@@ -15,6 +16,13 @@ class LogPMachine(Machine):
 
 		self.host_noise = None
 		self.network_noise = None
+
+		self.task_handlers[StartTask] = self.executeStartTask
+		self.task_handlers[ProxyTask] = self.executeProxyTask
+		self.task_handlers[SleepTask] = self.executeSleepTask
+		self.task_handlers[ComputeTask] = self.executeComputeTask
+		self.task_handlers[PutTask] = self.executePutTask
+		self.task_handlers[MsgTask] = self.executeMsgTask
 
 	def executeStartTask(self, time, task):
 		# check if cpu is available
@@ -85,6 +93,9 @@ class LogPMachine(Machine):
 			self.send_nic[task.proc] = time + LogPMachine.g + noise_nic
 		else:
 			return False, max(self.procs[task.proc], self.nics[task.proc])
+
+	def executeMsgTask(self, time, task):
+		pass
 
 	def drawStart(self, task, time):
 		pass

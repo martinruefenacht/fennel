@@ -46,17 +46,3 @@ class PutTask(Task):
 		self.target = target
 		self.size = size
 		self.block = block
-
-class GetTask(Task):
-	def __init__(self, node, proc, target, size, block=False):
-		self.target = target
-		self.size = size
-		self.block = block
-
-class SendTask(Task):
-	def __init__(self, node, proc, target, size, block=False):
-		pass
-
-class RecvTask(Task):
-	def __init__(self, node, proc, target, size, block=False):
-		pass

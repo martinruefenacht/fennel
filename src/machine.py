@@ -13,6 +13,9 @@ class Machine:
 		# starts will not be included
 		self.dtimes = {}
 
+		# task handlers
+		self.task_handlers = {}
+
 		# maximum time
 		self.maximum_time = 0
 
@@ -29,7 +32,6 @@ class Machine:
 		raise NotImplementedError
 
 	def run(self):
-		#TODO multi thread?
 		taskqueue = []
 		
 		# insert all start tasks
@@ -77,34 +79,17 @@ class Machine:
 
 
 	def execute(self, time, task):
-		# StartTask
-		if isinstance(task, StartTask):
-			success, time_done = self.executeStartTask(time, task)
-		
-		# ProxyTask
-		elif isinstance(task, ProxyTask):
-			success, time_done = self.executeProxyTask(time, task)
-		
-		# SleepTask
-		elif isinstance(task, SleepTask):
-			success, time_done = self.executeSleepTask(time, task)
-		
-		# ComputeTask
-		elif isinstance(task, ComputeTask):
-			success, time_done = self.executeComputeTask(time, task)
-		
-		# PutTask
-		elif isinstance(task, PutTask):
-			success, time_done = self.executePutTask(time, task)
+		handled = False
 
-		# GetTask
-		elif isinstance(task, GetTask):
-			success, time_done = self.executePutTask(time, task)
+		# search all task handlers for task
+		for tasktype, handler in self.task_handlers.items():
+			if isinstance(task, tasktype):
+				handled = True
+				success, time_done = handler(time, task)
 
-		# Unknown
-		else:
-			print('Unknown task type:', task, '@', time, 'on', task.proc)
-			sys.exit()
+		if not handled:
+			print('Unknown task type given.')
+			raise NotImplementedError
 
 		# check task execution
 		if not success:
@@ -113,21 +98,3 @@ class Machine:
 		else:
 			# insert successor tasks
 			return self.completeTask(task, time_done)
-
-	def executeStartTask(self, time, task):
-		raise NotImplementedError
-
-	def executeProxyTask(self, time, task):
-		raise NotImplementedError
-
-	def executeSleepTask(self, time, task):
-		raise NotImplementedError
-
-	def executeComputeTask(self, time, task):
-		raise NotImplementedError
-
-	def executePutTask(self, time, task):
-		raise NotImplementedError
-
-	def executeGetTask(self, time, task):
-		raise NotImplementedError

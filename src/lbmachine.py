@@ -3,6 +3,8 @@ from scipy.stats import betaprime
 from random import choice
 import math
 
+
+from tasks import *
 from visual import Visual
 
 class LBMachine(Machine):
@@ -24,8 +26,27 @@ class LBMachine(Machine):
 		self.host_noise = None
 		self.network_noise = None
 
+		self.task_handlers[StartTask] = self.executeStartTask
+		self.task_handlers[ProxyTask] = self.executeProxyTask
+		self.task_handlers[SleepTask] = self.executeSleepTask
+		self.task_handlers[ComputeTask] = self.executeComputeTask
+		self.task_handlers[PutTask] = self.executePutTask
+
 	def getMaxTime(self):
 		return max(self.procs)	
+
+	def getHostNoise(self, duration):
+		if self.host_noise:
+			return self.host_noise.generate(duration)
+		else:
+			return 0
+
+	def getNetworkNoise(self, duration):
+		if self.network_noise:
+			return self.network_noise.generate(duration)
+		else:
+			return 0
+
 
 	def drawMachine(self):
 		# find max time
@@ -116,17 +137,6 @@ class LBMachine(Machine):
 		#
 		return success, time_done
 
-	def getHostNoise(self, duration):
-		if self.host_noise:
-			return self.host_noise.generate(duration)
-		else:
-			return 0
-
-	def getNetworkNoise(self, duration):
-		if self.network_noise:
-			return self.network_noise.generate(duration)
-		else:
-			return 0
 
 	def executePutTask(self, time, task):
 		# 

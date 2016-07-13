@@ -280,7 +280,8 @@ class LogPMachineSimplex(LogPMachine):
 			
 			self.context.drawVLine(task.target, task.arrival, Visual.put_base, Visual.put_height*-side, 'blu')
 			self.context.drawVLine(task.target, time+self.gap+noise_nic, Visual.put_base, Visual.put_height*-side, 'std')
-			self.context.drawHLine(task.target, task.arrival, (time-task.arrival)+self.gap+noise_nic, Visual.put_height*-side/4, 'std')
+			self.context.drawHLine(task.target, time, self.gap+noise_nic, Visual.put_height*-side, 'std')
+			self.context.drawHLine(task.target, task.arrival, time-task.arrival, Visual.put_height*-side/4, 'std')
 
 			self.context.drawVLine(task.target, time, Visual.put_base, Visual.put_height*-side, 'std')
 

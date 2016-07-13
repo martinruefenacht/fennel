@@ -165,11 +165,11 @@ class LogPMachine(Machine):
 
 	def drawMsg(self, task, time, noise_nic):
 		if self.context:
-			side = -1 if task.proc < task.target else 1
+			side = 1 if task.proc < task.target else -1
 
 			# draw slant L line
-			self.context.drawSLine(task.proc, task.start, -side*Visual.put_height, task.target, task.arrival, 'std')
+			self.context.drawSLine(task.proc, task.start, Visual.put_height, task.target, task.arrival, 'std')
 			
-			self.context.drawVLine(task.target, task.arrival, Visual.put_base, Visual.put_height*side, 'blu')
-			self.context.drawVLine(task.target, time+LogPMachine.g+noise_nic, Visual.put_base, Visual.put_height*side, 'std')
-			self.context.drawHLine(task.target, time, LogPMachine.g+noise_nic, Visual.put_height*side/2, 'std')
+			self.context.drawVLine(task.target, task.arrival, Visual.put_base, Visual.put_height*-side, 'blu')
+			self.context.drawVLine(task.target, time+LogPMachine.g+noise_nic, Visual.put_base, Visual.put_height*-side, 'std')
+			self.context.drawHLine(task.target, time, LogPMachine.g+noise_nic, Visual.put_height*-side/2, 'std')

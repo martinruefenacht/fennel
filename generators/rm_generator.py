@@ -48,6 +48,7 @@ def schedule_to_program_generator(size, schedule, block):
 
 			# for each peer
 			for idx in range(factor-1):
+				# staggered multicast
 				mask = (idx + 1) * stage_mask
 				offset = (node + mask) % base
 				peer = group + offset

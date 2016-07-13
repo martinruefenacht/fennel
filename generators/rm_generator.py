@@ -132,7 +132,9 @@ if __name__ == "__main__":
 	# create machine
 	#m = LBPMachine(p, 1000, 0, 400)
 	#m = LBMachine(p, 1400, 0)
-	m = LogPMachine(p)
+	#m = LogPMachine(p, 200, 400, 300)
+	#m = LogPMachineDuplex(p, 200, 400, 300)
+	m = LogPMachineSimplex(p, 200, 400, 300)
 
 	#m.host_noise = noise.BetaPrimeNoise(2,3)
 	#m.network_noise = noise.BetaPrimeNoise(2,3)

@@ -47,6 +47,12 @@ class PutTask(Task):
 		self.size = size
 		self.block = block
 
+class NICTask(Task):
+	def __init__(self, puttask):
+		super().__init__('node', puttask.proc)
+		
+		self.puttask = puttask
+
 class MsgTask(Task):
 	def __init__(self, puttask, start, arrival):
 		super().__init__('node', puttask.proc)

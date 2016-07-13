@@ -20,6 +20,7 @@ class LBMachine(Machine):
 
 		# process times
 		self.procs = [0] * program.getSize()
+		self.maximum_time = 0
 
 		# noise
 		self.noise_record = {}
@@ -93,7 +94,7 @@ class LBMachine(Machine):
 			self.procs[task.proc] = time + task.delay
 
 			# visual
-			self.drawSleepTask(task, time)
+			self.drawSleepTask(time, task)
 
 			#
 			return self.completeTask(task, self.procs[task.proc])

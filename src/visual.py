@@ -104,6 +104,8 @@ class Visual:
 			color = pyx.color.rgb.black
 		elif dtype == 'sec':
 			color = pyx.color.cmyk.Gray
+		elif dtype == 'blu':
+			color = pyx.color.rgb.blue
 		elif dtype == 'err':
 			color = pyx.color.rgb.red
 
@@ -121,6 +123,8 @@ class Visual:
 			color = pyx.color.rgb.black
 		elif dtype == 'sec':
 			color = pyx.color.cmyk.Gray
+		elif dtype == 'blu':
+			color = pyx.color.rgb.blue
 		elif dtype == 'err':
 			color = pyx.color.rgb.red
 		
@@ -148,7 +152,7 @@ class Visual:
 			py = -Visual.tl_ymargin -Visual.ymargin - pid * Visual.proc_height
 
 			procline = pyx.path.line(px, py, px + stmax, py) 
-			self.canvas.stroke(procline)
+			self.canvas.stroke(procline, [pyx.color.cmyk.Gray])
 			
 			# draw process number
 			# TODO

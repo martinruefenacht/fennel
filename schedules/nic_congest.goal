@@ -1,20 +1,26 @@
 rank 0 {
 	l1: start
-	l2: put 8b to r7
+	l2: sleep 10ns
+	l3: put 8b to r7
+	l4: compute 100ns
 
 	l2 > l1
+	l3 > l2
+	l4 > l1
 }
 
 rank 1 {
 	l1: start
-	l2: put 8b to r7
+	l2: sleep 35ns
+	l3: put 8b to r7
 
 	l2 > l1
+	l3 > l2
 }
 
 rank 2 {
 	l1: start
-	l2: sleep 450ns
+	l2: sleep 50ns
 	l3: put 8b to r7
 
 	l2 > l1
@@ -23,42 +29,50 @@ rank 2 {
 
 rank 3 {
 	l1: start
-	l2: put 8b to r7
+	l2: sleep 75ns
+	l3: put 8b to r7
 
 	l2 > l1
+	l3 > l2
 }
 
 rank 4 {
 	l1: start
-	l2: put 8b to r7
+	l2: sleep 80ns
+	l3: put 8b to r7
 
 	l2 > l1
+	l3 > l2
 }
 
 rank 5 {
 	l1: start
-	l2: put 8b to r7
+	l2: sleep 15ns
+	l3: put 8b to r7
 
 	l2 > l1
+	l3 > l2
 }
 
 rank 6 {
 	l1: start
-	l2: put 8b to r7
+	l2: sleep 65ns
+	l3: put 8b to r7
 
 	l2 > l1
+	l3 > l2
 }
 
 rank 7 {
 	l1: start
-	l2: compute 56b
+	l2: compute 100ns
 
 	l2 > l1
-	l2 > r0:l2
-	l2 > r1:l2
+	l2 > r0:l3
+	l2 > r1:l3
 	l2 > r2:l3
-	l2 > r3:l2
-	l2 > r4:l2
-	l2 > r5:l2
-	l2 > r6:l2
+	l2 > r3:l3
+	l2 > r4:l3
+	l2 > r5:l3
+	l2 > r6:l3
 }

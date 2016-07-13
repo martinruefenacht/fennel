@@ -32,7 +32,7 @@ class LBMachine(Machine):
 		self.task_handlers[ComputeTask] = self.executeComputeTask
 		self.task_handlers[PutTask] = self.executePutTask
 
-	def getMaxTime(self):
+	def getMaximumTime(self):
 		return max(self.procs)	
 
 	def getHostNoise(self, duration):
@@ -47,17 +47,7 @@ class LBMachine(Machine):
 		else:
 			return 0
 
-
-	def drawMachine(self):
-		# find max time
-		max_time = int((math.ceil(self.getMaxTime() / 1000) * 1000))
-
-		# draw time line
-		self.context.drawTimeLine(max_time)
-
-		# draw process lines
-		self.context.drawProcessLines(self.program.getSize(), max_time)
-
+	
 	def executeStartTask(self, time, task):
 		# logic
 		if self.procs[task.proc] <= time:

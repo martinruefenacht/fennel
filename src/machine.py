@@ -1,6 +1,7 @@
 from scipy.stats import betaprime
 from heapq import *
 from tasks import *
+import math
 
 class Machine:
 	def __init__(self, program):
@@ -16,20 +17,25 @@ class Machine:
 		# task handlers
 		self.task_handlers = {}
 
-		# maximum time
-		self.maximum_time = 0
-
 		# visual context
 		self.context = None
 
 	def getMaximumTime(self):
-		return self.maximum_time
+		raise NotImplementedError
 
 	def setVisual(self, context):
 		self.context = context
 
 	def drawMachine(self):
-		raise NotImplementedError
+		# find max time
+		max_time = int((math.ceil(self.getMaximumTime() / 1000) * 1000))
+
+		# draw time line
+		self.context.drawTimeLine(max_time)
+
+		# draw process lines
+		self.context.drawProcessLines(self.program.getSize(), max_time)
+
 
 	def run(self):
 		taskqueue = []

@@ -86,6 +86,8 @@ class Visual:
 			color = pyx.color.rgb.black
 		elif dtype == 'sec':
 			color = pyx.color.cmyk.Gray
+		elif dtype == 'blu':
+			color = pyx.color.rgb.blue
 		elif dtype == 'err':
 			color = pyx.color.rgb.red
 

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import simulator, machine, visual, program, noise
 
 from lbmachine import *
-
+from logpmachine import * 
 
 from collections import Counter
 from itertools import * 
@@ -129,9 +129,9 @@ if __name__ == "__main__":
 
 
 	# create machine
-	m = LBPMachine(p, 1000, 0, 400)
+	#m = LBPMachine(p, 1000, 0, 400)
 	#m = LBMachine(p, 1400, 0)
-	#m = LogGMachine(p)
+	m = LogPMachine(p)
 
 	#m.host_noise = noise.BetaPrimeNoise(2,3)
 	#m.network_noise = noise.BetaPrimeNoise(2,3)
@@ -141,6 +141,6 @@ if __name__ == "__main__":
 
 	# run program on machine
 	m.run()
-	print(m.getMaxTime())
+	print(m.getMaximumTime())
 
 	v.savePDF('test.pdf')

@@ -12,8 +12,8 @@ if __name__ == "__main__":
 	machine = logpmachine.LogPMachine(program)
 
 	# set noise
-	machine.host_noise = True
-	machine.network_noise = True
+	#machine.host_noise = True
+	#machine.network_noise = True
 
 	# set visual
 	visual = visual.Visual()

@@ -115,7 +115,25 @@ if __name__ == "__main__":
 	print('Select schedule:')
 	for idx, un in enumerate(unique):
 		print(idx,')', un)
-	sel = int(input('Select: '))
+
+	notDone = True
+	while notDone:
+		try:
+			string = input('Select: ')
+
+			if string[0] == 'e':
+				sys.exit(0)
+			else:
+				sel = int(string)
+				if sel < 0 or sel > len(unique):
+					raise ValueError
+				else:
+					notDone = False
+		except SystemExit:
+			print('Goodbye.')
+			sys.exit(0)
+		except:
+			print('Selection needs to be a number in the list.')
 
 	if len(sys.argv) == 3:
 		block = True if sys.argv[2] == 'block' else False

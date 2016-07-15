@@ -17,27 +17,41 @@ class StageType(Enum):
 	invmerge = 5
 
 class Stage:
-	def __init__(self, stype, arg1, arg2=None):
+	def __init__(self, stype, arg1, arg2=None, arg3=None):
 		self.stype = stype
 		self.arg1 = arg1
 		self.arg2 = arg2
+		self.arg3 = arg3
 	
 	def __str__(self):
 		base = str(self.stype.name) + ':' + str(self.arg1)
 		
 		if self.arg2 is not None:
-			return base + ':' + str(self.arg2)
-		else:	
-			return base
+			base += ':' + str(self.arg2)
+
+		if self.arg3 is not None:
+			base += ':' + str(self.arg3)
+
+		return base
 
 	def __eq__(self, other):
-		return (self.stype == other.stype) and (self.arg1 == other.arg1) and (self.arg2 == other.arg2)
+		eq = (self.stype == other.stype) 
+		eq = eq and (self.arg1 == other.arg1)
+		eq = eq and (self.arg2 == other.arg2)
+		eq = eq and (self.arg3 == other.arg3)
+	
+		return eq	
 
 	def __hash__(self):
+		xor = self.stype.value ^ self.arg1
+
 		if self.arg2 is not None:
-			return self.stype.value ^ self.arg1 ^ self.arg2
-		else:
-			return self.stype.value ^ self.arg1
+			xor ^= self.arg2
+
+		if self.arg3 is not None:
+			xor ^= self.arg3
+
+		return xor
 			
 
 	def __repr__(self):
@@ -51,9 +65,6 @@ def convert(primedict):
 			schedule.append(Stage(StageType.factor, factor))
 	
 	return tuple(schedule)
-
-def generate_merged(N):
-	pass
 
 def generate_factored(N):
 	# find prime schedule
@@ -113,7 +124,7 @@ def generate_splits(N):
 					
 def generate_split(N, threshold, base):
 	if (threshold // base) != (threshold / base):
-		return None
+		raise ValueError
 
 	schedules = []
 
@@ -133,6 +144,53 @@ def generate_split(N, threshold, base):
 	
 	return schedules
 
+def generate_merge(N, r):
+	if r < 1:
+		raise ValueError
+
+	peers = N - r
+	subs = generate_factored(peers)
+
+	schedules = []
+
+	for sub in subs:
+		# check that the sub schedule is suitable, ie > than 2
+		if len(sub) < 2:
+			continue
+
+		# change first and last stages
+		first = sub[0]
+		last = sub[-1]
+
+		# eval groups
+		fgroups = reduce(operator.mul, (stage.arg1 for stage in sub[1:]))
+
+		nfirst = Stage(StageType.merge, r, fgroups, first.arg1)
+
+		lgroups = reduce(operator.mul, (stage.arg1 for stage in sub[:-1]))
+
+		nlast = Stage(StageType.invmerge, r, lgroups, last.arg1)
+
+		s = []
+		s.append(nfirst)
+		s.extend(sub[1:-1])
+		s.append(nlast)
+		
+		schedules.append(tuple(s))
+		
+	return schedules
+
+def generate_merges(N):
+	schedules = []
+	
+	for r in range(1, N-4):
+		s = generate_merge(N, r)
+		
+		if s is not None:
+			schedules.extend(s)
+
+	return schedules
+
 if __name__ == '__main__':
 	N = int(sys.argv[1])
 
@@ -142,4 +200,8 @@ if __name__ == '__main__':
 	print()
 
 	for s in generate_splits(N):
+		print(s)
+	print()
+
+	for s in generate_merges(N):
 		print(s)

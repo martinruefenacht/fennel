@@ -13,7 +13,8 @@ from rm_generator import *
 if __name__ == "__main__":
 	mins = []
 
-	for size in range(2, int(sys.argv[1])):
+	for size in range(2, int(sys.argv[1])+1):
+		print('Processing', size, file=sys.stderr)
 		schedules = []
 		schedules.extend(generate_factored(size))
 		schedules.extend(generate_splits(size))

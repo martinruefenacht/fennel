@@ -33,7 +33,6 @@ def schedule_to_program_generator(size, schedule, block):
 	split_stack = []
 	stage_mask = 1
 	wids = {}
-	#rids = {}
 	
 	for scount, stage in enumerate(schedule):
 		# stage id
@@ -165,7 +164,6 @@ def schedule_to_program_generator(size, schedule, block):
 
 				# insert rid & wid into translation dict
 				wids[rid] = wid
-				#rids[wid] = rid
 
 		elif stage.stype is StageType.invsplit:
 			# decode stage

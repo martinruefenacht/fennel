@@ -1,10 +1,6 @@
 #! /usr/bin/python3
 
-from tasks import *
-import networkx as nx
-from sympy.ntheory import factorint
 import math, sys
-import matplotlib.pyplot as plt
 import simulator, machine, visual, program, noise
 
 from schedule import *
@@ -12,30 +8,40 @@ from schedule import *
 from lbmachine import *
 from logpmachine import * 
 
-from collections import Counter
-from itertools import * 
-import operator
-from functools import reduce
-
 from rm_generator import *
 
 if __name__ == "__main__":
-	size = int(sys.argv[1]) # N
+	mins = []
 
-	schedules = []
-	schedules.extend(generate_factored(size))
-	schedules.extend(generate_splits(size))
+	for size in range(2, int(sys.argv[1])):
+		schedules = []
+		schedules.extend(generate_factored(size))
+		schedules.extend(generate_splits(size))
 
-	block = False
+		block = False
+
+		min_schedule = None
+		min_time = math.inf
+		
+		for schedule in schedules:
+			# program generator
+			p = schedule_to_program_generator(size, schedule, block)
+
+			# create machine
+			m = LBPMachine(p, 1000, 0, 400)
+
+			# run program on machine
+			m.run()
+
+			time = m.getMaximumTime()
+
+			if time < min_time:
+				min_time = time
+				min_schedule = schedule
+
+		mins.append((size, min_time,min_schedule))
+
+	for size, time, schedule  in mins:
+		print(size, time, schedule)
+		
 	
-	for schedule in schedules:
-		# program generator
-		print('Schedule:', schedule)
-		p = schedule_to_program_generator(size, schedule, block)
-
-		# create machine
-		m = LBPMachine(p, 1000, 0, 400)
-
-		# run program on machine
-		m.run()
-		print('>>>>', m.getMaximumTime())

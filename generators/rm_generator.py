@@ -7,6 +7,8 @@ import math, sys
 import matplotlib.pyplot as plt
 import simulator, machine, visual, program, noise
 
+from schedule import *
+
 from lbmachine import *
 from logpmachine import * 
 
@@ -22,98 +24,200 @@ def schedule_to_program_generator(size, schedule, block):
 	positions = {}
 
 	# create start tasks
-	stage_mask = 1
-	for node in range(size):
-		name = 'r' + str(node) + 'c0'
-		p.dag.add_node(name, {'task':StartTask(name, node)})
-		positions[name] = (node, 0)
+	for rid in range(size):
+		name = 'r' + str(rid) + 'c0'
+		p.dag.add_node(name, {'task':StartTask(name, rid)})
+		positions[name] = (rid, 0)
 
 	# run through schedule
-	for stage, factor in enumerate(schedule):
-		sid = stage + 1
-		base = factor * stage_mask
-		
-		# for every node
-		for node in range(size):
-			group = (node // base) * base
+	split_stack = []
+	stage_mask = 1
+	wids = {}
+	#rids = {}
+	
+	for scount, stage in enumerate(schedule):
+		# stage id
+		sid = scount + 1
 
-			# create compute
-			cname = 'r'+str(node)+'c'+str(sid)
-			ctask = ComputeTask(cname, node, delay=10)
-			p.dag.add_node(cname, {'task':ctask})
-			positions[cname] = (node, -sid)
+		# if factor
+		if stage.stype is StageType.factor:
+			# decode stage
+			factor = stage.arg1
+
+			# 
+			group_size = factor * stage_mask
 			
-			# compute is dependent on previous compute
-			p.dag.add_edge('r'+str(node)+'c'+str(sid-1), cname)
+			# for every node
+			for rid in range(size):
+				# working id
+				if len(wids) == 0:
+					wid = rid
+				else:
+					wid = wids[rid]
 
-			# for each peer
-			for idx in range(factor-1):
-				# staggered multicast
-				mask = (idx + 1) * stage_mask
-				offset = (node + mask) % base
-				peer = group + offset
+				# check for activeness
+				if wid < 0:
+					continue
 				
-				# create put for peer
-				pname = 'r'+str(node)+'p'+str(sid)+str(idx)
-				ptask = PutTask(pname, node, peer, msgsize, block)
-				p.dag.add_node(pname, {'task':ptask})
-				positions[pname] = (node+0.1+idx/(factor-1), -sid+0.2)
+				#
+				group = (wid // group_size) * group_size
+
+				# compute
+				name = 'r' + str(rid) + 'c' + str(sid)
+				p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
+				positions[name] = (rid, -sid)
 				
-				# depends on previous compute
-				p.dag.add_edge('r'+str(node)+'c'+str(sid-1), pname)
-   				# add dependency for all follow computes
-				p.dag.add_edge(pname, 'r'+str(peer)+'c'+str(sid)) 
+				# compute is dependent on previous compute
+				p.dag.add_edge('r' + str(rid) + 'c' + str(sid-1), name)
 
-		# increment mask
-		stage_mask *= factor
+				# for each peer
+				for idx in range(factor-1):
+					# staggered multicast
+					mask = (idx + 1) * stage_mask
+					offset = (wid + mask) % group_size
+					pwid = group + offset
 
-	# testing: draw graph
+					# convert wid to rid
+					# TODO can this be stored with rids?
+					# THIS ONLY WORKS WITH A SPLIT
+					if len(split_stack) > 0:
+						cthreshold, cbase = split_stack[len(split_stack)-1]
+						prid = pwid + cthreshold // cbase * (cbase - 1)
+						if prid < cthreshold:
+							prid = (pwid * cbase) + (cbase - 1)
+					else:
+						prid = pwid
+						
+					# create put for peer
+					pname = 'r' + str(rid) + 'p' + str(sid) + '_' + str(idx)
+					ptask = PutTask(pname, rid, prid, msgsize, block)
+					p.dag.add_node(pname, {'task':ptask})
+					positions[pname] = (rid+0.1+idx/(factor-1), -sid+0.2)
+					
+					# depends on previous compute
+					p.dag.add_edge('r' + str(rid) + 'c' + str(sid-1), pname)
+					# add dependency for all follow computes
+					p.dag.add_edge(pname, 'r' + str(prid) + 'c' + str(sid)) 
+
+			# increment mask
+			stage_mask *= factor
+
+		elif stage.stype is StageType.split:
+			# decode stage
+			threshold = stage.arg1
+			base = stage.arg2
+
+			# insert into stack
+			split_stack.append((threshold, base))
+
+			# sensical names
+			groups = threshold/base
+			group_size = base
+			group_uppermost = base - 1
+
+			# for all procs
+			for rid in range(size):
+
+				# if in collapse region
+				if rid < threshold:
+
+					# if not leader of group
+					if rid % group_size != group_uppermost:
+						# assign wid
+						wid = -1 - rid
+
+						# send to uppermost in group
+						group_leader = (rid // group_size) * group_size + group_uppermost
+
+						# construct put
+						name = 'r' + str(rid) + 'p' + str(sid)
+						p.dag.add_node(name, {'task':PutTask(name, rid, group_leader, msgsize, block)})
+						p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
+						positions[name] = (rid, -sid+0.1)
+	
+					# if leader of group
+					else:
+						# assign working id
+						wid = rid // group_size
+
+						# construct compute
+						name = 'r'+str(rid)+'c'+str(sid)
+						p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
+						p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
+						positions[name] = (rid, -sid)
+
+						# add dependencies
+						for idx in range(group_uppermost):
+							pid = (rid // group_size) * group_size + idx
+							pname = 'r' + str(pid) + 'p' + str(sid)
+							p.dag.add_edge(pname, name)							
+
+				# above collapse region
+				else:
+					# assign wid
+					wid = rid - int(groups * group_uppermost)
+
+					# create proxy
+					name = 'r' + str(rid) + 'c' + str(sid)
+					p.dag.add_node(name, {'task':ProxyTask(name, rid)})
+					p.dag.add_edge('r' + str(rid) + 'c' + str(sid-1), name)
+					positions[name] = (rid, -sid)
+
+				# insert rid & wid into translation dict
+				wids[rid] = wid
+				#rids[wid] = rid
+
+		elif stage.stype is StageType.invsplit:
+			# decode stage
+			threshold = stage.arg1
+			base = stage.arg2
+
+			# sensical names
+			group_size = base
+			group_uppermost = base - 1
+			
+			# for all procs
+			for rid in range(size):
+				wid = wids[rid]
+				
+				# if in collapse region
+				if rid < threshold:
+					
+					# if leader in group
+					if rid % group_size == group_uppermost:
+						for offset in range(group_uppermost):
+							prid = wid * group_size + offset
+
+							name = 'r' + str(rid) + 'p' + str(sid) + '_' + str(offset)
+							p.dag.add_node(name, {'task':PutTask(name, rid, prid, msgsize, block)})
+							p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
+							positions[name] = (rid - (group_uppermost-offset)/group_size, -sid)
+
+							p.dag.add_edge(name, 'r'+str(prid)+'c'+str(sid))
+
+					# if not leader
+					else:
+						# construct compute
+						name = 'r' + str(rid) + 'c' + str(sid)
+						p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
+						positions[name] = (rid, -sid-1)
+
+	# testing
 	#nx.draw_networkx(p.dag, pos=positions)
-	#plt.show()
+	#plt.show()		
 
 	return p
 
 if __name__ == "__main__":
 	size = int(sys.argv[1]) # N
-	
-	# factor size
-	factors = factorint(size)
-	prime_schedule = [key for key, count in factors.items() for c in range(count)]
 
-	# combine schedules
-	unique = []
-	stack = []
-	stack.append(tuple(prime_schedule))
-	while stack:
-		# retrieve item
-		item = stack.pop()
-
-		# check if done
-		if tuple(item) not in unique:
-			# add to unique set
-			unique.append(tuple(item))
-
-			# check for combinations
-			if len(item) is not 1:
-				# create pairings
-				pairs = set(combinations(item, 2))
-
-				for pair in pairs:
-					# subtract pair
-					diff_set = Counter(item) - Counter(pair)
-
-					# calculate product of pair
-					value = reduce(operator.mul, pair)
-
-					# combine into new set
-					combine_set = diff_set + Counter([value])
-
-					# push to stack
-					stack.append(tuple(combine_set.elements()))
+	schedules = []
+	schedules.extend(generate_factored(size))
+	schedules.extend(generate_splits(size))
 	
 	# user select
 	print('Select schedule:')
-	for idx, un in enumerate(unique):
+	for idx, un in enumerate(schedules):
 		print(idx,')', un)
 
 	notDone = True
@@ -125,34 +229,40 @@ if __name__ == "__main__":
 				sys.exit(0)
 			else:
 				sel = int(string)
-				if sel < 0 or sel > len(unique):
+				print('Selection ', sel)
+				if sel < 0 or sel > len(schedules):
 					raise ValueError
-				else:
-					notDone = False
+					
+				notDone = False
 		except SystemExit:
 			print('Goodbye.')
 			sys.exit(0)
-		except:
+		except Exception as err:
+			print(err)
 			print('Selection needs to be a number in the list.')
 
-	if len(sys.argv) == 3:
-		block = True if sys.argv[2] == 'block' else False
-	else:
-		block = False
 
 	# TODO select ordering of stages
 
+	# blocking puts
+	block_choice = input('Blocking [y]:')
+	
+	if block_choice == 'y':
+		block = True
+	else:
+		block = False
+
 	# program generator
-	print('Schedule:', unique[sel])
-	p = schedule_to_program_generator(size, unique[sel], block)
+	print('Schedule:', schedules[sel])
+	p = schedule_to_program_generator(size, schedules[sel], block)
 
 
 	# create machine
-	#m = LBPMachine(p, 1000, 0, 400)
+	m = LBPMachine(p, 1000, 0, 400)
 	#m = LBMachine(p, 1400, 0)
 	#m = LogPMachine(p, 200, 400, 300)
 	#m = LogPMachineDuplex(p, 200, 400, 300)
-	m = LogPMachineSimplex(p, 200, 400, 300)
+	#m = LogPMachineSimplex(p, 200, 400, 300)
 
 	#m.host_noise = noise.BetaPrimeNoise(2,3)
 	#m.network_noise = noise.BetaPrimeNoise(2,3)

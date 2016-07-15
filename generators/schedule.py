@@ -9,33 +9,12 @@ from collections import Counter
 from functools import reduce
 import operator
 
-#def generate_recursive_doubling(N):
-#	# find closest lower power of two
-#	power = int(math.floor(math.log(N)/math.log(2)))
-#	N_2 = 2**(power)
-#
-#	# calculate remainder/threshold
-#	rem = N - N_2
-#	
-#	if rem == 0:
-#		return [tuple(['a2']*power)]
-#
-#	else:
-#		threshold = 2*rem
-#
-#		# construct schedule
-#		schedule = []
-#		schedule.append('c'+str(threshold)+'m2')
-#		schedule.extend(['a2'] * power)	
-#		schedule.append('e'+str(threshold)+'m2')
-#
-#		return [tuple(schedule)]
-
-class Type(Enum):
+class StageType(Enum):
 	factor = 1
 	split = 2
 	invsplit = 3
-	#merge = 4
+	merge = 4
+	invmerge = 5
 
 class Stage:
 	def __init__(self, stype, arg1, arg2=None):
@@ -69,7 +48,7 @@ def convert(primedict):
 
 	for factor, count in primedict.items():
 		for c in range(count):
-			schedule.append(Stage(Type.factor, factor))
+			schedule.append(Stage(StageType.factor, factor))
 	
 	return tuple(schedule)
 
@@ -105,7 +84,7 @@ def generate_factored(N):
 					diff_set = Counter(item) - Counter(pair)
 
 					# calculate product of pair
-					value = Stage(Type.factor, pair[0].arg1 * pair[1].arg1)
+					value = Stage(StageType.factor, pair[0].arg1 * pair[1].arg1)
 
 					# combine into new set
 					combine_set = diff_set + Counter([value])
@@ -126,13 +105,15 @@ def generate_splits(N):
 	for threshold in range(2, N+1):
 		for base in range(2, threshold+1):
 			if threshold/base == threshold//base:
-				schedules.append(generate_split(N, threshold, base))
+				s = generate_split(N, threshold, base)
+
+				schedules.extend(s)
 
 	return schedules
 					
 def generate_split(N, threshold, base):
 	if (threshold // base) != (threshold / base):
-		return []
+		return None
 
 	schedules = []
 
@@ -144,9 +125,9 @@ def generate_split(N, threshold, base):
 
 	for sub in subs:
 		construct = []
-		construct.append(Stage(Type.split, threshold, base))
+		construct.append(Stage(StageType.split, threshold, base))
 		construct.extend(sub)
-		construct.append(Stage(Type.invsplit, threshold, base))
+		construct.append(Stage(StageType.invsplit, threshold, base))
 
 		schedules.append(tuple(construct))
 	

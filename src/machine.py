@@ -28,7 +28,7 @@ class Machine:
 
 	def drawMachine(self):
 		# find max time
-		max_time = int((math.ceil(self.getMaximumTime() / 1000) * 1000))
+		max_time = int((math.ceil(self.getMaximumTime() / 500) * 500))
 
 		# draw time line
 		self.context.drawTimeLine(max_time)

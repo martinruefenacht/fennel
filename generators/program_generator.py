@@ -8,9 +8,6 @@ from tasks import *
 import networkx as nx
 import matplotlib.pyplot as plt
 
-def generate_program(schedule):
-	pass	
-
 def schedule_to_program_generator(size, schedule, block):
 	msgsize = 8 
 	p = Program()

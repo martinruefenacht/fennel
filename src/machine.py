@@ -20,6 +20,10 @@ class Machine:
 		# visual context
 		self.context = None
 
+	def reset(self):
+		self.dependencies = {}
+		self.dtimes = {}
+
 	def getMaximumTime(self):
 		raise NotImplementedError
 

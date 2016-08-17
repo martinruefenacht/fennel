@@ -15,9 +15,6 @@ class LBMachine(Machine):
 		self.alpha = latency
 		self.beta = bandwidth
 
-		# recording
-		self.recording = False
-
 		# process times
 		self.procs = [0] * program.getSize()
 		self.maximum_time = 0
@@ -32,6 +29,14 @@ class LBMachine(Machine):
 		self.task_handlers[SleepTask] = self.executeSleepTask
 		self.task_handlers[ComputeTask] = self.executeComputeTask
 		self.task_handlers[PutTask] = self.executePutTask
+
+	def reset(self):
+		super().reset()
+		
+		self.noise_record = {}
+		self.maximum_time = 0
+
+		self.procs = [0] * self.program.getSize()
 
 	def getMaximumTime(self):
 		return max(self.procs)	
@@ -174,6 +179,9 @@ class LBPMachine(LBMachine):
 
 		self.kappa = pipelining
 
+	def getMaximumTime(self):
+		return self.maximum_time
+
 	def executePutTask(self, time, task):
 		# 
 		if self.procs[task.proc] > time:
@@ -202,7 +210,7 @@ class LBPMachine(LBMachine):
 			self.procs[task.proc] = time_put
 		else:
 			self.procs[task.proc] = time_pipe
-		self.maximum_time = max(self.maximum_time, time_pipe)
+		self.maximum_time = max(self.maximum_time, time_put)
 
 		return self.completeTask(task, time_put)
 

@@ -24,11 +24,11 @@ class LBMachine(Machine):
 		self.host_noise = None
 		self.network_noise = None
 
-		self.task_handlers[StartTask] = self.executeStartTask
-		self.task_handlers[ProxyTask] = self.executeProxyTask
-		self.task_handlers[SleepTask] = self.executeSleepTask
-		self.task_handlers[ComputeTask] = self.executeComputeTask
-		self.task_handlers[PutTask] = self.executePutTask
+		self.task_handlers['StartTask'] = self.executeStartTask
+		self.task_handlers['ProxyTask'] = self.executeProxyTask
+		self.task_handlers['SleepTask'] = self.executeSleepTask
+		self.task_handlers['ComputeTask'] = self.executeComputeTask
+		self.task_handlers['PutTask'] = self.executePutTask
 
 	def reset(self):
 		super().reset()

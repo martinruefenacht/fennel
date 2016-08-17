@@ -89,13 +89,5 @@ class Machine:
 
 
 	def execute(self, time, task):
-		handled = False
-
-		# search all task handlers for task
-		for tasktype, handler in self.task_handlers.items():
-			if isinstance(task, tasktype):
-				# TODO need to more array return of tasks into handler
-				return handler(time, task)
-		
-		print('Unknown task type:', task)
-		raise NotImplementedError
+		# look up task handler and execute 
+		return self.task_handlers[task.__class__.__name__](time, task)

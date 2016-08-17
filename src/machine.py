@@ -40,7 +40,6 @@ class Machine:
 		# draw process lines
 		self.context.drawProcessLines(self.program.getSize(), max_time)
 
-
 	def run(self):
 		taskqueue = []
 		

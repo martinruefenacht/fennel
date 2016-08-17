@@ -24,8 +24,8 @@ if __name__ == "__main__":
 
 	schedules = []
 	schedules.extend(generate_factored(size))
-	schedules.extend(generate_splits(size))
-	schedules.extend(generate_merges(size))
+	#schedules.extend(generate_splits(size))
+	#schedules.extend(generate_merges(size))
 	
 	# user select
 	print('Select schedule:')
@@ -70,8 +70,7 @@ if __name__ == "__main__":
 
 
 	# create machine
-	#m = LBPMachine(p, 1000, 0, 400)
-	m = LBPMachine(p, 300, 0, 400)
+	m = LBPMachine(p, 1000, 0, 400)
 	
 	#m = LBMachine(p, 1400, 0)
 	#m = LogPMachine(p, 1000, 400, 600)
@@ -81,11 +80,11 @@ if __name__ == "__main__":
 	#m.host_noise = noise.BetaPrimeNoise(2,3)
 	#m.network_noise = noise.BetaPrimeNoise(2,3, scale=0.25)
 
-	v = visual.Visual()
-	m.setVisual(v)
+	#v = visual.Visual()
+	#m.setVisual(v)
 
 	# run program on machine
 	m.run()
 	print(m.getMaximumTime())
 
-	v.savePDF('test.pdf')
+	#v.savePDF('test.pdf')

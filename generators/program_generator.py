@@ -315,8 +315,8 @@ def schedule_to_program_generator(size, schedule, block):
 			raise ValueError('Unknown StageType.')
 
 	# testing
-	nx.draw_networkx(p.dag, pos=positions)
-	plt.show()		
+	#nx.draw_networkx(p.dag, pos=positions)
+	#plt.show()		
 
 	return p
 

@@ -1,7 +1,5 @@
-from scipy.stats import betaprime
 from heapq import *
 from tasks import *
-import math
 
 class Machine:
 	def __init__(self, program):

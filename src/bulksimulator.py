@@ -1,9 +1,6 @@
 #! /usr/bin/python3
 
-from heapq import *
-from networkx import *
-import cairo, sys
-import numpy as np
+import sys
 
 from tasks import *
 import parser, machine

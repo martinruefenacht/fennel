@@ -1,34 +1,65 @@
-import networkx as nx
-
-# Program purely has directed acyclic graph and functions for usablility, does not record
-# anything. Nor do the tasks change
-
 class Program:
 	def __init__(self):
-		self.dag = nx.DiGraph()
+		self.edges_in = {}
+		self.edges_out = {}
+		self.metadata = {}
 
 	def getTask(self, nid):
-		return self.dag.node[nid]['task']
+		return self.metadata[nid]
 
-	def addTask(self, name, task):
-		self.dag.add_node(name, {'task':task, 'dependencies':0})
+	def addNode(self, nid, task):
+		self.metadata[nid] = task
 
-	def getSize(self):
+	def addEdge(self, nidfrom, nidto):
+		# insert into out edges
+		if nidfrom not in self.edges_out:
+			self.edges_out[nidfrom] = [nidto]
+		else:
+			self.edges_out[nidfrom].append(nidto)
+
+		# doubly link
+		if nidto not in self.edges_in:
+			self.edges_in[nidto] = [nidfrom]
+		else:
+			self.edges_in[nidto].append(nidfrom)
+
+	def getProcessCount(self):
 		size = 0
 		
-		for nid, deg in self.dag.in_degree_iter():
-			if deg == 0:
+		for nid, task in self.metadata.items():
+			if task.__class__.__name__ == "StartTask":
 				size += 1
 
 		return size
 
-	def getSuccessorTasks(self, node):
-		return self.dag.successors_iter(node)
-	
 	def getStartTasks(self):
-		# iterate all nodes
-		for nid, degree in self.dag.in_degree_iter():
-			# if no dependencies
-			if degree == 0:
-				# found start task
-				yield self.dag.node[nid]['task']
+		for nid, task in self.metadata.items():
+			if task.__class__.__name__ == "StartTask":
+				yield task
+
+	def getSuccessors(self, nid):
+		# end of process check
+		if nid in self.edges_out:
+			# dependent tasks
+			for eid in self.edges_out[nid]:
+				yield eid
+
+	def getInDegree(self, nid):
+		if nid in self.edges_in:
+			return len(self.edges_in[nid])
+		else:
+			return 0
+
+	def getOutDegree(self, nid):
+		if nid in self.edges_out:
+			return len(self.edges_out[nid])
+		else:
+			return 0
+
+	def prt(self):
+		print(self.edges_out)
+		print(self.metadata)
+		print(self.edges_in)
+
+	def draw(self):
+		raise NotImplementedError

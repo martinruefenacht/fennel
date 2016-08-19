@@ -5,9 +5,6 @@ from schedule_generator import *
 from program import *
 from tasks import *
 
-import networkx as nx
-import matplotlib.pyplot as plt
-
 def schedule_to_program_generator(size, schedule, block):
 	msgsize = 8 
 	p = Program()
@@ -314,15 +311,4 @@ def schedule_to_program_generator(size, schedule, block):
 		else:
 			raise ValueError('Unknown StageType.')
 
-	# testing
-	#nx.draw_networkx(p.dag, pos=positions)
-	#plt.show()		
-
 	return p
-
-if __name__ == "__main__":
-	size = 5
-	schedule = [Stage(StageType.merge, 1, 2, 2), Stage(StageType.invmerge, 1, 2, 2)]
-	block = False
-
-	p = schedule_to_program_generator(size, schedule, block)

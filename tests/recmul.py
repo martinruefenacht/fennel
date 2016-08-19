@@ -1,22 +1,23 @@
 #! /usr/bin/python3
 
-from tasks import *
-import networkx as nx
-from sympy.ntheory import factorint
-import math, sys
-import matplotlib.pyplot as plt
-import simulator, machine, visual, program, noise
+#from tasks import *
+#import networkx as nx
+#from sympy.ntheory import factorint
+#import math, sys
+#import matplotlib.pyplot as plt
+#import simulator, machine, visual, program, noise
+#
+#from schedule_generator import *
+#from program_generator import *
+#
+#from lbmachine import *
+#from logpmachine import * 
+#
+#from collections import Counter
+#from itertools import * 
+#import operator
+#from functools import reduce
 
-from schedule_generator import *
-from program_generator import *
-
-from lbmachine import *
-from logpmachine import * 
-
-from collections import Counter
-from itertools import * 
-import operator
-from functools import reduce
 
 
 if __name__ == "__main__":
@@ -24,8 +25,8 @@ if __name__ == "__main__":
 
 	schedules = []
 	schedules.extend(generate_factored(size))
-	#schedules.extend(generate_splits(size))
-	#schedules.extend(generate_merges(size))
+	schedules.extend(generate_splits(size))
+	schedules.extend(generate_merges(size))
 	
 	# user select
 	print('Select schedule:')
@@ -67,7 +68,6 @@ if __name__ == "__main__":
 	# program generator
 	print('Schedule:', schedules[sel])
 	p = schedule_to_program_generator(size, schedules[sel], block)
-
 
 	# create machine
 	m = LBPMachine(p, 1000, 0, 400)

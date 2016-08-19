@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 
 import sys, math
-from enum import Enum
 
 from stage import *
 
@@ -144,17 +143,3 @@ def generate_merges(N):
 			schedules.extend(s)
 
 	return schedules
-
-if __name__ == '__main__':
-	N = int(sys.argv[1])
-
-	for s in generate_factored(N):
-		print(s)
-	print()
-
-	for s in generate_splits(N):
-		print(s)
-	print()
-
-	for s in generate_merges(N):
-		print(s)

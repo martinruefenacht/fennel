@@ -1,4 +1,7 @@
 class Program:
+	pass
+
+class StaticProgram:
 	def __init__(self):
 		self.edges_in = {}
 		self.edges_out = {}

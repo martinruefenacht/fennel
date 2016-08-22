@@ -1,13 +1,10 @@
-from machine import Machine
-from scipy.stats import betaprime
-from random import choice
-import math
+import simulator.core.machine as machine
+import simulator.core.tasks as tasks
 
+#from visual import Visual
+#import math
 
-from tasks import *
-from visual import Visual
-
-class LBMachine(Machine):
+class LBMachine(machine.Machine):
 	def __init__(self, program, latency, bandwidth):
 		super().__init__(program)
 
@@ -16,7 +13,7 @@ class LBMachine(Machine):
 		self.beta = bandwidth
 
 		# process times
-		self.procs = [0] * program.getSize()
+		self.procs = [0] * program.getProcessCount()
 		self.maximum_time = 0
 
 		# noise
@@ -36,7 +33,7 @@ class LBMachine(Machine):
 		self.noise_record = {}
 		self.maximum_time = 0
 
-		self.procs = [0] * self.program.getSize()
+		self.procs = [0] * self.program.getProcessCount()
 
 	def getMaximumTime(self):
 		return max(self.procs)	

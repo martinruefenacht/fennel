@@ -1,5 +1,5 @@
 from heapq import *
-from tasks import *
+import simulator.core.tasks as tasks
 
 class Machine:
 	def __init__(self, program):
@@ -64,7 +64,7 @@ class Machine:
 	def completeTask(self, task, time):
 		successors = []
 
-		for successor in self.program.getSuccessorTasks(task.node):
+		for successor in self.program.getSuccessors(task.node):
 			# increment completed dependencies for successor
 			self.dependencies[successor] = self.dependencies.get(successor, 0) + 1
 
@@ -72,7 +72,7 @@ class Machine:
 			self.dtimes[successor] = max(self.dtimes.get(successor, 0), time)
 
 			# check for completion
-			if self.dependencies[successor] == self.program.dag.in_degree(successor):
+			if self.dependencies[successor] == self.program.getInDegree(successor):
 				successor_task = self.program.getTask(successor)
 				time_next = self.dtimes[successor]
 

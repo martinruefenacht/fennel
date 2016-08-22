@@ -2,7 +2,7 @@
 
 import sys, math
 
-from stage import *
+import simulator.core.stage as stage
 
 from sympy import factorint
 from itertools import combinations
@@ -15,7 +15,7 @@ def convert(primedict):
 
 	for factor, count in primedict.items():
 		for c in range(count):
-			schedule.append(Stage(StageType.factor, factor))
+			schedule.append(stage.Stage(stage.StageType.factor, factor))
 	
 	return tuple(schedule)
 
@@ -48,7 +48,7 @@ def generate_factored(N):
 					diff_set = Counter(item) - Counter(pair)
 
 					# calculate product of pair
-					value = Stage(StageType.factor, pair[0].arg1 * pair[1].arg1)
+					value = stage.Stage(stage.StageType.factor, pair[0].arg1 * pair[1].arg1)
 
 					# combine into new set
 					combine_set = diff_set + Counter([value])
@@ -89,9 +89,9 @@ def generate_split(N, threshold, base):
 
 	for sub in subs:
 		construct = []
-		construct.append(Stage(StageType.split, threshold, base))
+		construct.append(stage.Stage(stage.StageType.split, threshold, base))
 		construct.extend(sub)
-		construct.append(Stage(StageType.invsplit, threshold, base))
+		construct.append(stage.Stage(stage.StageType.invsplit, threshold, base))
 
 		schedules.append(tuple(construct))
 	
@@ -118,11 +118,11 @@ def generate_merge(N, r):
 		# eval groups
 		fgroups = reduce(operator.mul, (stage.arg1 for stage in sub[1:]))
 
-		nfirst = Stage(StageType.merge, r, fgroups, first.arg1)
+		nfirst = stage.Stage(stage.StageType.merge, r, fgroups, first.arg1)
 
 		lgroups = reduce(operator.mul, (stage.arg1 for stage in sub[:-1]))
 
-		nlast = Stage(StageType.invmerge, r, lgroups, last.arg1)
+		nlast = stage.Stage(stage.StageType.invmerge, r, lgroups, last.arg1)
 
 		s = []
 		s.append(nfirst)

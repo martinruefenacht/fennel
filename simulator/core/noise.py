@@ -1,4 +1,3 @@
-from abc import ABCMeta, abstractmethod
 from scipy.stats import betaprime
 from random import choice
 

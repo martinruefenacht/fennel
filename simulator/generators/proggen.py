@@ -1,35 +1,32 @@
 #! /usr/bin/python3
 
-from stage import *
-from schedule_generator import *
-from program import *
-from tasks import *
+import simulator.core.stage as stage
+import simulator.generators.skdgen as skdgen
+import simulator.core.program as program
+import simulator.core.tasks as tasks
 
 def schedule_to_program_generator(size, schedule, block):
 	msgsize = 8 
-	p = Program()
-
-	positions = {}
+	p = program.Program()
 
 	# create start tasks
 	for rid in range(size):
 		name = 'r' + str(rid) + 'c0'
-		p.dag.add_node(name, {'task':StartTask(name, rid)})
-		positions[name] = (rid, 0)
+		p.addNode(name, tasks.StartTask(name, rid))
 
 	# run through schedule
 	split_stack = []
 	stage_mask = 1
 	wids = {}
 	
-	for scount, stage in enumerate(schedule):
+	for scount, staget in enumerate(schedule):
 		# stage id
 		sid = scount + 1
 
 		# if factor
-		if stage.stype is StageType.factor:
+		if staget.stype is stage.StageType.factor:
 			# decode stage
-			factor = stage.arg1
+			factor = staget.arg1
 
 			# 
 			group_size = factor * stage_mask
@@ -51,11 +48,10 @@ def schedule_to_program_generator(size, schedule, block):
 
 				# compute
 				name = 'r' + str(rid) + 'c' + str(sid)
-				p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
-				positions[name] = (rid, -sid)
+				p.addNode(name, tasks.ComputeTask(name, rid, delay=10))
 				
 				# compute is dependent on previous compute
-				p.dag.add_edge('r' + str(rid) + 'c' + str(sid-1), name)
+				p.addEdge('r' + str(rid) + 'c' + str(sid-1), name)
 
 				# for each peer
 				for idx in range(factor-1):
@@ -75,22 +71,21 @@ def schedule_to_program_generator(size, schedule, block):
 						
 					# create put for peer
 					pname = 'r' + str(rid) + 'p' + str(sid) + '_' + str(idx)
-					ptask = PutTask(pname, rid, prid, msgsize, block)
-					p.dag.add_node(pname, {'task':ptask})
-					positions[pname] = (rid+0.1+idx/(factor-1), -sid+0.2)
+					ptask = tasks.PutTask(pname, rid, prid, msgsize, block)
+					p.addNode(pname, ptask)
 					
 					# depends on previous compute
-					p.dag.add_edge('r' + str(rid) + 'c' + str(sid-1), pname)
+					p.addEdge('r' + str(rid) + 'c' + str(sid-1), pname)
 					# add dependency for all follow computes
-					p.dag.add_edge(pname, 'r' + str(prid) + 'c' + str(sid)) 
+					p.addEdge(pname, 'r' + str(prid) + 'c' + str(sid)) 
 
 			# increment mask
 			stage_mask *= factor
 
-		elif stage.stype is StageType.split:
+		elif staget.stype is stage.StageType.split:
 			# decode stage
-			threshold = stage.arg1
-			base = stage.arg2
+			threshold = staget.arg1
+			base = staget.arg2
 
 			# insert into stack
 			split_stack.append((threshold, base))
@@ -116,9 +111,8 @@ def schedule_to_program_generator(size, schedule, block):
 
 						# construct put
 						name = 'r' + str(rid) + 'p' + str(sid)
-						p.dag.add_node(name, {'task':PutTask(name, rid, group_leader, msgsize, block)})
-						p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
-						positions[name] = (rid, -sid+0.1)
+						p.addNode(name, tasks.PutTask(name, rid, group_leader, msgsize, block))
+						p.addEdge('r'+str(rid)+'c'+str(sid-1), name)
 	
 					# if leader of group
 					else:
@@ -127,15 +121,14 @@ def schedule_to_program_generator(size, schedule, block):
 
 						# construct compute
 						name = 'r'+str(rid)+'c'+str(sid)
-						p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
-						p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
-						positions[name] = (rid, -sid)
+						p.addNode(name, tasks.ComputeTask(name, rid, delay=10))
+						p.addEdge('r'+str(rid)+'c'+str(sid-1), name)
 
 						# add dependencies
 						for idx in range(group_uppermost):
 							pid = (rid // group_size) * group_size + idx
 							pname = 'r' + str(pid) + 'p' + str(sid)
-							p.dag.add_edge(pname, name)							
+							p.addEdge(pname, name)							
 
 				# above collapse region
 				else:
@@ -144,17 +137,16 @@ def schedule_to_program_generator(size, schedule, block):
 
 					# create proxy
 					name = 'r' + str(rid) + 'c' + str(sid)
-					p.dag.add_node(name, {'task':ProxyTask(name, rid)})
-					p.dag.add_edge('r' + str(rid) + 'c' + str(sid-1), name)
-					positions[name] = (rid, -sid)
+					p.addNode(name, tasks.ProxyTask(name, rid))
+					p.addEdge('r' + str(rid) + 'c' + str(sid-1), name)
 
 				# insert rid & wid into translation dict
 				wids[rid] = wid
 
-		elif stage.stype is StageType.invsplit:
+		elif stage.stype is stage.StageType.invsplit:
 			# decode stage
-			threshold = stage.arg1
-			base = stage.arg2
+			threshold = staget.arg1
+			base = staget.arg2
 
 			# sensical names
 			group_size = base
@@ -173,26 +165,24 @@ def schedule_to_program_generator(size, schedule, block):
 							prid = wid * group_size + offset
 
 							name = 'r' + str(rid) + 'p' + str(sid) + '_' + str(offset)
-							p.dag.add_node(name, {'task':PutTask(name, rid, prid, msgsize, block)})
-							p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
-							positions[name] = (rid - offset/group_size, -sid)
+							p.addNode(name, tasks.PutTask(name, rid, prid, msgsize, block))
+							p.addEdge('r'+str(rid)+'c'+str(sid-1), name)
 
-							p.dag.add_edge(name, 'r'+str(prid)+'c'+str(sid))
+							p.addEdge(name, 'r'+str(prid)+'c'+str(sid))
 
 					# if not leader
 					else:
 						# construct compute
 						name = 'r' + str(rid) + 'c' + str(sid)
-						p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
-						positions[name] = (rid, -sid-0.1)
+						p.addNode(name, tasks.ComputeTask(name, rid, delay=10))
 		
-		elif stage.stype is StageType.merge:
+		elif staget.stype is stage.StageType.merge:
 			# decode
-			merge_threshold = stage.arg1
-			groups = stage.arg2
+			merge_threshold = staget.arg1
+			groups = staget.arg2
 
-			factor = stage.arg3
-			group_size = stage.arg3 * stage_mask
+			factor = staget.arg3
+			group_size = staget.arg3 * stage_mask
 
 			# for all procs
 			for rid in range(size):
@@ -213,10 +203,9 @@ def schedule_to_program_generator(size, schedule, block):
 
 						# put
 						pname = 'r' + str(rid) + 'p' + str(sid) + '_' + str(idx)
-						p.dag.add_node(pname, {'task':PutTask(pname, rid, prid, msgsize, block)})
-						p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), pname)
-						p.dag.add_edge(pname, 'r' + str(prid) + 'c' + str(sid))
-						positions[pname] = (rid+idx/group_size, -sid+0.2)
+						p.addNode(pname, tasks.PutTask(pname, rid, prid, msgsize, block))
+						p.addEdge('r'+str(rid)+'c'+str(sid-1), pname)
+						p.addEdge(pname, 'r' + str(prid) + 'c' + str(sid))
 
 				else:
 					wid = rid - merge_threshold
@@ -227,9 +216,8 @@ def schedule_to_program_generator(size, schedule, block):
 
 					# compute
 					name = 'r' + str(rid) + 'c' + str(sid)
-					p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
-					p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
-					positions[name] = (rid, -sid)
+					p.addNode(name, tasks.ComputeTask(name, rid, delay=10))
+					p.addEdge('r'+str(rid)+'c'+str(sid-1), name)
 					
 					# for each group peer
 					for idx in range(factor-1):
@@ -243,29 +231,28 @@ def schedule_to_program_generator(size, schedule, block):
 						
 						#
 						pname = 'r' + str(rid) + 'p' + str(sid) + '_' + str(idx)
-						p.dag.add_node(pname, {'task':PutTask(pname, rid, prid, msgsize, block)})
+						p.addNode(pname, tasks.PutTask(pname, rid, prid, msgsize, block))
 						positions[pname] = (rid+0.1+idx/(factor-1), -sid+0.2)
 
 						#
-						p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), pname)
-						p.dag.add_edge(pname, 'r'+str(prid)+'c'+str(sid))
+						p.addEdge('r'+str(rid)+'c'+str(sid-1), pname)
+						p.addEdge(pname, 'r'+str(prid)+'c'+str(sid))
 
 			# 
 			stage_mask *= factor
 		
-		elif stage.stype is StageType.invmerge:
+		elif staget.stype is stage.StageType.invmerge:
 			# decode
-			merge_threshold = stage.arg1
-			groups = stage.arg2
-			factor = stage.arg3
-			group_size = stage.arg3 * stage_mask
+			merge_threshold = staget.arg1
+			groups = staget.arg2
+			factor = staget.arg3
+			group_size = staget.arg3 * stage_mask
 
 			for rid in range(size):
 				if rid < merge_threshold:
 					# compute
 					name = 'r' + str(rid) + 'c' + str(sid)
-					p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
-					positions[name] = (rid, -sid)
+					p.addNode(name, tasks.ComputeTask(name, rid, delay=10))
 
 				else:
 					wid = wids[rid]
@@ -275,9 +262,8 @@ def schedule_to_program_generator(size, schedule, block):
 
 					# compute
 					name = 'r' + str(rid) + 'c' + str(sid)
-					p.dag.add_node(name, {'task':ComputeTask(name, rid, delay=10)})
-					p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), name)
-					positions[name] = (rid, -sid)
+					p.addNode(name, tasks.ComputeTask(name, rid, delay=10))
+					p.addEdge('r'+str(rid)+'c'+str(sid-1), name)
 					
 					# for each group peer
 					for idx in range(factor-1):
@@ -291,22 +277,20 @@ def schedule_to_program_generator(size, schedule, block):
 						
 						#
 						pname = 'r' + str(rid) + 'p' + str(sid) + '_' + str(idx)
-						p.dag.add_node(pname, {'task':PutTask(pname, rid, prid, msgsize, block)})
-						positions[pname] = (rid+0.1+idx/(factor-1), -sid+0.2)
+						p.addNode(pname, tasks.PutTask(pname, rid, prid, msgsize, block))
 
 						#
-						p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), pname)
-						p.dag.add_edge(pname, 'r'+str(prid)+'c'+str(sid))
+						p.addEdge('r'+str(rid)+'c'+str(sid-1), pname)
+						p.addEdge(pname, 'r'+str(prid)+'c'+str(sid))
 
 					# outmerge
 					for idx in range(merge_threshold):
 						if idx % groups == wid % groups:
 							#
 							pname = 'r' + str(rid) + 'p' + str(sid) + '_m' + str(idx)
-							p.dag.add_node(pname, {'task':PutTask(pname, rid, idx, msgsize, block)})
-							p.dag.add_edge('r'+str(rid)+'c'+str(sid-1), pname)
-							p.dag.add_edge(pname, 'r'+str(idx)+'c'+str(sid))
-							positions[pname] = (rid+0.1, -sid+0.1)
+							p.addNode(pname, tasks.PutTask(pname, rid, idx, msgsize, block))
+							p.addEdge('r'+str(rid)+'c'+str(sid-1), pname)
+							p.addEdge(pname, 'r'+str(idx)+'c'+str(sid))
 
 		else:
 			raise ValueError('Unknown StageType.')

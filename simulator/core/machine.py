@@ -1,4 +1,5 @@
 from heapq import *
+
 import simulator.core.tasks as tasks
 
 class Machine:

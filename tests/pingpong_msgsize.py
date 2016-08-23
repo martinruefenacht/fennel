@@ -3,6 +3,9 @@ import simulator.models.lbmachine as lbmachine
 import simulator.core.noise as noise
 
 import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
 
 if __name__ == "__main__":
 	data_x = []
@@ -20,26 +23,31 @@ if __name__ == "__main__":
 		p = p2p.generate_pingpong(msgsize)
 
 		# machine creation
-		m = lbmachine.LBPMachine(p, 1000, 0.09, 400)
+		m = lbmachine.LBPMachine(p, 1000, 0.4, 400)
 
 		# noise configuration
 		m.host_noise = noise.BetaPrimeNoise(2, 3)
 		m.network_noise = noise.BetaPrimeNoise(2, 3)
 
 		# sampling
-		for sample in range(10):
+		for sample in range(100):
 			m.run()
 			
 			samples.append(m.getMaximumTime()/1000)
 
 			m.reset()
 
+		print(msgsize, np.min(samples), np.median(samples), np.mean(samples))
+
 		data_y.append(samples)
 
 	# boxplot results
-	print(data_x)
+	#plt.boxplot(data_y)
 
-	plt.boxplot(data_y)
+	sns.set_context(context='talk')
+	sns.set_style('whitegrid')
+
+	sns.boxplot(data=data_y, fliersize=0.5, linewidth=1.0, notch=True, color='#7291ba')
 	plt.yscale('log')
 
 	# ticks
@@ -59,6 +67,8 @@ if __name__ == "__main__":
 				break
 
 
-	plt.xticks(range(1, len(data_x)+1), ticks, rotation='vertical')
+	plt.xticks(range(0, len(data_x)+1), ticks, rotation='vertical')
 	plt.ylim(1, 4000)
+	plt.tight_layout()
+
 	plt.show()

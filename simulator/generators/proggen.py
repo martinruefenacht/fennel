@@ -5,9 +5,12 @@ import simulator.generators.skdgen as skdgen
 import simulator.core.program as program
 import simulator.core.tasks as tasks
 
-def schedule_to_program_generator(size, schedule, block):
+def schedule_to_program_generator(scheduleob, block):
 	msgsize = 8 
 	p = program.Program()
+
+	size = scheduleob.getProcessCount()
+	schedule = scheduleob.order
 
 	# create start tasks
 	for rid in range(size):

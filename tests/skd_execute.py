@@ -7,6 +7,9 @@ import simulator.generators.proggen as proggen
 import simulator.core.noise as noise
 
 if __name__ == '__main__':
+	if len(sys.argv) is not 3:
+		print('generator | command samples noise')
+
 	# parse schedule
 	schedule = pickle.loads(sys.stdin.buffer.read())
 
@@ -19,8 +22,9 @@ if __name__ == '__main__':
 		# create machine
 		machine = lbmachine.LBPMachine(program, 1000, 0.4, 400)
 
-		#machine.host_noise = noise.BetaPrimeNoise(2,3)
-		#machine.network_noise = noise.BetaPrimeNoise(2,3, scale=0.25)
+		if sys.argv[2] is 'n':
+			machine.host_noise = noise.BetaPrimeNoise(2, 3)
+			machine.network_noise = noise.BetaPrimeNoise(2, 3, scale=0.25)
 
 		# heavy!
 		machine.run()

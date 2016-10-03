@@ -18,8 +18,6 @@
 #import operator
 #from functools import reduce
 
-
-
 if __name__ == "__main__":
 	size = int(sys.argv[1]) # N
 

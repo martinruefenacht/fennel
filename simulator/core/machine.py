@@ -1,4 +1,5 @@
 from heapq import *
+import libpqueue
 
 import simulator.core.tasks as tasks
 
@@ -40,23 +41,28 @@ class Machine:
 		self.context.drawProcessLines(self.program.getSize(), max_time)
 
 	def run(self):
-		taskqueue = []
+		#taskqueue = []
+		taskqueue = libpqueue.PriorityQueue(self.program.getProcessCount()*1000)
 		
 		# insert all start tasks
 		for task in self.program.getStartTasks():
-			heappush(taskqueue, (0, task))
+			#heappush(taskqueue, (0, task))
+			taskqueue.push(0, task)
 
 		# process entire queue
-		while taskqueue:
+		#while taskqueue:
+		while not taskqueue.isEmpty():
 			# retrieve next global clock event
-			time, task = heappop(taskqueue)
-
+			#time, task = heappop(taskqueue)
+			time, task = taskqueue.pop()
+			
 			# execute task
 			successors = self.execute(time, task)
 
 			# insert all successor tasks
 			for successor in successors:
-				heappush(taskqueue, successor)
+				#heappush(taskqueue, successor)
+				taskqueue.push(*successor)
 
 		# visualize
 		if self.context is not None:

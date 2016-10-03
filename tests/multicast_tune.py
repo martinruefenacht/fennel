@@ -10,10 +10,14 @@ import pandas as pd
 import numpy as np
 
 if __name__ == "__main__":
+	if len(sys.argv) is not 3:
+		print('command N samples')
+
 	samples = []
 
 	# program generation
-	p = p2p.generate_multicast(1, int(sys.argv[1]))
+	# 8B
+	p = p2p.generate_multicast(8, int(sys.argv[1]))
 
 	# sampling
 	for sample in range(int(sys.argv[2])):

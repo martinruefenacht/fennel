@@ -16,7 +16,7 @@ class Schedule:
 			yield stage 
 
 	def __str__(self):
-		pass
+		return str(self.process_count) + ':' + str(self.order)
 
 	def __repr__(self):
 		pass

@@ -1,4 +1,4 @@
-from scipy.stats import betaprime
+from scipy.stats import *
 from random import choice
 
 class NoiseGenerator:
@@ -13,3 +13,21 @@ class BetaPrimeNoise(NoiseGenerator):
  
 	def generate(self, duration):
 		return int(round(betaprime.rvs(self.a, self.b, scale=duration*self.scale)))
+
+class InvGaussNoise(NoiseGenerator):
+	def __init__(self, mu, loc, scale):
+		self.mu = mu
+		self.loc = loc
+		self.scale = scale
+
+	def generate(self, duration):
+		return int(round(invgauss.rvs(self.mu, self.loc, self.scale)))
+
+class GammaNoise(NoiseGenerator):
+	def __init__(self, alpha, loc, scale):
+		self.alpha = alpha
+		self.loc = loc
+		self.scale = scale
+
+	def generate(self, duration):
+		return int(round(gamma.rvs(self.alpha, self.loc, self.scale)))

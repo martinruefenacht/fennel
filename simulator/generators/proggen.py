@@ -5,7 +5,7 @@ import simulator.generators.skdgen as skdgen
 import simulator.core.program as program
 import simulator.core.tasks as tasks
 
-def schedule_to_program_generator(scheduleob, block):
+def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 	msgsize = 8 
 	p = program.Program()
 

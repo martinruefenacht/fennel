@@ -26,11 +26,11 @@ if __name__ == '__main__':
 		samples = []
 		for sidx in range(int(sys.argv[1])):
 			# create machine
-			machine = lbmachine.LBPMachine(program, 1000, 0.4, 400)
+			machine = lbmachine.LBPMachine(program, 220, 0.4, 410)
 
 			if len(sys.argv) == 3 and sys.argv[2] is 'n':
-				machine.host_noise = noise.BetaPrimeNoise(2, 3)
-				machine.network_noise = noise.BetaPrimeNoise(2, 3, scale=0.25)
+				#machine.host_noise = noise.BetaPrimeNoise(2, 3, scale=0.05)
+				#machine.network_noise = noise.BetaPrimeNoise(2, 3, scale=1.25)
 
 			# heavy!
 			machine.run()

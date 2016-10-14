@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
 		# noise configuration
 		#m.host_noise = noise.BetaPrimeNoise(2, 3, scale=0.075)
-		m.network_noise = noise.BetaPrimeNoise(2, 3, scale=1.075)
+		#m.network_noise = noise.BetaPrimeNoise(2, 3, scale=1.075)
 
 		m.run()
 		

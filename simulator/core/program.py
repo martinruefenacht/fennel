@@ -37,6 +37,11 @@ class Program:
 			if task.__class__.__name__ == "StartTask":
 				yield task
 
+	def getStartNodes(self):
+		for nid, task in self.metadata.items():
+			if task.__class__.__name__ == "StartTask":
+				yield nid
+
 	def getSuccessors(self, nid):
 		# end of process check
 		if nid in self.edges_out:
@@ -60,6 +65,3 @@ class Program:
 		print(self.edges_out)
 		print(self.metadata)
 		print(self.edges_in)
-
-	def draw(self):
-		raise NotImplementedError

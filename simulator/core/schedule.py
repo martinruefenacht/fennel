@@ -11,6 +11,9 @@ class Schedule:
 	def getProcessCount(self):
 		return self.process_count
 
+	def getStageCount(self):
+		return len(self.order)
+
 	def __iter__(self):
 		for stage in self.order:
 			yield stage 

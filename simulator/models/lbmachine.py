@@ -5,15 +5,15 @@ import simulator.core.tasks as tasks
 #import math
 
 class LBMachine(machine.Machine):
-	def __init__(self, program, latency, bandwidth):
-		super().__init__(program)
+	def __init__(self, nodes, latency, bandwidth):
+		super().__init__(nodes)
 
 		# model parameters
 		self.alpha = latency
 		self.beta = bandwidth
 
 		# process times
-		self.procs = [0] * program.getProcessCount()
+		self.procs = [0] * self.node_count
 		self.maximum_time = 0
 
 		# noise
@@ -33,8 +33,6 @@ class LBMachine(machine.Machine):
 		self.noise_record = {}
 		self.maximum_time = 0
 
-		self.procs = [0] * self.program.getProcessCount()
-
 	def getMaximumTime(self):
 		return max(self.procs)	
 
@@ -51,7 +49,7 @@ class LBMachine(machine.Machine):
 			return 0
 
 	
-	def executeStartTask(self, time, task):
+	def executeStartTask(self, time, program, task):
 		# logic
 		if self.procs[task.proc] <= time:
 			# no noise
@@ -63,9 +61,9 @@ class LBMachine(machine.Machine):
 			self.drawStart(time, task)
 
 			# return list of dependencies which are fulfilled
-			return self.completeTask(task, self.procs[task.proc])
+			return self.completeTask(task, program, self.procs[task.proc])
 		else:
-			return (time, task)
+			return [(self.procs[task.proc], task)]
 
 	def drawStart(self, time, task):
 		if self.context is not None:
@@ -75,7 +73,7 @@ class LBMachine(machine.Machine):
 			self.context.drawVLine(task.proc, time, start_height, start_height, 'std')
 			self.context.drawCircle(task.proc, time, -start_height, start_radius)
 
-	def executeProxyTask(self, time, task):
+	def executeProxyTask(self, time, program, task):
 		# logic
 		self.procs[task.proc] = time
 
@@ -84,9 +82,9 @@ class LBMachine(machine.Machine):
 		# no visual
 
 		#
-		return self.completeTask(task, self.procs[task.proc])
+		return self.completeTask(task, program, self.procs[task.proc])
 
-	def executeSleepTask(self, time, task):
+	def executeSleepTask(self, time, program, task):
 		# logic
 		if self.procs[task.proc] <= time:
 			# noise
@@ -99,7 +97,7 @@ class LBMachine(machine.Machine):
 			self.drawSleepTask(time, task)
 
 			#
-			return self.completeTask(task, self.procs[task.proc])
+			return self.completeTask(task, program, self.procs[task.proc])
 		else:
 			return [(self.procs[task.proc], task)]
 
@@ -107,7 +105,7 @@ class LBMachine(machine.Machine):
 		if self.context is not None:
 			self.context.drawHLine(task.proc, time, task.delay, -self.context.sleep_height, 'std')	
 		 
-	def executeComputeTask(self, time, task):
+	def executeComputeTask(self, time, program, task):
 		if self.procs[task.proc] <= time:
 			# noise
 			#noise = self.getHostNoise(task.delay)
@@ -120,7 +118,7 @@ class LBMachine(machine.Machine):
 			# visual 
 			self.drawCompute(task, time, noise)
 			
-			return self.completeTask(task, self.procs[task.proc])
+			return self.completeTask(task, program, self.procs[task.proc])
 		else:
 			return [(self.procs[task.proc], task)]
 
@@ -131,7 +129,7 @@ class LBMachine(machine.Machine):
 			if self.host_noise is not None:
 				self.context.drawRectangle(task.proc, time+task.delay, noise, -self.context.compute_height/2, self.context.compute_height, 'err')
 
-	def executePutTask(self, time, task):
+	def executePutTask(self, time, program, task):
 		# 
 		if self.procs[task.proc] > time:
 			# fail
@@ -153,7 +151,7 @@ class LBMachine(machine.Machine):
 		self.maximum_time = max(self.maximum_time, time_put)
 
 		
-		return self.completeTask(task, time_put)
+		return self.completeTask(task, program, time_put)
 
 	def drawPut(self, task, time, arrival, noise):
 		# check for visual context
@@ -171,15 +169,15 @@ class LBMachine(machine.Machine):
 				self.context.drawVLine(task.target, arrival+noise, Visual.put_base, -Visual.put_height*side, 'err')
 			
 class LBPMachine(LBMachine):
-	def __init__(self, program, latency, bandwidth, pipelining):
-		super().__init__(program, latency, bandwidth)
+	def __init__(self, nodes, latency, bandwidth, pipelining):
+		super().__init__(nodes, latency, bandwidth)
 
 		self.kappa = pipelining
 
 	def getMaximumTime(self):
 		return self.maximum_time
 
-	def executePutTask(self, time, task):
+	def executePutTask(self, time, program, task):
 		# 
 		if self.procs[task.proc] > time:
 			# fail
@@ -209,7 +207,7 @@ class LBPMachine(LBMachine):
 			self.procs[task.proc] = time_pipe
 		self.maximum_time = max(self.maximum_time, time_put)
 
-		return self.completeTask(task, time_put)
+		return self.completeTask(task, program, time_put)
 
 	def drawPipe(self, task, time, delay, noise):
 		#

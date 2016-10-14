@@ -11,34 +11,38 @@ import numpy as np
 
 if __name__ == "__main__":
 	data = []
-	block_size = 10
 
-	for power in range(1, 7):
+	for power in range(1, 6):
 		process_count = 2 << power
 		print(process_count)
 
 		skd = schedule.Schedule(process_count, skdgen.generate_factored(process_count)[0])
-		program = proggen.schedule_to_program_generator(skd, False, block_size)
+		program = proggen.schedule_to_program_generator(skd, False)
 
 		time_start = timeit.default_timer()
 
 		samples = []
 
-		machine = lbmachine.LBPMachine(program, 655, 0.4, 410)
+		machine = lbmachine.LBPMachine(program.getProcessCount(), 655, 0.4, 410)
 			
 		machine.host_noise = noise.InvGaussNoise(0.6, 0, 50)
 		machine.network_noise = noise.GammaNoise(15.85, 0, 3.6)
 
+		last = 0
 		for sample in range(int(sys.argv[1])):
-			machine.run()
+			machine.reset()
+			machine.run(program)
 
-			samples.append(machine.getMaximumTime()/float(block_size))
+			current = machine.getMaximumTime()
+			samples.append(current - last)
+			last = current
 
 		time_end = timeit.default_timer()
 
 		samples = np.array(samples)
 		samples /= 1000.0
 		data.append(samples)
+		
 		print('min: ', np.min(samples))
 		print('median: ', np.median(samples))
 		print('mean: ', np.mean(samples))

@@ -4,8 +4,8 @@ import libpqueue
 import simulator.core.tasks as tasks
 
 class Machine:
-	def __init__(self, program):
-		self.program = program
+	def __init__(self, nodes):
+		self.node_count = nodes
 
 		# fulfilled dependency counter
 		self.dependencies = {}
@@ -38,40 +38,40 @@ class Machine:
 		self.context.drawTimeLine(max_time)
 
 		# draw process lines
-		self.context.drawProcessLines(self.program.getSize(), max_time)
+		self.context.drawProcessLines(self.node_count, max_time)
 
-	def run(self):
-		#taskqueue = []
-		taskqueue = libpqueue.PriorityQueue(self.program.getProcessCount()*1000)
+	def run(self, program):
+		if program.getProcessCount() > self.node_count:
+			raise ValueError
+
+		# TODO remove magic 1000, require some intelligent way of memory requirement
+		# (technically program should know)
+		taskqueue = libpqueue.PriorityQueue(program.getProcessCount() * 1000)
 		
 		# insert all start tasks
-		for task in self.program.getStartTasks():
-			#heappush(taskqueue, (0, task))
+		for task in program.getStartTasks():
 			taskqueue.push(0, task)
 
 		# process entire queue
-		#while taskqueue:
 		while not taskqueue.isEmpty():
 			# retrieve next global clock event
-			#time, task = heappop(taskqueue)
 			time, task = taskqueue.pop()
-			
+
 			# execute task
-			successors = self.execute(time, task)
+			successors = self.execute(time, program, task)
 
 			# insert all successor tasks
 			for successor in successors:
-				#heappush(taskqueue, successor)
 				taskqueue.push(*successor)
 
 		# visualize
 		if self.context is not None:
 			self.drawMachine()
 
-	def completeTask(self, task, time):
+	def completeTask(self, task, program, time):
 		successors = []
 
-		for successor in self.program.getSuccessors(task.node):
+		for successor in program.getSuccessors(task.node):
 			# increment completed dependencies for successor
 			self.dependencies[successor] = self.dependencies.get(successor, 0) + 1
 
@@ -79,8 +79,8 @@ class Machine:
 			self.dtimes[successor] = max(self.dtimes.get(successor, 0), time)
 
 			# check for completion
-			if self.dependencies[successor] == self.program.getInDegree(successor):
-				successor_task = self.program.getTask(successor)
+			if self.dependencies[successor] == program.getInDegree(successor):
+				successor_task = program.getTask(successor)
 				time_next = self.dtimes[successor]
 
 				# delete record of program
@@ -92,6 +92,6 @@ class Machine:
 		return successors
 
 
-	def execute(self, time, task):
+	def execute(self, time, program, task):
 		# look up task handler and execute 
-		return self.task_handlers[task.__class__.__name__](time, task)
+		return self.task_handlers[task.__class__.__name__](time, program, task)

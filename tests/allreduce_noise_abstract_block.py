@@ -6,13 +6,13 @@ import simulator.models.lbmachine as lbmachine
 
 import matplotlib.pyplot as plt
 
-import timeit, sys
+import timeit, sys, gc
 import numpy as np
 
 if __name__ == "__main__":
 	data = []
 
-	for power in range(1, 6):
+	for power in range(1, 5):
 		process_count = 2 << power
 		print(process_count)
 
@@ -29,13 +29,15 @@ if __name__ == "__main__":
 		machine.network_noise = noise.GammaNoise(15.85, 0, 3.6)
 
 		last = 0
-		for sample in range(int(sys.argv[1])):
-			machine.reset()
-			machine.run(program)
+		for block in range(int(sys.argv[2])):
+			gc.collect()
+			for sample in range(int(sys.argv[1])):
+				machine.reset()
+				machine.run(program)
 
-			current = machine.getMaximumTime()
-			samples.append(current - last)
-			last = current
+				current = machine.getMaximumTime()
+				samples.append(current - last)
+				last = current
 
 		time_end = timeit.default_timer()
 

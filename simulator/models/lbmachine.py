@@ -1,7 +1,7 @@
 import simulator.core.machine as machine
 import simulator.core.tasks as tasks
 
-#from visual import Visual
+from simulator.visual.visualizer import Visual
 #import math
 
 class LBMachine(machine.Machine):

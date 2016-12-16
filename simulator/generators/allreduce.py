@@ -192,11 +192,11 @@ def generate_merge(N, r):
 		last = sub[-1]
 
 		# eval groups
-		fgroups = reduce(operator.mul, (arg1 for stage in sub[1:]))
+		fgroups = reduce(operator.mul, (stage.arg1 for stage in sub[1:]))
 
 		nfirst = Stage(StageType.merge, r, fgroups, first.arg1)
 
-		lgroups = reduce(operator.mul, (arg1 for stage in sub[:-1]))
+		lgroups = reduce(operator.mul, (stage.arg1 for stage in sub[:-1]))
 
 		nlast = Stage(StageType.invmerge, r, lgroups, last.arg1)
 
@@ -364,7 +364,7 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 				# insert rid & wid into translation dict
 				wids[rid] = wid
 
-		elif stage.stype is StageType.invsplit:
+		elif staget.stype is StageType.invsplit:
 			# decode stage
 			threshold = staget.arg1
 			base = staget.arg2
@@ -453,7 +453,6 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 						#
 						pname = 'r' + str(rid) + 'p' + str(sid) + '_' + str(idx)
 						p.addNode(pname, tasks.PutTask(pname, rid, prid, msgsize, block))
-						positions[pname] = (rid+0.1+idx/(factor-1), -sid+0.2)
 
 						#
 						p.addEdge('r'+str(rid)+'c'+str(sid-1), pname)

@@ -1,5 +1,6 @@
-from heapq import *
-import libpqueue
+import heapq
+import math
+#import libpqueue
 
 import simulator.core.tasks as tasks
 
@@ -30,6 +31,9 @@ class Machine:
 	def setVisual(self, context):
 		self.context = context
 
+	def registerVisualContext(self, context):
+		self.context = context	
+
 	def drawMachine(self):
 		# find max time
 		max_time = int((math.ceil(self.getMaximumTime() / 500) * 500))
@@ -46,23 +50,28 @@ class Machine:
 
 		# TODO remove magic 1000, require some intelligent way of memory requirement
 		# (technically program should know)
-		taskqueue = libpqueue.PriorityQueue(program.getProcessCount() * 1000)
+		#taskqueue = libpqueue.PriorityQueue(program.getProcessCount() * 1000)
+		taskqueue = []
 		
 		# insert all start tasks
 		for task in program.getStartTasks():
-			taskqueue.push(0, task)
+			#taskqueue.push(0, task)
+			heapq.heappush(taskqueue, (0, task))
 
 		# process entire queue
-		while not taskqueue.isEmpty():
+		#while not taskqueue.isEmpty():
+		while taskqueue:
 			# retrieve next global clock event
-			time, task = taskqueue.pop()
+			#time, task = taskqueue.pop()
+			time, task = heapq.heappop(taskqueue)
 
 			# execute task
 			successors = self.execute(time, program, task)
 
 			# insert all successor tasks
 			for successor in successors:
-				taskqueue.push(*successor)
+				#taskqueue.push(*successor)
+				heapq.heappush(taskqueue, successor)
 
 		# visualize
 		if self.context is not None:

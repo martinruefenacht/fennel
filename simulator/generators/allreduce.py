@@ -2,12 +2,8 @@
 
 import sys, math
 
-import simulator.core.stage as stage
-
-import simulator.generators.skdgen as skdgen
 import simulator.core.program as program
 import simulator.core.tasks as tasks
-
 
 from sympy import factorint
 from itertools import combinations
@@ -15,12 +11,87 @@ from collections import Counter
 from functools import reduce
 import operator
 
+from enum import Enum
+
+class StageType(Enum):
+	factor = 1
+	split = 2
+	invsplit = 3
+	merge = 4
+	invmerge = 5
+
+class Stage:
+	def __init__(self, stype, arg1, arg2=None, arg3=None):
+		self.stype = stype
+		self.arg1 = arg1
+		self.arg2 = arg2
+		self.arg3 = arg3
+	
+	def __str__(self):
+		base = str(self.stype.name) + ':' + str(self.arg1)
+		
+		if self.arg2 is not None:
+			base += ':' + str(self.arg2)
+
+		if self.arg3 is not None:
+			base += ':' + str(self.arg3)
+
+		return base
+
+	def __eq__(self, other):
+		eq = (self.stype == other.stype) 
+		eq = eq and (self.arg1 == other.arg1)
+		eq = eq and (self.arg2 == other.arg2)
+		eq = eq and (self.arg3 == other.arg3)
+	
+		return eq	
+
+	def __hash__(self):
+		xor = self.stype.value ^ self.arg1
+
+		if self.arg2 is not None:
+			xor ^= self.arg2
+
+		if self.arg3 is not None:
+			xor ^= self.arg3
+
+		return xor
+			
+
+	def __repr__(self):
+		return self.__str__()
+
+class Schedule:
+	def __init__(self, process_count, order):
+		self.process_count = process_count
+		self.order = order
+
+	def addStage(self, stage):
+		self.order.append(stage)
+
+	def getProcessCount(self):
+		return self.process_count
+
+	def getStageCount(self):
+		return len(self.order)
+
+	def __iter__(self):
+		for stage in self.order:
+			yield stage 
+
+	def __str__(self):
+		return str(self.process_count) + ':' + str(self.order)
+
+	def __repr__(self):
+		pass
+
+
 def convert(primedict):
 	schedule = []
 
 	for factor, count in primedict.items():
 		for c in range(count):
-			schedule.append(stage.Stage(stage.StageType.factor, factor))
+			schedule.append(Stage(StageType.factor, factor))
 	
 	return tuple(schedule)
 
@@ -53,7 +124,7 @@ def generate_factored(N):
 					diff_set = Counter(item) - Counter(pair)
 
 					# calculate product of pair
-					value = stage.Stage(stage.StageType.factor, pair[0].arg1 * pair[1].arg1)
+					value = Stage(StageType.factor, pair[0].arg1 * pair[1].arg1)
 
 					# combine into new set
 					combine_set = diff_set + Counter([value])
@@ -94,9 +165,9 @@ def generate_split(N, threshold, base):
 
 	for sub in subs:
 		construct = []
-		construct.append(stage.Stage(stage.StageType.split, threshold, base))
+		construct.append(Stage(StageType.split, threshold, base))
 		construct.extend(sub)
-		construct.append(stage.Stage(stage.StageType.invsplit, threshold, base))
+		construct.append(Stage(StageType.invsplit, threshold, base))
 
 		schedules.append(tuple(construct))
 	
@@ -121,13 +192,13 @@ def generate_merge(N, r):
 		last = sub[-1]
 
 		# eval groups
-		fgroups = reduce(operator.mul, (stage.arg1 for stage in sub[1:]))
+		fgroups = reduce(operator.mul, (arg1 for stage in sub[1:]))
 
-		nfirst = stage.Stage(stage.StageType.merge, r, fgroups, first.arg1)
+		nfirst = Stage(StageType.merge, r, fgroups, first.arg1)
 
-		lgroups = reduce(operator.mul, (stage.arg1 for stage in sub[:-1]))
+		lgroups = reduce(operator.mul, (arg1 for stage in sub[:-1]))
 
-		nlast = stage.Stage(stage.StageType.invmerge, r, lgroups, last.arg1)
+		nlast = Stage(StageType.invmerge, r, lgroups, last.arg1)
 
 		s = []
 		s.append(nfirst)
@@ -174,7 +245,7 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 		sid = scount + 1
 
 		# if factor
-		if staget.stype is stage.StageType.factor:
+		if staget.stype is StageType.factor:
 			# decode stage
 			factor = staget.arg1
 
@@ -232,7 +303,7 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 			# increment mask
 			stage_mask *= factor
 
-		elif staget.stype is stage.StageType.split:
+		elif staget.stype is StageType.split:
 			# decode stage
 			threshold = staget.arg1
 			base = staget.arg2
@@ -293,7 +364,7 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 				# insert rid & wid into translation dict
 				wids[rid] = wid
 
-		elif stage.stype is stage.StageType.invsplit:
+		elif stage.stype is StageType.invsplit:
 			# decode stage
 			threshold = staget.arg1
 			base = staget.arg2
@@ -326,7 +397,7 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 						name = 'r' + str(rid) + 'c' + str(sid)
 						p.addNode(name, tasks.ComputeTask(name, rid, delay=10))
 		
-		elif staget.stype is stage.StageType.merge:
+		elif staget.stype is StageType.merge:
 			# decode
 			merge_threshold = staget.arg1
 			groups = staget.arg2
@@ -391,7 +462,7 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 			# 
 			stage_mask *= factor
 		
-		elif staget.stype is stage.StageType.invmerge:
+		elif staget.stype is StageType.invmerge:
 			# decode
 			merge_threshold = staget.arg1
 			groups = staget.arg2
@@ -446,3 +517,4 @@ def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 			raise ValueError('Unknown StageType.')
 
 	return p
+

@@ -18,6 +18,9 @@ class Machine:
 		# task handlers
 		self.task_handlers = {}
 
+		# program counter
+		self.program_counter = 0
+
 		# visual context
 		self.context = None
 

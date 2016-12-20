@@ -7,6 +7,7 @@ import simulator.core.tasks as tasks
 
 from sympy import factorint
 from itertools import combinations
+from itertools import permutations
 from collections import Counter
 from functools import reduce
 import operator
@@ -15,10 +16,16 @@ from enum import Enum
 
 class StageType(Enum):
 	factor = 1
+
 	split = 2
 	invsplit = 3
 	merge = 4
 	invmerge = 5
+
+	ttelim = 6
+	ttexp = 7
+	toelim = 8
+	toexp = 9
 
 class Stage:
 	def __init__(self, stype, arg1, arg2=None, arg3=None):
@@ -85,7 +92,6 @@ class Schedule:
 	def __repr__(self):
 		pass
 
-
 def convert(primedict):
 	schedule = []
 
@@ -139,6 +145,10 @@ def generate_factored(N):
 
 	return unique
 
+def permute_factored(order):
+	# TODO CHEKC PERMUTATIONS, invariant ones are now duplicated
+	return permutations(order)	
+
 def generate_splits(N):
 	schedules = []
 	
@@ -187,25 +197,26 @@ def generate_merge(N, r):
 		if len(sub) < 2:
 			continue
 
-		# change first and last stages
-		first = sub[0]
-		last = sub[-1]
+		for perm in permute_factored(sub):
+			# change first and last stages
+			first = perm[0]
+			last = perm[-1]
 
-		# eval groups
-		fgroups = reduce(operator.mul, (stage.arg1 for stage in sub[1:]))
+			# eval groups
+			fgroups = reduce(operator.mul, (stage.arg1 for stage in perm[1:]))
 
-		nfirst = Stage(StageType.merge, r, fgroups, first.arg1)
+			nfirst = Stage(StageType.merge, r, fgroups, first.arg1)
 
-		lgroups = reduce(operator.mul, (stage.arg1 for stage in sub[:-1]))
+			lgroups = reduce(operator.mul, (stage.arg1 for stage in perm[:-1]))
 
-		nlast = Stage(StageType.invmerge, r, lgroups, last.arg1)
+			nlast = Stage(StageType.invmerge, r, lgroups, last.arg1)
 
-		s = []
-		s.append(nfirst)
-		s.extend(sub[1:-1])
-		s.append(nlast)
-		
-		schedules.append(tuple(s))
+			s = []
+			s.append(nfirst)
+			s.extend(perm[1:-1])
+			s.append(nlast)
+			
+			schedules.append(tuple(s))
 		
 	return schedules
 
@@ -219,9 +230,6 @@ def generate_merges(N):
 			schedules.extend(s)
 
 	return schedules
-
-
-
 
 def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 	msgsize = 8 

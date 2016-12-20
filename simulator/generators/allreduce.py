@@ -147,7 +147,8 @@ def generate_factored(N):
 
 def permute_factored(order):
 	# TODO CHEKC PERMUTATIONS, invariant ones are now duplicated
-	return permutations(order)	
+	d = list(permutations(order))
+	return list(set(d))
 
 def generate_splits(N):
 	schedules = []

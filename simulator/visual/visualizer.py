@@ -24,8 +24,9 @@ class Visual:
 
 	scale = 1/72
 
-	def __init__(self):
+	def __init__(self, mintime=0):
 		self.canvas = pyx.canvas.canvas()
+		self.minimum_time = mintime
 		
 	def getProcessTransform(self, process):
 		return pyx.trafo.translate(xmargin, ymargin + process_height * process)

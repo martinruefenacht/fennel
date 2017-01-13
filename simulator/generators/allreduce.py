@@ -143,7 +143,11 @@ def generate_factored(N):
 					# push to stack
 					stack.append(tuple(combined))
 
-	return unique
+	# list all permutations
+	final = []
+	for un in unique:
+		final.extend(permute_factored(un))
+	return final
 
 def permute_factored(order):
 	# TODO CHEKC PERMUTATIONS, invariant ones are now duplicated

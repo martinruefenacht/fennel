@@ -40,6 +40,8 @@ class Machine:
 	def drawMachine(self):
 		# find max time
 		max_time = int((math.ceil(self.getMaximumTime() / 500) * 500))
+		# TODO required minimum
+		max_time = max(max_time, 2000)
 
 		# draw time line
 		self.context.drawTimeLine(max_time)

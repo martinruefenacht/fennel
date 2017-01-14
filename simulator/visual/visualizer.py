@@ -56,7 +56,7 @@ class Visual:
 
 			# draw numbers
 			if tid % 5 == 0:
-				self.canvas.text(tx - 0.1, ty - 0.4, str(int(tid * Visual.tick_freq)), [pyx.text.size.small])
+				self.canvas.text(tx - 0.4, ty - 0.5, str(int(tid * Visual.tick_freq)), [pyx.text.size.large])
 	
 	def drawCircle(self, pid, time, yoffset, radius):
 		time = time * Visual.scale

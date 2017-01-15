@@ -45,6 +45,8 @@ class Visual:
 		bottom = pyx.path.line(0, 0, bx*2 + stmax, 0)
 		self.canvas.stroke(bottom, [pyx.color.rgb.white])
 
+		self.canvas.text(Visual.xmargin, 0.1-Visual.tl_ymargin, 'nanoseconds', [pyx.text.size.large])	
+
 		# draw ticks
 		tick_count = int((max_time / Visual.tick_freq) + 1)
 		for tid in range(tick_count):
@@ -56,7 +58,9 @@ class Visual:
 
 			# draw numbers
 			if tid % 5 == 0:
-				self.canvas.text(tx - 0.4, ty - 0.5, str(int(tid * Visual.tick_freq)), [pyx.text.size.large])
+				tex =  str(int(tid * Visual.tick_freq))
+				xoffset = len(tex) * 0.1
+				self.canvas.text(tx - xoffset, ty - 0.5, tex, [pyx.text.size.large])
 	
 	def drawCircle(self, pid, time, yoffset, radius):
 		time = time * Visual.scale

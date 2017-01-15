@@ -56,8 +56,8 @@ if __name__ == '__main__':
 		# TODO
 
 	# TODO HACK
-	process_count = 7
-	program = elimination.program_7_overlap()
+	process_count = 6
+	program = elimination.program_6_overlap()
 
 	context = visualizer.Visual()
 	

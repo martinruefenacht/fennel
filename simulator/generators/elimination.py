@@ -1,6 +1,182 @@
 import simulator.core.program
 import simulator.core.tasks as tasks
 
+def program_6_overlap():
+	# set message size
+	msgsize = 8
+
+	# create program
+	p = simulator.core.program.Program()
+
+	# create start tasks
+	for rid in range(6):
+		name = 'r' + str(rid) + 's'
+		p.addNode(name, tasks.StartTask(name, rid))
+
+	# 2x 3-2 elimination
+	# 0 -> 1
+	name = 'r0p0_1'
+	p.addNode(name, tasks.PutTask(name, 0, 1, msgsize, False))
+	p.addEdge('r0s', name)
+
+	# 1 -> 0
+	name = 'r1p0_0'
+	p.addNode(name, tasks.PutTask(name, 1, 0, msgsize, False))
+	p.addEdge('r1s', name)
+
+	# 2 -> 1
+	name = 'r2p0_1'
+	p.addNode(name, tasks.PutTask(name, 2, 1, msgsize, False))
+	p.addEdge('r2s', name)
+
+	# reduce 0
+	name = 'r0c0'
+	p.addNode(name, tasks.ComputeTask(name, 0, delay=10))
+	p.addEdge('r0s', name)
+	p.addEdge('r1p0_0', name)
+
+	# reduce 1
+	name = 'r1c0'
+	p.addNode(name, tasks.ComputeTask(name, 1, delay=10))
+	p.addEdge('r1s', name)
+	p.addEdge('r0p0_1', name)
+
+	# 0 -> 2
+	name = 'r0p1_2'
+	p.addNode(name, tasks.PutTask(name, 0, 2, msgsize, False))
+	p.addEdge('r0c0', name)
+
+	# reduce 1
+	name = 'r1c1'
+	p.addNode(name, tasks.ComputeTask(name, 1, delay=10))
+	p.addEdge('r2p0_1', name)
+	p.addEdge('r1c0', name)
+
+	# reduce 2
+	name = 'r2c1'
+	p.addNode(name, tasks.ComputeTask(name, 2, delay=10))
+	p.addEdge('r2s', name)
+	p.addEdge('r0p1_2', name)
+
+
+	# 3 -> 4
+	name = 'r3p0_4'
+	p.addNode(name, tasks.PutTask(name, 3, 4, msgsize, False))
+	p.addEdge('r3s', name)
+
+	# 4 -> 3
+	name = 'r4p0_3'
+	p.addNode(name, tasks.PutTask(name, 4, 3, msgsize, False))
+	p.addEdge('r4s', name)
+
+	# 5 -> 4
+	name = 'r5p0_4'
+	p.addNode(name, tasks.PutTask(name, 5, 4, msgsize, False))
+	p.addEdge('r5s', name)
+
+	# reduce 3
+	name = 'r3c0'
+	p.addNode(name, tasks.ComputeTask(name, 3, delay=10))
+	p.addEdge('r3s', name)
+	p.addEdge('r4p0_3', name)
+
+	# reduce 4
+	name = 'r4c0'
+	p.addNode(name, tasks.ComputeTask(name, 4, delay=10))
+	p.addEdge('r4s', name)
+	p.addEdge('r3p0_4', name)
+
+	# 4 -> 5
+	name = 'r3p1_5'
+	p.addNode(name, tasks.PutTask(name, 3, 5, msgsize, False))
+	p.addEdge('r3c0', name)
+
+	# reduce 4
+	name = 'r4c1'
+	p.addNode(name, tasks.ComputeTask(name, 4, delay=10))
+	p.addEdge('r5p0_4', name)
+	p.addEdge('r4c0', name)
+
+	# reduce 5
+	name = 'r5c1'
+	p.addNode(name, tasks.ComputeTask(name, 5, delay=10))
+	p.addEdge('r5s', name)
+	p.addEdge('r3p1_5', name)
+
+
+	# a2
+	# 1 -> 4
+	name = 'r1p10_4'
+	p.addNode(name, tasks.PutTask(name, 1, 4, msgsize, False))
+	p.addEdge('r1c1', name)
+
+	# 2 -> 5
+	name = 'r2p10_5'
+	p.addNode(name, tasks.PutTask(name, 2, 5, msgsize, False))
+	p.addEdge('r2c1', name)
+
+	# 4 -> 1
+	name = 'r4p10_1'
+	p.addNode(name, tasks.PutTask(name, 4, 1, msgsize, False))
+	p.addEdge('r4c1', name)
+
+	# 5 -> 2
+	name = 'r5p10_2'
+	p.addNode(name, tasks.PutTask(name, 5, 2, msgsize, False))
+	p.addEdge('r5c1', name)
+
+	# reduce 1
+	name = 'r1c10'
+	p.addNode(name, tasks.ComputeTask(name, 1, delay=10))
+	p.addEdge('r4p10_1', name)
+	p.addEdge('r1c1', name)
+
+	# reduce 2
+	name = 'r2c10'
+	p.addNode(name, tasks.ComputeTask(name, 2, delay=10))
+	p.addEdge('r5p10_2', name)
+	p.addEdge('r2c1', name)
+
+	# reduce 4
+	name = 'r4c10'
+	p.addNode(name, tasks.ComputeTask(name, 4, delay=10))
+	p.addEdge('r4c1', name)
+	p.addEdge('r1p10_4', name)
+
+	# reduce 5
+	name = 'r5c10'
+	p.addNode(name, tasks.ComputeTask(name, 5, delay=10))
+	p.addEdge('r5c1', name)
+	p.addEdge('r2p10_5', name)
+
+
+	# 2x expand
+	# 1 -> 0
+	name = 'r1p15_0'
+	p.addNode(name, tasks.PutTask(name, 1, 0, msgsize, False))
+	p.addEdge('r1c10', name)
+
+	# 4 -> 3
+	name = 'r4p15_3'
+	p.addNode(name, tasks.PutTask(name, 4, 3, msgsize, False))
+	p.addEdge('r4c10', name)
+
+	# reduce 0
+	name = 'r0c15'
+	p.addNode(name, tasks.ComputeTask(name, 0, delay=10))
+	p.addEdge('r1p15_0', name)
+	p.addEdge('r0s', name)
+
+	# reduce 3
+	name = 'r3c15'
+	p.addNode(name, tasks.ComputeTask(name, 3, delay=10))
+	p.addEdge('r4p15_3', name)
+	p.addEdge('r3s', name)
+	
+
+	return p
+
+
 def program_7_nonoverlap():
 	# set message size
 	msgsize = 8

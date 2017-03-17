@@ -2,8 +2,8 @@
 
 import sys, math
 
-import simulator.core.program as program
-import simulator.core.tasks as tasks
+import fennel.simulator.core.program as program
+import fennel.simulator.core.tasks as tasks
 
 from sympy import factorint
 from itertools import combinations
@@ -143,16 +143,21 @@ def generate_factored(N):
 					# push to stack
 					stack.append(tuple(combined))
 
-	# list all permutations
-	final = []
-	for un in unique:
-		final.extend(permute_factored(un))
-	return final
+	# return unique sets, ordering is not given
+	return unique
 
 def permute_factored(order):
-	# TODO CHEKC PERMUTATIONS, invariant ones are now duplicated
 	d = list(permutations(order))
 	return list(set(d))
+
+def permute_lowhigh(order):
+	# forward order
+	high = sorted(order, key = lambda x: x.arg1)
+
+	# reverse order
+	low = reversed(high)
+
+	return [tuple(high), tuple(low)]
 
 def generate_splits(N):
 	schedules = []
@@ -186,7 +191,7 @@ def generate_split(N, threshold, base):
 
 		schedules.append(tuple(construct))
 	
-	return schedules
+	return list(set(schedules))
 
 def generate_merge(N, r):
 	if r < 1:
@@ -234,7 +239,34 @@ def generate_merges(N):
 		if s is not None:
 			schedules.extend(s)
 
-	return schedules
+	return list(set(schedules))
+
+def convert_schedule(schedule):
+	# input schedule types
+	# output tuple of strings
+	
+	output = []
+
+	for stage in schedule:
+		if stage.stype is StageType.factor:
+			output.append('a' + str(stage.arg1))
+
+		elif stage.stype is StageType.split:
+			output.append('c'+ str(stage.arg1) + 'm' + str(stage.arg2))
+
+		elif stage.stype is StageType.invsplit:
+			output.append('e'+ str(stage.arg1) + 'm' + str(stage.arg2))
+
+		elif stage.stype is StageType.merge:
+			output.append('m'+ str(stage.arg1) + 'g' + str(stage.arg2) + 'a' + str(stage.arg3))
+
+		elif stage.stype is StageType.invmerge:
+			output.append('n'+ str(stage.arg1) + 'g' + str(stage.arg2) + 'a' + str(stage.arg3))
+			
+		else:
+			print('ERROR')
+	
+	return tuple(output)
 
 def schedule_to_program_generator(scheduleob, block=False, block_size=1):
 	msgsize = 8 

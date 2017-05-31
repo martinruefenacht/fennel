@@ -2,7 +2,7 @@ import heapq
 import math
 #import libpqueue
 
-import simulator.core.tasks as tasks
+import fennel.core.tasks as tasks
 
 class Machine:
 	def __init__(self, nodes):

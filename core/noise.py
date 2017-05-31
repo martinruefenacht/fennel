@@ -5,6 +5,13 @@ class NoiseGenerator:
 	def generate(self, duration):
 		raise NotImplementedError
 
+class HistogramHoise(NoiseGenerator):
+	def __init__(self, data):
+		pass
+	
+	def generate(self, duration):
+		raise NotImplementedError
+
 class BetaPrimeNoise(NoiseGenerator):
 	def __init__(self, a, b, scale=0.05):
 		self.a = a

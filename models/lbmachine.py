@@ -1,7 +1,7 @@
-import simulator.core.machine as machine
-import simulator.core.tasks as tasks
+import fennel.core.machine as machine
+import fennel.core.tasks as tasks
 
-from simulator.visual.visualizer import Visual
+from fennel.visual.visualizer import Visual
 #import math
 
 class LBMachine(machine.Machine):
@@ -21,6 +21,7 @@ class LBMachine(machine.Machine):
 		self.host_noise = None
 		self.network_noise = None
 
+		# set supported tasks for LBMachine model
 		self.task_handlers['StartTask'] = self.executeStartTask
 		self.task_handlers['ProxyTask'] = self.executeProxyTask
 		self.task_handlers['SleepTask'] = self.executeSleepTask

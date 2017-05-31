@@ -2,8 +2,8 @@
 
 import sys, math
 
-import fennel.simulator.core.program as program
-import fennel.simulator.core.tasks as tasks
+import fennel.core.program as program
+import fennel.core.tasks as tasks
 
 from sympy import factorint
 from itertools import combinations
@@ -149,6 +149,18 @@ def generate_factored(N):
 def permute_factored(order):
 	d = list(permutations(order))
 	return list(set(d))
+
+def generate_normal_schedules(nodes):
+	schedules = []
+
+	# mpich schedule
+	remainder = nodes - 2**(int(math.floor(math.log(nodes)/math.log(2))))
+	schedules.append(generate_split(nodes, 2*remainder, 2))
+
+	# factored
+	schedules.append(generate_factored(nodes))
+
+	print(schedules)
 
 def permute_lowhigh(order):
 	# forward order

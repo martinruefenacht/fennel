@@ -1,8 +1,9 @@
 import sys, string
 
-import simulator.generators.allreduce as allreduce
-import simulator.models.lbmachine as lbmachine
-import simulator.visual.visualizer as visualizer
+import fennel.generators.allreduce as allreduce
+import fennel.models.lbmachine as lbmachine
+import fennel.visual.visualizer as visualizer
+import fennel.core.noise as noise
 
 if __name__ == '__main__':
 	# argument check
@@ -53,9 +54,12 @@ if __name__ == '__main__':
 
 		context = visualizer.Visual()
 		
-		machine = lbmachine.LBPMachine(process_count, 500, 0.4, 100)
+		machine = lbmachine.LBPMachine(process_count, 500, 0.4, 410)
+
+		machine.host_noise = noise.BetaPrimeNoise(2, 5, scale=0.15)
+ 
 		machine.registerVisualContext(context)
 		machine.run(program)
 
 		# draw
-		context.savePDF('rm_' + str(order) + '.pdf')
+		context.savePDF('rm_draw.pdf')

@@ -150,17 +150,6 @@ def permute_factored(order):
 	d = list(permutations(order))
 	return list(set(d))
 
-def generate_normal_schedules(nodes):
-	schedules = []
-
-	# mpich schedule
-	remainder = nodes - 2**(int(math.floor(math.log(nodes)/math.log(2))))
-	schedules.append(generate_split(nodes, 2*remainder, 2))
-
-	# factored
-	schedules.append(generate_factored(nodes))
-
-	print(schedules)
 
 def permute_lowhigh(order):
 	# forward order
@@ -203,6 +192,34 @@ def generate_split(N, threshold, base):
 
 		schedules.append(tuple(construct))
 	
+	return list(set(schedules))
+
+def generate_mpich(nodes):
+	power = int(math.floor(math.log(nodes)/math.log(2)))
+	remainder = nodes - 2 ** power
+	threshold = 2 * remainder
+
+	if remainder == 0:
+		return tuple([Stage(StageType.factor, 2)] * power)
+	else:
+		schedule = []
+		schedule.append(Stage(StageType.split, threshold , 2))
+		schedule.extend([Stage(StageType.factor, 2)] * power) 
+		schedule.append(Stage(StageType.invsplit, threshold, 2))
+		
+		return tuple(schedule)
+
+def generate_normal_schedules(nodes):
+	schedules = []
+
+	# mpich schedule
+	schedules.append(generate_mpich(nodes))
+
+	# factored
+	factored = generate_factored(nodes)
+	for schedule in factored:
+		schedules.append(permute_lowhigh(schedule)[1])
+
 	return list(set(schedules))
 
 def generate_merge(N, r):

@@ -182,6 +182,7 @@ class LBPMachine(LBMachine):
 		# 
 		if self.procs[task.proc] > time:
 			# fail
+			# reinsert task at delayed time
 			return [(self.procs[task.proc], task)]
 
 		# pipeline
@@ -223,3 +224,6 @@ class LBPMachine(LBMachine):
 			
 			if noise != 0:
 				self.context.drawHLine(task.proc, time+delay, noise, Visual.put_height*side, 'err')
+
+class LBPCMachine(LBPMachine):
+	pass

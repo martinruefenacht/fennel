@@ -1,7 +1,7 @@
 import sys
 import pickle
-import simulator.generators.skdgen as skdgen
-import simulator.core.schedule as schedule
+import generators.skdgen as skdgen
+import core.schedule as schedule
 
 def print_schedules(schedules):
 	for idx, schedule in enumerate(schedules):

@@ -1,10 +1,11 @@
-from machine import Machine
-from visual import Visual
-from tasks import *
+import core.machine as machine
+from visual.visualizer import Visual
 
-class LogPMachine(Machine):
-	def __init__(self, program, latency, overhead, gap):
-		super().__init__(program)
+import core.tasks as tasks
+
+class LogPMachine(machine.Machine):
+	def __init__(self, nodes, latency, overhead, gap):
+		super().__init__(nodes)
 
 		# LogP model parameters
 		self.latency = latency
@@ -12,26 +13,26 @@ class LogPMachine(Machine):
 		self.overhead = overhead
 
 		# store cpu times
-		self.procs = [0] * self.program.getSize()
-		self.nic_sends = [0] * self.program.getSize()
-		self.nic_recvs = [0] * self.program.getSize()
+		self.procs = [0] * self.node_count
+		self.nic_sends = [0] * self.node_count
+		self.nic_recvs = [0] * self.node_count
 
 		self.host_noise = None
 		self.network_noise = None
 
-		self.task_handlers[StartTask] = self.executeStartTask
-		self.task_handlers[ProxyTask] = self.executeProxyTask
-		self.task_handlers[SleepTask] = self.executeSleepTask
-		self.task_handlers[ComputeTask] = self.executeComputeTask
-		self.task_handlers[PutTask] = self.executePutTask
+		self.task_handlers['StartTask'] = self.executeStartTask
+		self.task_handlers['ProxyTask'] = self.executeProxyTask
+		self.task_handlers['SleepTask'] = self.executeSleepTask
+		self.task_handlers['ComputeTask'] = self.executeComputeTask
+		self.task_handlers['PutTask'] = self.executePutTask
 
 		# special to this model
-		self.task_handlers[MsgTask] = self.executeMsgTask
+		self.task_handlers['MsgTask'] = self.executeMsgTask
 	
 	def getMaximumTime(self):
 		return max(max(self.procs), max(self.nic_sends), max(self.nic_recvs))
 
-	def executeStartTask(self, time, task):
+	def executeStartTask(self, time, program, task):
 		# check if cpu is available
 		if self.procs[task.proc] > time:
 			return [(self.procs[task.proc], task)]
@@ -44,9 +45,9 @@ class LogPMachine(Machine):
 		# draw
 		self.drawStart(task, time)
 
-		return self.completeTask(task, time + task.skew)
+		return self.completeTask(task, program, time + task.skew)
 
-	def executeProxyTask(self, time, task):
+	def executeProxyTask(self, time, program, task):
 		# forward process -> task finish
 		self.procs[task.proc] = time
 
@@ -55,9 +56,9 @@ class LogPMachine(Machine):
 		# no visual
 
 		# dependencies execute immediate
-		return self.completeTask(task, time)
+		return self.completeTask(task, program, time)
 
-	def executeSleepTask(self, time, task):
+	def executeSleepTask(self, time, program, task):
 		if self.procs[task.proc] <= time:
 			# forward process -> task finish
 			self.procs[task.proc] = time + task.delay
@@ -68,11 +69,11 @@ class LogPMachine(Machine):
 			# visual
 			self.drawSleep(task, time, noise)
 
-			return self.completeTask(task, time+task.delay)
+			return self.completeTask(task, program, time+task.delay)
 		else:
 			return [(self.procs[task.proc], task)]
 
-	def executeComputeTask(self, time, task):
+	def executeComputeTask(self, time, program, task):
 		if self.procs[task.proc] <= time:
 			# TODO noise
 			noise = 0
@@ -83,11 +84,11 @@ class LogPMachine(Machine):
 			# forward process -> task finish
 			self.procs[task.proc] = time + task.delay + noise
 
-			return self.completeTask(task, self.procs[task.proc])
+			return self.completeTask(task, program, self.procs[task.proc])
 		else:
 			return [(self.procs[task.proc], task)]
 
-	def executePutTask(self, time, task):
+	def executePutTask(self, time, program, task):
 		# cpu available
 		if self.procs[task.proc] > time:
 			return [(self.procs[task.proc], task)]
@@ -111,11 +112,11 @@ class LogPMachine(Machine):
 
 		start = time + self.overhead + noise_cpu
 		travel = start + self.latency
-		msg = MsgTask(task, start, travel)
+		msg = tasks.MsgTask(task, start, travel)
 		
 		return [(travel, msg)]	
 
-	def executeMsgTask(self, time, task):
+	def executeMsgTask(self, time, program, task):
 		available = self.nic_recvs[task.target]
 
 		if available > time:
@@ -133,7 +134,7 @@ class LogPMachine(Machine):
 		# resolve put task dependencies
 		# put is finished when processing with NIC is done
 		# ie msg in memory
-		return self.completeTask(task.puttask, time + self.gap + noise_nic)
+		return self.completeTask(task.puttask, program, time + self.gap + noise_nic)
 
 	def drawStart(self, task, time):
 		if self.context is not None:

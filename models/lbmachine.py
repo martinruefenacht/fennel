@@ -174,6 +174,7 @@ class LBPMachine(LBMachine):
 		super().__init__(nodes, latency, bandwidth)
 
 		self.kappa = pipelining
+		self.network_lock = [0] * 40
 
 	def getMaximumTime(self):
 		return self.maximum_time
@@ -189,6 +190,11 @@ class LBPMachine(LBMachine):
 		pipe_time = self.kappa
 		noise_pipe = self.getHostNoise(pipe_time)
 		time_pipe = time + pipe_time + noise_pipe
+
+		# XXX NETWORK LOCK quick and dirty
+		if self.network_lock[time_pipe // 50]:
+			return [(((time_pipe // 50) + 1) * 50, task)]
+		self.network_lock[time_pipe // 50] = True
 
 		# draw pipeline
 		self.drawPipe(task, time, self.kappa, noise_pipe)
@@ -225,52 +231,75 @@ class LBPMachine(LBMachine):
 			if noise != 0:
 				self.context.drawHLine(task.proc, time+delay, noise, Visual.put_height*side, 'err')
 
-#class LBPCMachine(LBPMachine):
-#	def __init__(self, nodes, latency, bandwidth, pipelining, congest):
-#		super().__init__(nodes, latency, bandwidth, pipelining)
-#
-#		self.congestion = congest
-#		
-#		# initialize nic recving side "time"
-#		self.nic_recv = [0] * self.node_count
-#
-#	def getMaximumTime(self):
-#		return self.maximum_time
-#
-#	def executePutTask(self, time, program, task):
-#		# 
-#		if self.procs[task.proc] > time:
-#			# fail
-#			# reinsert task at delayed time
-#			return [(self.procs[task.proc], task)]
-#
-#		# pipeline
-#		pipe_time = self.kappa
-#		noise_pipe = self.getHostNoise(pipe_time)
-#		time_pipe = time + pipe_time + noise_pipe
-#
-#		# draw pipeline
-#		#self.drawPipe(task, time, self.kappa, noise_pipe)
-#
-#		# put side
-#		put_time = self.alpha + self.beta * task.size
-#		noise_put = self.getNetworkNoise(put_time)
-#		arrival = time_pipe + put_time
-#		time_put = arrival + noise_put
-#
-#		#return MsgTaskType?
-#
-#		#if self.nic_recv[task.proc] > time_put:
-#			# reinsert recv
-#
-#		# draw put side
-#		#self.drawPut(task, time_pipe, arrival, noise_put)
-#
-#		#
-#		#if task.block:
-#		#	self.procs[task.proc] = time_put
-#		#else:
-#		#	self.procs[task.proc] = time_pipe
-#		#self.maximum_time = max(self.maximum_time, time_put)
-#
-#		#return self.completeTask(task, program, time_put)
+class LBPCMachine(LBPMachine):
+	def __init__(self, nodes, latency, bandwidth, pipelining, congest):
+		super().__init__(nodes, latency, bandwidth, pipelining)
+
+		self.congestion = congest
+		
+		# initialize nic recving side "time"
+		self.nic_recv = [0] * self.node_count
+
+		self.task_handlers['MsgTask'] = self.executeMsgTask
+
+	def getMaximumTime(self):
+		return self.maximum_time
+
+	def executePutTask(self, time, program, task):
+		# 
+		if self.procs[task.proc] > time:
+			# fail
+			# reinsert task at delayed time
+			return [(self.procs[task.proc], task)]
+
+		# pipeline
+		pipe_time = self.kappa
+		noise_pipe = self.getHostNoise(pipe_time)
+		time_pipe = time + pipe_time + noise_pipe
+
+		# draw pipeline
+		self.drawPipe(task, time, self.kappa, noise_pipe)
+
+		# put side
+		put_time = self.alpha + self.beta * task.size
+		noise_put = self.getNetworkNoise(put_time)
+		arrival = time_pipe + put_time
+		time_put = arrival + noise_put
+
+		#return MsgTaskType?
+
+		#if self.nic_recv[task.proc] > time_put:
+			# reinsert recv
+
+		# draw put side
+		self.drawPut(task, time_pipe, arrival, noise_put)
+
+		#
+		#if task.block:
+		#	self.procs[task.proc] = time_put
+		#else:
+		self.procs[task.proc] = time_pipe
+		self.maximum_time = max(self.maximum_time, time_put)
+
+		#self.completeTask(task, program, time_put)
+
+		msgtask = tasks.MsgTask(task, time_pipe, time_put)
+
+		return [(time_put, msgtask)]
+
+	def executeMsgTask(self, time, program, task):
+		#print(task.name, time, self.nic_recv[task.target])
+		if self.nic_recv[task.target] > time:
+			# reinsert
+			return [(self.nic_recv[task.target], task)]
+
+		self.nic_recv[task.target] = time + self.congestion # + noise
+
+		self.drawRecv(task, time + self.congestion, 0)
+		
+
+		return self.completeTask(task.puttask, program, time + self.congestion)
+
+	def drawRecv(self, task, time, noise):
+		pass	
+		# TODO

@@ -65,3 +65,14 @@ class Program:
 		print(self.edges_out)
 		print(self.metadata)
 		print(self.edges_in)
+
+	def convert_networkx(self):
+		import networkx as nx
+
+		graph = nx.Graph()
+
+		graph.add_nodes_from(self.metadata)
+
+		graph.add_edges_from([(out, d) for out, inl in self.edges_out.items() for d in inl])
+
+		return graph

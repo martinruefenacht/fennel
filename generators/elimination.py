@@ -1,5 +1,5 @@
-import simulator.core.program
-import simulator.core.tasks as tasks
+import core.program
+import core.tasks as tasks
 
 def program_6_overlap():
 	# set message size

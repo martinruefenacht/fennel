@@ -192,9 +192,9 @@ class LBPMachine(LBMachine):
 		time_pipe = time + pipe_time + noise_pipe
 
 		# XXX NETWORK LOCK quick and dirty
-		if self.network_lock[time_pipe // 50]:
-			return [(((time_pipe // 50) + 1) * 50, task)]
-		self.network_lock[time_pipe // 50] = True
+		#if self.network_lock[time_pipe // 50]:
+		#	return [(((time_pipe // 50) + 1) * 50, task)]
+		#self.network_lock[time_pipe // 50] = True
 
 		# draw pipeline
 		self.drawPipe(task, time, self.kappa, noise_pipe)

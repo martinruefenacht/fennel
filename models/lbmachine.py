@@ -301,5 +301,8 @@ class LBPCMachine(LBPMachine):
 		return self.completeTask(task.puttask, program, time + self.congestion)
 
 	def drawRecv(self, task, time, noise):
-		pass	
-		# TODO
+		if self.context:
+			side = 1 if task.proc < task.target else -1
+			
+			# draw nic recv
+			self.context.drawHLine(task.target, time-self.congestion, self.congestion, -Visual.put_height*side, 'std')	

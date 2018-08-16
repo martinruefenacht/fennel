@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
 	context = visualizer.Visual()
 	
-	machine = lbmachine.LBPCMachine(process_count, 450, 0.4, 100, 50)
+	machine = lbmachine.LBPCMachine(process_count, 450, 0.4, 50, 100)
 	#machine = lbmachine.LBPMachine(process_count, 500, 0.4, 100)
 	#machine = logpmachine.LogPMachine(process_count, 500, 100, 50)
 	machine.registerVisualContext(context)

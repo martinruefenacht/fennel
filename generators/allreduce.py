@@ -158,7 +158,7 @@ def permute_lowhigh(order):
 	# reverse order
 	low = reversed(high)
 
-	return [tuple(high), tuple(low)]
+	return (tuple(high), tuple(low))
 
 def generate_splits(N):
 	schedules = []

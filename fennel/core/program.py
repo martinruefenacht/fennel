@@ -6,7 +6,8 @@ Defines the Program class.
 from typing import MutableMapping, Iterable
 
 
-from fennel.core.tasks import Task, StartTask
+from fennel.core.task import Task
+from fennel.tasks.start import StartTask
 
 
 class Program:
@@ -20,71 +21,69 @@ class Program:
         self.edges_out: MutableMapping[str, str] = {}
         self.metadata: MutableMapping[str, Task] = {}
 
-    def get_task(self, nid: str) -> Task:
+    def get_task(self, name: str) -> Task:
         """
+        Get a task by name.
         """
 
-        return self.metadata[nid]
+        return self.metadata[name]
 
-    def add_node(self, nid: str, task: Task) -> None:
+    def add_node(self, name: str, task: Task) -> None:
         """
         Adds a node to this program.
         """
 
-        self.metadata[nid] = task
+        self.metadata[name] = task
 
-    def add_edge(self, nidfrom: str, nidto: str) -> None:
+    def add_edge(self, name_from: str, name_to: str) -> None:
         """
         Adds an edge to this program.
         """
 
         # insert into out edges
-        if nidfrom not in self.edges_out:
-            self.edges_out[nidfrom] = [nidto]
+        if name_from not in self.edges_out:
+            self.edges_out[name_from] = [name_to]
 
         else:
-            self.edges_out[nidfrom].append(nidto)
+            self.edges_out[name_from].append(name_to)
 
         # doubly link
-        if nidto not in self.edges_in:
-            self.edges_in[nidto] = [nidfrom]
+        if name_to not in self.edges_in:
+            self.edges_in[name_to] = [name_from]
 
         else:
-            self.edges_in[nidto].append(nidfrom)
+            self.edges_in[name_to].append(name_from)
 
-    def get_node_count(self) -> int:
+    def get_process_count(self) -> int:
         """
+        Get number of processes required by program, the number of start tasks.
         """
 
-        size = 0
-
-        for nid, task in self.metadata.items():
-            if task.__class__.__name__ == "StartTask":
-                size += 1
-
-        return size
+        return len(self.get_start_tasks)
 
     def get_start_tasks(self) -> Iterable[StartTask]:
         """
+        Get all start tasks in the program.
         """
 
-        for nid, task in self.metadata.items():
-            if task.__class__.__name__ == "StartTask":
-                yield task
+        return {task for task in self.metadata.values()
+                if isinstance(task, StartTask)}
 
-    def get_start_nodes(self):
-        for nid, task in self.metadata.items():
-            if task.__class__.__name__ == "StartTask":
-                yield nid
+    def get_successors_to_task(self, name):
+        """
+        Get all tasks that depend on this task.
+        """
 
-    def get_successors_to_task(self, nid):
         # end of process check
-        if nid in self.edges_out:
+        if name in self.edges_out:
             # dependent tasks
-            for eid in self.edges_out[nid]:
+            for eid in self.edges_out[name]:
                 yield eid
 
     def get_in_degree(self, nid):
+        """
+        """
+
         if nid in self.edges_in:
             return len(self.edges_in[nid])
 
@@ -92,16 +91,14 @@ class Program:
             return 0
 
     def get_out_degree(self, nid):
+        """
+        """
+
         if nid in self.edges_out:
             return len(self.edges_out[nid])
 
         else:
             return 0
-
-#    def prt(self):
-#        print(self.edges_out)
-#        print(self.metadata)
-#        print(self.edges_in)
 
 #    def convert_networkx(self):
 #        import networkx as nx

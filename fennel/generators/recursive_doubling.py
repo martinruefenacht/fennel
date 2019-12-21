@@ -7,7 +7,10 @@ import math
 
 
 from fennel.core.program import Program
-from fennel.core.tasks import StartTask, ProxyTask, PutTask, ComputeTask
+from fennel.tasks.start import StartTask
+from fennel.tasks.proxy import ProxyTask
+from fennel.tasks.put import PutTask
+from fennel.tasks.compute import ComputeTask
 
 
 def _target(ridx: int, process: int) -> int:
@@ -17,14 +20,15 @@ def _target(ridx: int, process: int) -> int:
     smask = 2 ** ridx
     sbase = 2 ** (ridx+1)
 
-    block = math.floor(process / sbase) * sbase
-    offset = math.fmod(process + smask, sbase)
+    block = process // sbase
+    offset = (process + smask) % sbase
 
-    return int(block + offset)
+    return block + offset
 
 
 def generate_recursive_doubling(processes: int, message_size: int) -> Program:
     """
+    Generate a recursive doubling schedule.
     """
 
     assert math.log2(processes).is_integer()

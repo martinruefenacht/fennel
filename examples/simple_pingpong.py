@@ -4,7 +4,7 @@ Simple example to use a multicast generator and model to execute it.
 
 
 from fennel.generators.p2p import generate_pingpong
-from fennel.models.lbmachine import LBMachine
+from fennel.machines.lbmachine import LBMachine
 
 
 def main() -> None:
@@ -18,7 +18,7 @@ def main() -> None:
 
     program = generate_pingpong(msg_size, rounds)
 
-    machine = LBMachine(nodes, 1000, 0)
+    machine = LBMachine(nodes, 1000, 0, 0)
     machine.run(program)
     print(f'maximum time {machine.maximum_time}')
 

@@ -8,7 +8,11 @@ import logging
 
 from fennel.core.machine import Machine
 from fennel.core.program import Program
-from fennel.core.tasks import Task, StartTask, ProxyTask, PutTask, ComputeTask
+from fennel.core.task import Task
+from fennel.tasks.start import StartTask
+from fennel.tasks.put import PutTask
+from fennel.tasks.compute import ComputeTask
+from fennel.tasks.proxy import ProxyTask
 
 
 class LBMachine(Machine):
@@ -30,7 +34,7 @@ class LBMachine(Machine):
         # set supported tasks for LBMachine model
         self._task_handlers['StartTask'] = self.execute_start_task
         self._task_handlers['ProxyTask'] = self.execute_proxy_task
-        self._task_handlers['SleepTask'] = self.executeSleepTask
+        self._task_handlers['SleepTask'] = self.execute_sleep_task
         self._task_handlers['ComputeTask'] = self.execute_compute_task
         self._task_handlers['PutTask'] = self.execute_put_task
 
@@ -54,6 +58,9 @@ class LBMachine(Machine):
         self._maximum_time = max(self._maximum_time,
                                  self._process_times[task.process])
 
+        if self._canvas:
+            self._canvas.draw_start_task()
+
         # return list of dependencies which are fulfilled
         return self._complete_task(self._process_times[task.process],
                                    program,
@@ -61,7 +68,7 @@ class LBMachine(Machine):
 
 #    def drawStart(self, time, task):
 #        if self.context:
-#            start_height = self.context.start_height
+#            start_height = self.context.start_heighhaht
 #            start_radius = self.context.start_radius
 #
 #            self.context.drawVLine(task.process, time, start_height, start_height, 'std')
@@ -84,23 +91,22 @@ class LBMachine(Machine):
                                    program,
                                    task)
 
-    def executeSleepTask(self, time, program, task):
+    def execute_sleep_task(self, time, program, task):
         """
         """
 
-        # logic
-        if self._process_times[task.process] <= time:
-            # forward proc
-            self._process_times[task.process] = time + task.delay
-
-            # visual
-            #self.drawSleepTask(time, task)
-
-            #
-            return self.completeTask(task, program, self._process_times[task.process])
-
-        else:
+        if self._process_times[task.process] > time:
             return [(self._process_times[task.process], task)]
+
+        self._process_times[task.process] = time + task.delay
+
+        if self._canvas:
+            self._canvas.draw_sleep_task()
+
+        return self._complete_task(task,
+                                   program,
+                                   self._process_times[task.process])
+
 
 #    def drawSleepTask(self, time, task):
 #        """
@@ -120,8 +126,10 @@ class LBMachine(Machine):
         if self._process_times[task.process] > time:
             return [(self._process_times[task.process], task)]
 
-        # forward proc
         self._process_times[task.process] = time + task.size * self._gamma
+
+        if self._canvas:
+            self._canvas.draw_compute_task()
 
         return self._complete_task(self._process_times[task.process],
                                    program,
@@ -161,6 +169,9 @@ class LBMachine(Machine):
 
         self._process_times[task.process] = arrival
         self._maximum_time = max(self._maximum_time, arrival)
+
+        if self._canvas:
+            self._canvas.draw_put_task()
 
         return self._complete_task(arrival, program, task)
 
@@ -209,27 +220,30 @@ class LBPMachine(LBMachine):
         time_pipe = time + pipe_time
 
         #  XXX NETWORK LOCK quick and dirty
+        # this was part of the push for a network implementation
         # if self.network_lock[time_pipe // 50]:
         #        return [(((time_pipe // 50) + 1) * 50, task)]
         # self.network_lock[time_pipe // 50] = True
 
         # put side
-        put_time = self._alpha + self._beta * task.size
+        put_time = self._alpha + self._beta * task.message_size
         arrival = time_pipe + put_time
-        time_put = arrival
 
         # draw put side
         # self.drawPut(task, time_pipe, arrival, noise_put)
 
-        if task.block:
-            self._process_times[task.process] = time_put
+        if task.blocking:
+            self._process_times[task.process] = arrival
 
         else:
             self._process_times[task.process] = time_pipe
 
-        self._maximum_time = max(self._maximum_time, time_put)
+        self._maximum_time = max(self._maximum_time, arrival)
 
-        return self._complete_task(time_put, program, task)
+        if self._canvas:
+            self._canvas.draw_put_task()
+
+        return self._complete_task(arrival, program, task)
 
 #     def drawPipe(self, task, time, delay, noise):
 #             #

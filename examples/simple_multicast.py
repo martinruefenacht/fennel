@@ -5,7 +5,7 @@ Simple example to use a multicast generator and model to execute it.
 from typing import Tuple
 
 from fennel.generators.p2p import generate_multicast
-from fennel.models.lbmachine import LBMachine
+from fennel.machines.lbmachine import LBMachine
 
 
 def sample(data: Tuple[int, int]) -> None:
@@ -16,7 +16,7 @@ def sample(data: Tuple[int, int]) -> None:
 
     program = generate_multicast(msg_size, fan_out)
 
-    machine = LBMachine(fan_out + 1, 1000, 10)
+    machine = LBMachine(fan_out + 1, 1000, 0, 0)
     machine.run(program)
     print(f'maximum time {machine.maximum_time}')
 
@@ -26,7 +26,7 @@ def main() -> None:
     Generates a multicast program and executes it using LBMachine model.
     """
 
-    msg_sizes = range(0, 10)
+    msg_sizes = range(1, 2)
     fan_outs = range(1, 10)
 
     list(map(sample, ((msg_size, fan_out)

@@ -28,6 +28,12 @@ def parse_arguments():
                         type=str,
                         help='Set the python logging level.')
 
+    parser.add_argument('mode', choices=['draw', 'measure'])
+
+    parser.add_argument('machine')
+
+    # read program from pickle through stdin
+
 
 if __name__ == '__main__':
     arguments = parse_arguments()

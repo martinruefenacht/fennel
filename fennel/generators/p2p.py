@@ -3,7 +3,9 @@ Module for generators of point-to-point programs.
 """
 
 from fennel.core.program import Program
-from fennel.core.tasks import StartTask, PutTask, ProxyTask
+from fennel.tasks.start import StartTask
+from fennel.tasks.put import PutTask
+from fennel.tasks.proxy import ProxyTask
 
 
 def generate_multicast(message_size: int, width: int) -> Program:

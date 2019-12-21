@@ -3,8 +3,8 @@ Simple example to use a multicast generator and model to execute it.
 """
 
 
-from fennel.generators.recursive_doubling import generate_recursive_doubling
-from fennel.machines.lbmachine import LBMachine
+from fennel.generators.recursive_multiplying import generate_recursive_multiplying
+from fennel.machines.lbmachine import LBPMachine
 
 
 def main() -> None:
@@ -12,13 +12,13 @@ def main() -> None:
     Generates a multicast program and executes it using LBMachine model.
     """
 
-    nodes = 2 ** 4
+    nodes = 16
     print(f'nodes {nodes}')
     msg_size = 8
 
-    program = generate_recursive_doubling(nodes, msg_size)
+    program = generate_recursive_multiplying(nodes, msg_size)
 
-    machine = LBMachine(nodes, 1000, 0, 0)
+    machine = LBPMachine(nodes, 900, 0, 0, 100)
     machine.run(program)
     print(f'maximum time {machine.maximum_time}')
 

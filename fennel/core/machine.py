@@ -4,11 +4,12 @@ Defines the abstract class for machine models.
 
 import heapq
 import abc
-from typing import Optional, Iterable, Tuple
+from typing import Iterable, Tuple, Optional
 from collections import defaultdict
 
 from fennel.core.program import Program
-from fennel.core.tasks import Task
+from fennel.core.task import Task
+from fennel.visual.canvas import Canvas
 
 
 class Machine(abc.ABC):
@@ -33,6 +34,8 @@ class Machine(abc.ABC):
         # program counter
         self._program_counter = 0
 
+        self._canvas: Optional[Canvas] = None
+
     @property
     def nodes(self) -> int:
         """
@@ -41,18 +44,36 @@ class Machine(abc.ABC):
 
         return self._nodes
 
+    @property
+    def canvas(self) -> Optional[Canvas]:
+        """
+        Get canvas.
+        """
+
+        return self._canvas
+
+    @canvas.setter
+    def canvas(self, canvas: Canvas) -> None:
+        """
+        Set canvas.
+        """
+
+        self._canvas = canvas
+
     def run(self, program: Program) -> None:
         """
         Runs the given program on this machine.
         """
 
-        if program.get_node_count() > self.nodes:
+        if program.get_process_count() > self.nodes:
             raise RuntimeError(f'{program} requires greater node count '
                                f'{program.get_process_count()} than '
                                f'{self.nodes}.')
 
+        # TODO how does this need to change to accomodate network simulation?
+
         # task priority queue
-        task_queue = []
+        task_queue: Iterable[Tuple[int, Task]] = []
 
         # insert all start tasks
         for task in program.get_start_tasks():
@@ -61,6 +82,8 @@ class Machine(abc.ABC):
         # process entire queue
         while task_queue:
             # retrieve next global clock event
+            time: int
+            task: Task
             time, task = heapq.heappop(task_queue)
 
             # execute task
@@ -70,15 +93,11 @@ class Machine(abc.ABC):
             for successor in successors:
                 heapq.heappush(task_queue, successor)
 
-#    def reset(self) -> None:
-#        """
-#        Reset machine back to initial state.
-#        """
-#
-#        self._dependencies.clear()
-#        self._dtimes.clear()
-
-    def _execute(self, time: int, program: Program, task: Task) -> None:
+    def _execute(self,
+                 time: int,
+                 program: Program,
+                 task: Task
+                 ) -> Iterable[Tuple[int, Task]]:
         """
         Looks up required handler for task and executes task using that
         handler.
@@ -118,7 +137,6 @@ class Machine(abc.ABC):
                 time_next = self._dtimes[successor]
 
                 # delete record of program
-                # TODO do we need to do this? they should be unique?
                 del self._dtimes[successor]
                 del self._dependencies[successor]
 
@@ -147,34 +165,17 @@ class Machine(abc.ABC):
 # time, task = task_queue.pop()
 # task_queue.push(*successor)
 
-
-#     def setVisual(self, context):
-#         """
-#         """
-# 
-#         self.context = context
-# 
-#     def registerVisualContext(self, context):
-#         """
-#         """
-# 
-#         self.context = context
-# 
 #     def drawMachine(self):
 #         """
 #         """
-# 
+
 #         # find max time
 #         max_time = int((math.ceil(self.getMaximumTime() / 500) * 500))
 #         # TODO required minimum
 #         max_time = max(max_time, 2000)
-# 
+
 #         # draw time line
 #         self.context.drawTimeLine(max_time)
-# 
+
 #         # draw process lines
 #         self.context.drawProcessLines(self.node_count, max_time)
-# 
-#     
-# 
-

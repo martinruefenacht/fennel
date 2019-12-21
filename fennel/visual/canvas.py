@@ -41,6 +41,12 @@ class Canvas:
 
     scale = 1/72
 
+    START_SYMBOL = pyx.path.path(pyx.path.moveto(0, 0.5),
+                                 pyx.path.lineto(0.5, 0),
+                                 pyx.path.lineto(0, -0.5),
+                                 pyx.path.lineto(0, 0.5),
+                                 pyx.path.closepath())
+
     def __init__(self):
         if not PYPY_ENVIRONMENT:
             self._canvas = pyx.canvas.canvas()
@@ -213,7 +219,7 @@ class Canvas:
         assert process >= 0
 
         if not PYPY_ENVIRONMENT:
-            self._canvas.fill()
+            self._canvas.fill(self.START_SYMBOL, [pyx.color.rgb.black])
 
     def draw_sleep_task(self):
         """

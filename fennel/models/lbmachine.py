@@ -8,7 +8,7 @@ import logging
 
 from fennel.core.machine import Machine
 from fennel.core.program import Program
-from fennel.core.tasks import Task, StartTask, ProxyTask, PutTask
+from fennel.core.tasks import Task, StartTask, ProxyTask, PutTask, ComputeTask
 
 
 class LBMachine(Machine):
@@ -16,12 +16,13 @@ class LBMachine(Machine):
     The latency-bandwidth machine implementation.
     """
 
-    def __init__(self, nodes: int, latency: int, bandwidth: int):
+    def __init__(self, nodes: int, latency: int, bandwidth: int, compute: int):
         super().__init__(nodes)
 
         # model parameters
         self._alpha = latency
         self._beta = bandwidth
+        self._gamma = compute
 
         # process times
         self._process_times = [0] * self.nodes
@@ -35,7 +36,7 @@ class LBMachine(Machine):
         self._task_handlers['StartTask'] = self.execute_start_task
         self._task_handlers['ProxyTask'] = self.execute_proxy_task
         self._task_handlers['SleepTask'] = self.executeSleepTask
-        self._task_handlers['ComputeTask'] = self.executeComputeTask
+        self._task_handlers['ComputeTask'] = self.execute_compute_task
         self._task_handlers['PutTask'] = self.execute_put_task
 
 #    def reset(self):
@@ -145,27 +146,24 @@ class LBMachine(Machine):
 #
 #        if self.context is not None:
 #            self.context.drawHLine(task.process, time, task.delay, -self.context.sleep_height, 'std')  
-             
-    def executeComputeTask(self, time, program, task):
+
+    def execute_compute_task(self,
+                             time: int,
+                             program: Program,
+                             task: ComputeTask
+                             ) -> Iterable[Tuple[int, Task]]:
         """
         """
 
-        if self._process_times[task.process] <= time:
-            # noise
-            #noise = self.getHostNoise(task.delay)
-            noise = 0
-            #TODO
-
-            # forward proc
-            self._process_times[task.process] = time + task.delay + noise
-
-            # visual 
-            self.drawCompute(task, time, noise)
-            
-            return self.completeTask(task, program, self._process_times[task.process])
-
-        else:
+        if self._process_times[task.process] > time:
             return [(self._process_times[task.process], task)]
+
+        # forward proc
+        self._process_times[task.process] = time + task.size * self._gamma
+
+        return self._complete_task(self._process_times[task.process],
+                                   program,
+                                   task)
 
 #    def drawCompute(self, task, time, noise):               
 #        """

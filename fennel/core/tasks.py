@@ -95,22 +95,20 @@ class ComputeTask(Task):
     ComputeTask represents the time of a model during which no communication
     takes place.
     """
-    def __init__(self, name: str, proc: int, time: int):
+    def __init__(self, name: str, proc: int, size: int):
         # initialize task
         super().__init__(name, proc)
 
-        # TODO support data size?
-
         # initialize compute task
-        self._time = time
+        self._size = size
 
     @property
-    def time(self) -> int:
+    def size(self) -> int:
         """
         Get compute time.
         """
 
-        return self._time
+        return self._size
 
 
 class PutTask(Task):

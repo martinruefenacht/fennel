@@ -227,12 +227,6 @@ class Canvas:
         
         pass
 
-    def draw_compute_task(self):
-        """
-        """
-
-        pass
-
     def draw_put_task(self):
         """
         """

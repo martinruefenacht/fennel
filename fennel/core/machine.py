@@ -4,12 +4,13 @@ Defines the abstract class for machine models.
 
 import heapq
 import abc
-from typing import Iterable, Tuple, Optional
+from typing import Iterable, Tuple, Optional, MutableSet, MutableMapping, Callable, List
 from collections import defaultdict
 
 from fennel.core.program import Program
 from fennel.core.task import Task
 from fennel.visual.canvas import Canvas
+from fennel.core.instrument import Instrument
 
 
 class Machine(abc.ABC):
@@ -21,15 +22,17 @@ class Machine(abc.ABC):
         self._nodes = nodes
         self._maximum_time = 0
 
+        self._instruments: MutableSet[Instrument] = set()
+
         # fulfilled dependency counter
-        self._dependencies = defaultdict(lambda: 0)
+        self._dependencies: MutableMapping[str, int] = defaultdict(lambda: 0)
 
         # max time of dependency, gives task begin time
         # starts will not be included
-        self._dtimes = defaultdict(lambda: 0)
+        self._dtimes: MutableMapping[str, int] = defaultdict(lambda: 0)
 
         # task handlers
-        self._task_handlers = {}
+        self._task_handlers: MutableMapping[str, Optional[Callable[[int, Program, Task], Iterable[Tuple[int, Task]]]]] = defaultdict(lambda: None)
 
         # program counter
         self._program_counter = 0
@@ -73,9 +76,10 @@ class Machine(abc.ABC):
         # TODO how does this need to change to accomodate network simulation?
 
         # task priority queue
-        task_queue: Iterable[Tuple[int, Task]] = []
+        task_queue: List[Tuple[int, Task]] = []
 
         # insert all start tasks
+        task: Task
         for task in program.get_start_tasks():
             heapq.heappush(task_queue, (0, task))
 
@@ -83,7 +87,6 @@ class Machine(abc.ABC):
         while task_queue:
             # retrieve next global clock event
             time: int
-            task: Task
             time, task = heapq.heappop(task_queue)
 
             # execute task
@@ -106,9 +109,24 @@ class Machine(abc.ABC):
         assert time >= 0
 
         # look up task handler and execute
-        return self._task_handlers[task.__class__.__name__](time,
-                                                            program,
-                                                            task)
+        callable = self._task_handlers[task.__class__.__name__]
+
+        if not callable:
+            raise RuntimeError('callable is None')
+
+        return callable(time, program, task)
+
+
+    def _run_instruments(self,
+                         time: int,
+                         program: Program,
+                         task: Task) -> None:
+        """
+        Run all instruments on the task completion.
+        """
+
+        for instrument in self._instruments:
+            instrument.measure(time, program, task)
 
     def _complete_task(self,
                        time: int,
@@ -134,6 +152,9 @@ class Machine(abc.ABC):
             if (self._dependencies[successor] ==
                     program.get_in_degree(successor)):
                 successor_task = program.get_task(successor)
+                if not successor_task:
+                    raise RuntimeError('Successor does not exist.')
+
                 time_next = self._dtimes[successor]
 
                 # delete record of program

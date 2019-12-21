@@ -40,9 +40,11 @@ def recursive_doubling(processes: int, message_size: int) -> Program:
 
     # generate start nodes + proxies
     for process in range(processes):
-        program.add_node(StartTask(f's{process}', process))
+        program.add_node(f's{process}',
+                         StartTask(f's{process}', process))
 
-        program.add_node(ProxyTask(f'x_{process}_0', process))
+        program.add_node(f'x_{process}_0',
+                         ProxyTask(f'x_{process}_0', process))
 
         program.add_edge(f's{process}', f'x_{process}_0')
 
@@ -56,16 +58,21 @@ def recursive_doubling(processes: int, message_size: int) -> Program:
             # generate put
             target = _target_rd(ridx, process)
 
-            program.add_node(PutTask(put_name, process, target, message_size))
+            program.add_node(put_name,
+                             PutTask(put_name, process, target,
+                                     message_size * (2 ** ridx)))
 
             program.add_edge(put_name, f'c_{target}_{ridx}')
             program.add_edge(f'x_{process}_{ridx}', put_name)
 
             # generate proxy
-            program.add_node(ProxyTask(proxy_name, process))
+            program.add_node(proxy_name, ProxyTask(proxy_name, process))
 
             # generate compute
-            program.add_node(ComputeTask(compute_name, process, message_size))
+            # TODO there isnot really a compute phase
+            program.add_node(compute_name,
+                             ComputeTask(compute_name, process,
+                                         message_size * (2 ** ridx)))
 
             program.add_edge(f'x_{process}_{ridx}', compute_name)
             program.add_edge(compute_name, f'x_{process}_{ridx+1}')
@@ -141,6 +148,8 @@ def recursive_multiplying(processes: int,
     Generate a factored recursive multiplying schedule.
     """
 
+    raise NotImplementedError('Allgather recursive multiplying')
+
     assert processes >= 1
     assert _prime_factorization(processes)
     assert message_size >= 0
@@ -149,9 +158,11 @@ def recursive_multiplying(processes: int,
 
     # generate start nodes + proxies
     for process in range(processes):
-        program.add_node(StartTask(f's{process}', process))
+        program.add_node(f's{process}',
+                         StartTask(f's{process}', process))
 
-        program.add_node(ProxyTask(f'x_{process}_0', process))
+        program.add_node(f'x_{process}_0',
+                         ProxyTask(f'x_{process}_0', process))
 
         program.add_edge(f's{process}', f'x_{process}_0')
 
@@ -170,7 +181,7 @@ def recursive_multiplying(processes: int,
         for process in range(processes):
             # generate proxy
             proxy_name = f'x_{process}_{ridx+1}'
-            program.add_node(ProxyTask(proxy_name, process))
+            program.add_node(proxy_name, ProxyTask(proxy_name, process))
 
             # multicast send
             for index in range(factor - 1):
@@ -179,7 +190,8 @@ def recursive_multiplying(processes: int,
 
                 target = _target_rm(base, mask, process, index)
 
-                program.add_node(PutTask(put_name, process,
+                program.add_node(put_name,
+                                 PutTask(put_name, process,
                                          target, message_size))
 
                 program.add_edge(put_name, f'c_{target}_{ridx}')
@@ -187,7 +199,8 @@ def recursive_multiplying(processes: int,
 
             # generate compute
             compute_name = f'c_{process}_{ridx}'
-            program.add_node(ComputeTask(compute_name, process, message_size))
+            program.add_node(compute_name,
+                             ComputeTask(compute_name, process, message_size))
 
             program.add_edge(f'x_{process}_{ridx}', compute_name)
             program.add_edge(compute_name, f'x_{process}_{ridx+1}')

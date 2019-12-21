@@ -13,7 +13,7 @@ def check_version() -> None:
     Check that the executing python version is above 3.6.
     """
 
-    if not (sys.version_info['major'] == 3 and sys.version_info['minor'] > 6):
+    if not (sys.version_info[0] == 3 and sys.version_info[1] >= 6):
         raise RuntimeError('Python version required is 3.6.')
 
 

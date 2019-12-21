@@ -12,7 +12,8 @@ def main() -> None:
     Generates a multicast program and executes it using LBMachine model.
     """
 
-    nodes = 256
+    nodes = 2 ** 14
+    print(f'nodes {nodes}')
     msg_size = 8
 
     program = generate_recursive_doubling(nodes, msg_size)

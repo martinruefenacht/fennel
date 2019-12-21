@@ -27,50 +27,12 @@ class LBMachine(Machine):
         # process times
         self._process_times = [0] * self.nodes
 
-#        # noise
-#        self._noise_record = {}
-#        self._host_noise = None
-#        self._network_noise = None
-
         # set supported tasks for LBMachine model
         self._task_handlers['StartTask'] = self.execute_start_task
         self._task_handlers['ProxyTask'] = self.execute_proxy_task
         self._task_handlers['SleepTask'] = self.executeSleepTask
         self._task_handlers['ComputeTask'] = self.execute_compute_task
         self._task_handlers['PutTask'] = self.execute_put_task
-
-#    def reset(self):
-#        """
-#        """
-#
-#        super().reset()
-#
-#        self.noise_record = {}
-#        self.maximum_time = 0
-
-#    def getMaximumTime(self):
-#        """
-#        """
-#
-#        return max(self._process_times)
-
-#    def getHostNoise(self, duration):
-#        """
-#        """
-#
-#        if self.host_noise:
-#            return self.host_noise.generate(duration)
-#        else:
-#            return 0
-#
-#    def getNetworkNoise(self, duration):
-#        """
-#        """
-#
-#        if self.network_noise:
-#            return self.network_noise.generate(duration)
-#
-#        return 0
 
     def execute_start_task(self,
                            time: int,
@@ -218,53 +180,57 @@ class LBMachine(Machine):
 #                self.context.drawVLine(task.target, arrival+noise, Visual.put_base, -Visual.put_height*side, 'err')
 
 
-# class LBPMachine(LBMachine):
-#     def __init__(self, nodes, latency, bandwidth, pipelining):
-#             super().__init__(nodes, latency, bandwidth)
-#
-#             self.kappa = pipelining
-#             self.network_lock = [0] * 40
-#
-#     def getMaximumTime(self):
-#             return self.maximum_time
-#
-#     def executePutTask(self, time, program, task):
-#             if self._process_times[task.process] > time:
-#                     # fail
-#                     # reinsert task at delayed time
-#                     return [(self._process_times[task.process], task)]
-#
-#             # pipeline
-#             pipe_time = self.kappa
-#             noise_pipe = self.getHostNoise(pipe_time)
-#             time_pipe = time + pipe_time + noise_pipe
-#
-#             # XXX NETWORK LOCK quick and dirty
-#             #if self.network_lock[time_pipe // 50]:
-#             #       return [(((time_pipe // 50) + 1) * 50, task)]
-#             #self.network_lock[time_pipe // 50] = True
-#
-#             # draw pipeline
-#             self.drawPipe(task, time, self.kappa, noise_pipe)
-#
-#             # put side
-#             put_time = self.alpha + self.beta * task.size
-#             noise_put = self.getNetworkNoise(put_time)
-#             arrival = time_pipe + put_time
-#             time_put = arrival + noise_put
-#
-#             # draw put side
-#             self.drawPut(task, time_pipe, arrival, noise_put)
-#
-#             #
-#             if task.block:
-#                     self._process_times[task.process] = time_put
-#             else:
-#                     self._process_times[task.process] = time_pipe
-#             self.maximum_time = max(self.maximum_time, time_put)
-#
-#             return self.completeTask(task, program, time_put)
-#
+class LBPMachine(LBMachine):
+    """
+    The latency-bandwidth-pipeline machine implementation.
+    """
+
+    def __init__(self,
+                 nodes: int,
+                 latency: int,
+                 bandwidth: int,
+                 pipelining: int,
+                 compute: int):
+        super().__init__(nodes, latency, bandwidth, compute)
+
+        self._kappa = pipelining
+
+    def execute_put_task(self, time, program, task):
+        """
+        Execute the put task.
+        """
+
+        if self._process_times[task.process] > time:
+            # reinsert task at delayed time
+            return [(self._process_times[task.process], task)]
+
+        # pipeline
+        pipe_time = self._kappa
+        time_pipe = time + pipe_time
+
+        #  XXX NETWORK LOCK quick and dirty
+        # if self.network_lock[time_pipe // 50]:
+        #        return [(((time_pipe // 50) + 1) * 50, task)]
+        # self.network_lock[time_pipe // 50] = True
+
+        # put side
+        put_time = self._alpha + self._beta * task.size
+        arrival = time_pipe + put_time
+        time_put = arrival
+
+        # draw put side
+        # self.drawPut(task, time_pipe, arrival, noise_put)
+
+        if task.block:
+            self._process_times[task.process] = time_put
+
+        else:
+            self._process_times[task.process] = time_pipe
+
+        self._maximum_time = max(self._maximum_time, time_put)
+
+        return self._complete_task(time_put, program, task)
+
 #     def drawPipe(self, task, time, delay, noise):
 #             #
 #             if self.context:

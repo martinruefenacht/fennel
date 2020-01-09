@@ -40,7 +40,7 @@ class NormalNoise(NoiseModel):
     """
     """
 
-    def __init__(self, seed: int, mean: int, stdev: int) -> None:
+    def __init__(self, seed: int, mean: float, stdev: float) -> None:
         super().__init__(seed)
 
         self._mean = mean

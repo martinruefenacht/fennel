@@ -16,6 +16,7 @@ def main() -> None:
     canvas.draw_blocking_put_task(0, 1, 50, 60)
     canvas.draw_non_blocking_put_task(1, 0, 60, 70, 80)
     canvas.draw_non_blocking_put_task(0, 1, 100, 110, 120)
+    canvas.draw_noise_overlay(0, 100, 110)
 
     canvas.minimum_time = 200
 

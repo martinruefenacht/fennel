@@ -22,7 +22,7 @@ def _target_rd(ridx: int, process: int) -> int:
     smask = 2 ** ridx
     sbase = 2 ** (ridx+1)
 
-    block = process // sbase
+    block = (process // sbase) * sbase
     offset = (process + smask) % sbase
 
     return block + offset
@@ -127,7 +127,7 @@ def _target_rm(base: int, mask: int, process: int, index: int) -> int:
     """
 
     sub_mask = (index + 1) * mask
-    block = process // base
+    block = (process // base) * base
     offset = (process + sub_mask) % base
 
     return block + offset

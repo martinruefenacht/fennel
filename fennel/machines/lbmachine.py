@@ -23,12 +23,10 @@ class LBMachine(Machine):
 
         # model parameters
         # network parameters
-        # time
         self._alpha = latency
-        # time / byte
         self._beta = bandwidth
+
         # compute parameters
-        # time / byte
         self._gamma = compute
 
         self._compute_noise: Optional[NoiseModel] = None
@@ -39,6 +37,20 @@ class LBMachine(Machine):
         self._task_handlers['SleepTask'] = self._execute_sleep_task
         self._task_handlers['ComputeTask'] = self._execute_compute_task
         self._task_handlers['PutTask'] = self._execute_put_task
+
+    @property
+    def compute_noise_model(self) -> NoiseModel:
+        """
+        """
+
+        return self._compute_noise
+
+    @compute_noise_model.setter
+    def compute_noise_model(self, model: NoiseModel) -> None:
+        """
+        """
+
+        self._compute_noise = model
 
     def _execute_start_task(self,
                             time: int,
@@ -88,7 +100,8 @@ class LBMachine(Machine):
         time_compute = time + task.size * self._gamma
 
         if self._compute_noise is not None:
-            time_compute += self._compute_noise.sample()
+            time_noise = self._compute_noise.sample()
+            time_compute += time_noise
 
         self._set_process_time(task.process, time_compute)
 
@@ -98,7 +111,10 @@ class LBMachine(Machine):
                                           time,
                                           time_compute)
 
-            # TODO consider additional draw for noise overlay
+            if self._compute_noise is not None:
+                self.canvas.draw_noise_overlay(task.process,
+                                               time_compute - time_noise,
+                                               time_compute)
 
         return time_compute
 
@@ -114,7 +130,8 @@ class LBMachine(Machine):
         time_arrival = time + put_time
 
         if self._network_noise is not None:
-            time_arrival += self._network_noise.sample()
+            time_noise = self._network_noise.sample()
+            time_arrival += time_noise
 
         assert time_arrival > time
 
@@ -127,6 +144,11 @@ class LBMachine(Machine):
                                                task.target,
                                                time,
                                                time_arrival)
+
+            # TODO draw noise on transfer line somehow
+#             if self._network_noise is not None:
+#                 self._canvas.draw_noise_overlay(task.target,
+#                                                 
 
         return time_arrival
 
@@ -165,25 +187,31 @@ class LBPMachine(LBMachine):
         put_time = self._alpha + self._beta * task.message_size
         time_arrival = time_pipe + put_time
 
+        if self._network_noise is not None:
+            time_arrival += self._network_noise.sample()
+
         if task.blocking:
             self._set_process_time(task.process, time_arrival)
-
+ 
+            # TODO
             # if self.draw_mode:
             #     self.canvas.draw_put_task()
 
         else:
             self._set_process_time(task.process, time_pipe)
 
+            # TODO
             # if self.draw_mode:
             #     self.canvas.draw_put_task()
 
-        # expliclty update maximum time, because there may not be successors
-        # and that would not give the correct maximum time
-        self._update_maximum_time(time_arrival)
+            # expliclty update maximum time, because there may not be
+            # successors and that would not give the correct maximum time
+            self._update_maximum_time(time_arrival)
 
         return time_arrival
 
-# congestion
+# receive nic congestion or network congestion?
+
 # class LBPCMachine(LBPMachine):
 #     def __init__(self, nodes, latency, bandwidth, pipelining, congest):
 #             super().__init__(nodes, latency, bandwidth, pipelining)
@@ -194,9 +222,6 @@ class LBPMachine(LBMachine):
 #             self.nic_recv = [0] * self.node_count
 # 
 #             self.task_handlers['MsgTask'] = self.executeMsgTask
-# 
-#     def getMaximumTime(self):
-#             return self.maximum_time
 # 
 #     def _executePutTask(self, time, program, task):
 #             # 
@@ -252,10 +277,3 @@ class LBPMachine(LBMachine):
 #             
 # 
 #             return self.completeTask(task.puttask, program, time + self.congestion)
-# 
-#     def drawRecv(self, task, time, noise):
-#             if self.context:
-#                     side = 1 if task.process < task.target else -1
-#                     
-#                     # draw nic recv
-#                     self.context.drawHLine(task.target, time-self.congestion, self.congestion, -Visual.put_height*side, 'std')      

@@ -183,6 +183,7 @@ class Machine(ABC):
 
         # delay task if process time is further
         if self._process_times[task.process] > time:
+            # TODO what is the reason for the delaying?
             return [(self._process_times[task.process], task)]
 
         # look up task handler and execute

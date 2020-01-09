@@ -34,7 +34,10 @@ class Canvas:
 
     def __init__(self):
         if not PYPY_ENVIRONMENT:
-            self._canvas = pyx.canvas.canvas()
+            self._base = pyx.canvas.canvas()
+
+            self._plot = self._base.layer('plot')
+            self._canvas = self._base.layer('draw')
 
         else:
             self._canvas = None
@@ -100,12 +103,12 @@ class Canvas:
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE)]
 
-            self._canvas.stroke(pyx.path.line(0.0, -0.25, self.minimum_time, -0.25), attrs)
+            self._plot.stroke(pyx.path.line(0.0, -0.25, self.minimum_time, -0.25), attrs)
 
             ticks = int(math.ceil(self.minimum_time / self.TICK_RESOLUTION))
             for tick in range(ticks+1):
                 # 1000 ticks bigger than 100s
-                self._canvas.stroke(pyx.path.line(tick * self.TICK_RESOLUTION, -0.5,
+                self._plot.stroke(pyx.path.line(tick * self.TICK_RESOLUTION, -0.5,
                                                   tick * self.TICK_RESOLUTION, -0.15), attrs)
 
                 # TODO tick labeling
@@ -118,9 +121,10 @@ class Canvas:
         if not PYPY_ENVIRONMENT:
             for process in range(len(self._processes)):
                 attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                         pyx.trafo.translate(0, self.process_offset(process))]
+                         pyx.trafo.translate(0, self.process_offset(process)),
+                         pyx.style.linestyle.dotted]
 
-                self._canvas.stroke(pyx.path.line(0, 0,
+                self._plot.stroke(pyx.path.line(0, 0,
                                                   self.minimum_time, 0), attrs)
 
     def _draw_margin(self) -> None:
@@ -131,10 +135,11 @@ class Canvas:
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.color.rgb.white]
 
-            self._canvas.stroke(
+            # TODO review this, it is broken!
+            self._plot.stroke(
                 pyx.path.rect(-self.MARGIN, self.MARGIN,
                               self.minimum_time*self.TIME_SCALE + 2*self.MARGIN,
-                              (len(self._processes) + 1) * -self.PROCESS_SCALE - 2*self.MARGIN),
+                              (len(self._processes) + 1) * -self.PROCESS_SCALE - 3*self.MARGIN),
                 attrs)
 
     def _draw_process_bound(self, process) -> None:
@@ -161,7 +166,7 @@ class Canvas:
         self._draw_timeline()
         self._draw_process_lines()
 
-        self._canvas.writetofile(str(path))
+        self._base.writetofile(str(path))
 
     def draw_start_task(self, process: int, time: int) -> None:
         """
@@ -200,7 +205,7 @@ class Canvas:
                      pyx.trafo.translate(0.0, self.process_offset(process))]
 
             self._canvas.stroke(
-                pyx.path.rect(start, -0.25, start-end, 0.5),
+                pyx.path.rect(start, -0.25, end-start, 0.5),
                 attrs)
 
             self._processes[process] = True
@@ -219,7 +224,7 @@ class Canvas:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
                      pyx.trafo.translate(0.0, self.process_offset(process))]
 
-            self._canvas.fill(pyx.path.rect(start, -0.25, start-end, 0.5), attrs)
+            self._canvas.fill(pyx.path.rect(start, -0.25, end-start, 0.5), attrs)
 
             self._processes[process] = True
             self._minimum_time = max(self._minimum_time, end)
@@ -247,7 +252,6 @@ class Canvas:
             self._processes[source] = True
             self._processes[target] = True
             self._minimum_time = max(self._minimum_time, end)
-
 
     def draw_non_blocking_put_task(self, source: int, target: int, start: int,
                                    switch: int, end: int) -> None:
@@ -285,3 +289,19 @@ class Canvas:
             self._processes[source] = True
             self._processes[target] = True
             self._minimum_time = max(self._minimum_time, end)
+
+    def draw_noise_overlay(self, process: int, start: int, end: int) -> None:
+        """
+        """
+
+        assert process >= 0
+        assert start > 0
+        assert end > start
+
+        if not PYPY_ENVIRONMENT:
+            attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
+                     pyx.trafo.translate(0.0, self.process_offset(process)),
+                     pyx.color.rgb.red,
+                     pyx.style.linewidth.Thick]
+
+            self._canvas.stroke(pyx.path.line(start, 0.1, end, 0.1), attrs)

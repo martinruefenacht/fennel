@@ -1,46 +1,73 @@
 """
 """
 
-from scipy.stats import *
+from abc import ABC, abstractmethod
 from random import choice
 
-class NoiseGenerator:
+
+import scipy.stats
+
+
+class NoiseModel(ABC):
     """
     """
 
-    def generate(self, duration):
-        raise NotImplementedError
+    def __init__(self, seed: int) -> None:
+        self._seed = seed
 
-class HistogramHoise(NoiseGenerator):
-    def __init__(self, data):
+    @abstractmethod
+    def sample(self) -> int:
+        """
+        Sample the noise model.
+        """
+
+
+class NoNoiseModel(NoiseModel):
+    """
+    """
+
+    def __init__(self):
         pass
-    
-    def generate(self, duration):
-        raise NotImplementedError
 
-class BetaPrimeNoise(NoiseGenerator):
-    def __init__(self, a, b, scale=0.05):
-        self.a = a
-        self.b = b
-        self.scale = scale
+    def sample(self) -> int:
+        """
+        """
 
-    def generate(self, duration):
-        return int(round(betaprime.rvs(self.a, self.b, scale=duration*self.scale)))
+        return 0
 
-class InvGaussNoise(NoiseGenerator):
-    def __init__(self, mu, loc, scale):
-        self.mu = mu
-        self.loc = loc
-        self.scale = scale
 
-    def generate(self, duration):
-        return int(round(invgauss.rvs(self.mu, self.loc, self.scale)))
+class NormalNoise(NoiseModel):
+    """
+    """
 
-class GammaNoise(NoiseGenerator):
-    def __init__(self, alpha, loc, scale):
-        self.alpha = alpha
-        self.loc = loc
-        self.scale = scale
+    def __init__(self, seed: int, mean: int, stdev: int) -> None:
+        super().__init__(seed)
 
-    def generate(self, duration):
-        return int(round(gamma.rvs(self.alpha, self.loc, self.scale)))
+        self._mean = mean
+        self._stdev = stdev
+
+        rvs = scipy.stats.norm.rvs(self._mean, self._stdev,
+                                   size=100, random_state=self._seed)
+
+        self._rvs = [int(r) for r in rvs]
+
+    def sample(self) -> int:
+        """
+        Sample the normal distributed noise function.
+        """
+
+        return choice(self._rvs)
+
+
+class BetaPrimeNoise(NoiseModel):
+    """
+    """
+
+    def __init__(self, seed: int, a: float, b: float) -> None:
+        super().__init__(seed)
+
+    def sample(self) -> int:
+        """
+        """
+
+        return -1

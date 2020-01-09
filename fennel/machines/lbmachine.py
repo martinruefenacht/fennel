@@ -3,8 +3,9 @@ This module defines the machines for the latency-bandwidth models.
 """
 
 import logging
+from typing import Optional
 
-
+from fennel.core.noise import NoiseModel
 from fennel.core.machine import Machine
 from fennel.tasks.start import StartTask
 from fennel.tasks.put import PutTask
@@ -30,6 +31,9 @@ class LBMachine(Machine):
         # time / byte
         self._gamma = compute
 
+        self._compute_noise: Optional[NoiseModel] = None
+        self._network_noise: Optional[NoiseModel] = None
+
         # set supported tasks for LBMachine model
         self._task_handlers['StartTask'] = self._execute_start_task
         self._task_handlers['SleepTask'] = self._execute_sleep_task
@@ -48,6 +52,7 @@ class LBMachine(Machine):
         self._set_process_time(task.process, time_start)
 
         if self.draw_mode:
+            assert self.canvas is not None
             self.canvas.draw_start_task(task.process, time_start)
 
         return time_start
@@ -66,7 +71,10 @@ class LBMachine(Machine):
         self._set_process_time(task.process, time_sleep)
 
         if self.draw_mode:
-            self.canvas.draw_sleep_task()
+            assert self.canvas is not None
+            self.canvas.draw_sleep_task(task.process,
+                                        time,
+                                        time_sleep)
 
         return time_sleep
 
@@ -78,10 +86,19 @@ class LBMachine(Machine):
         """
 
         time_compute = time + task.size * self._gamma
+
+        if self._compute_noise is not None:
+            time_compute += self._compute_noise.sample()
+
         self._set_process_time(task.process, time_compute)
 
         if self.draw_mode:
-            self.canvas.draw_compute_task()
+            assert self.canvas is not None
+            self.canvas.draw_compute_task(task.process,
+                                          time,
+                                          time_compute)
+
+            # TODO consider additional draw for noise overlay
 
         return time_compute
 
@@ -96,11 +113,20 @@ class LBMachine(Machine):
         put_time = self._alpha + self._beta * task.message_size
         time_arrival = time + put_time
 
+        if self._network_noise is not None:
+            time_arrival += self._network_noise.sample()
+
+        assert time_arrival > time
+
         # blocking put and put and same with LB machine
         self._set_process_time(task.process, time_arrival)
 
         if self.draw_mode:
-            self.canvas.draw_put_task()
+            assert self.canvas is not None
+            self.canvas.draw_blocking_put_task(task.process,
+                                               task.target,
+                                               time,
+                                               time_arrival)
 
         return time_arrival
 
@@ -120,6 +146,8 @@ class LBPMachine(LBMachine):
 
         self._kappa = pipelining
 
+        self._pipe_noise = None
+
     def _execute_put_task(self,
                           time: int,
                           task: PutTask
@@ -130,6 +158,9 @@ class LBPMachine(LBMachine):
 
         pipe_time = self._kappa
         time_pipe = time + pipe_time
+
+        if self._pipe_noise is not None:
+            time_pipe += self._pipe_noise.sample()
 
         put_time = self._alpha + self._beta * task.message_size
         time_arrival = time_pipe + put_time

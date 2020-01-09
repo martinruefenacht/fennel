@@ -58,7 +58,7 @@ def test_rd_lbmachine():
     Test LBMachine with a PingPong program.
     """
 
-    nodes = 8
+    nodes = 2 ** 4
     msg_size = 0
     # rounds = 1
 
@@ -72,6 +72,3 @@ def test_rd_lbmachine():
     machine.run(program)
 
     assert machine.maximum_time == math.log2(nodes) * latency
-
-
-

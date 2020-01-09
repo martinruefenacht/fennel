@@ -3,7 +3,7 @@
 
 
 import math
-from typing import Any, Optional, Tuple, Iterable
+from typing import Any, Optional, Tuple, Iterable, Collection
 from itertools import tee
 import logging
 
@@ -80,7 +80,7 @@ def _pairwise(iterable: Iterable[Any]) -> Iterable[Tuple[Any, Any]]:
     return zip(primary, secondary)
 
 
-def _prime_factorization(num: int) -> Iterable[int]:
+def _prime_factorization(num: int) -> Collection[int]:
     """
     Find prime factorization of non-zero positive number.
     """
@@ -103,9 +103,9 @@ def _prime_factorization(num: int) -> Iterable[int]:
     return sorted(factors)
 
 
-def _aggregate_factors(factors: Iterable[int],
+def _aggregate_factors(factors: Collection[int],
                        threshold: int
-                       ) -> Iterable[int]:
+                       ) -> Collection[int]:
     """
     """
 

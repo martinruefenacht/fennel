@@ -5,7 +5,7 @@ Defines the abstract class for machine models.
 import heapq
 from abc import ABC
 from typing import (Iterable, Tuple, Optional, MutableSet, MutableMapping,
-                    Callable, List)
+                    Callable, List, Union)
 from collections import defaultdict
 
 from fennel.core.program import Program
@@ -13,6 +13,10 @@ from fennel.core.task import Task
 from fennel.visual.canvas import Canvas
 from fennel.core.instrument import Instrument
 from fennel.tasks.proxy import ProxyTask
+from fennel.tasks.put import PutTask
+from fennel.tasks.start import StartTask
+from fennel.tasks.sleep import SleepTask
+from fennel.tasks.compute import ComputeTask
 
 
 class Machine(ABC):
@@ -23,13 +27,14 @@ class Machine(ABC):
     def __init__(self, nodes: int):
         self._nodes = nodes
         self._maximum_time = 0
+
+        # TODO could be MachineState abstraction
         self._process_times: MutableMapping[int, int] = defaultdict(lambda: 0)
-        #self._process_times = [0] * self._nodes
+        # self._process_times = [0] * self._nodes
 
         self._instruments: MutableSet[Instrument] = set()
 
         # fulfilled dependency counter
-        # TODO could be MachineState abstraction
         self._dependencies: MutableMapping[str, int] = defaultdict(lambda: 0)
 
         # max time of dependency, gives task begin time
@@ -37,13 +42,15 @@ class Machine(ABC):
         self._dtimes: MutableMapping[str, int] = defaultdict(lambda: 0)
 
         self._task_handlers: MutableMapping[str,
-                                            Optional[Callable[[int, Task], int]]] = defaultdict(lambda: None)
+                                            Union[
+                                                Callable[[int, StartTask], int],
+                                                Callable[[int, ProxyTask], int],
+                                                Callable[[int, SleepTask], int],
+                                                Callable[[int, ComputeTask], int],
+                                                Callable[[int, PutTask], int],
+                                                ]] = defaultdict(lambda: None)
 
         self._task_handlers['ProxyTask'] = self._execute_proxy_task
-
-        # program counter
-        # TODO where is this used???
-        self._program_counter = 0
 
         self._parallel_processes = 1
 
@@ -181,7 +188,7 @@ class Machine(ABC):
         # look up task handler and execute
         handler = self._task_handlers[task.__class__.__name__]
 
-        if not handler:
+        if handler is None:
             raise RuntimeError('callable look up is None')
 
         time_successors = handler(time, task)

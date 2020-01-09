@@ -28,7 +28,7 @@ def _target_rd(ridx: int, process: int) -> int:
     return block + offset
 
 
-def recursive_doubling(processes: int, message_size: int) -> Program:
+def generate_recursive_doubling(processes: int, message_size: int) -> Program:
     """
     Generate a recursive doubling schedule.
     """
@@ -133,10 +133,10 @@ def _target_rm(base: int, mask: int, process: int, index: int) -> int:
     return block + offset
 
 
-def recursive_multiplying(processes: int,
-                          message_size: int,
-                          aggregate: Optional[int] = None
-                          ) -> Program:
+def generate_recursive_multiplying(processes: int,
+                                   message_size: int,
+                                   aggregate: Optional[int] = None
+                                   ) -> Program:
     """
     Generate a factored recursive multiplying schedule.
     """

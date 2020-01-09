@@ -45,7 +45,23 @@ class Machine(ABC):
         # TODO where is this used???
         self._program_counter = 0
 
+        self._parallel_processes = 1
+
         self._canvas: Optional[Canvas] = None
+
+    @property
+    def parallel_processes(self) -> int:
+        """
+        """
+
+        return self._parallel_processes
+
+    @parallel_processes.setter
+    def parallel_processes(self, processes: int) -> None:
+        """
+        """
+
+        self._parallel_processes = processes
 
     @property
     def nodes(self) -> int:
@@ -92,15 +108,22 @@ class Machine(ABC):
         Runs the given program on this machine.
         """
 
-        # TODO if sampling mode, then multiprocessing here
-        # separate MachineState
-
         if program.get_process_count() > self.nodes:
             raise RuntimeError(f'{program} requires greater node count '
                                f'{program.get_process_count()} than '
                                f'{self.nodes}.')
 
-        # TODO how does this need to change to accomodate network simulation?
+        # TODO if sampling mode, then multiprocessing here
+        # separate MachineState
+        # if not self.draw_mode:
+        #     multiprocessing.pool
+        #     # give different seeds to the machines
+
+        self._run_program(program)
+
+    def _run_program(self, program: Program) -> None:
+        """
+        """
 
         # task priority queue
         # this is the core of the simulation

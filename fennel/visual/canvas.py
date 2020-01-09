@@ -54,12 +54,6 @@ class Canvas:
 
     TICK_RESOLUTION = 100
 
-    START_SYMBOL = pyx.path.path(pyx.path.moveto(0,  0.5),
-                                 pyx.path.lineto(25,  0),
-                                 pyx.path.lineto(0, -0.5),
-                                 pyx.path.lineto(0,  0.5),
-                                 pyx.path.closepath())
-
     def __init__(self):
         if not PYPY_ENVIRONMENT:
             self._canvas = pyx.canvas.canvas()
@@ -203,7 +197,12 @@ class Canvas:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
                      pyx.trafo.translate(time, self.process_offset(process))]
 
-            self._canvas.fill(self.START_SYMBOL, attrs)
+            self._canvas.stroke(pyx.path.line(0.0, 0.0, 0.0, -0.5), attrs)
+
+            attrs = [pyx.trafo.scale(self.PROCESS_SCALE, -self.PROCESS_SCALE),
+                     pyx.trafo.translate(time, self.process_offset(process))]
+
+            self._canvas.fill(pyx.path.circle(0.0, -0.5, 0.1), attrs)
 
             self._processes[process] = True
             self._minimum_time = max(self._minimum_time, time+1)
@@ -246,8 +245,33 @@ class Canvas:
             self._processes[process] = True
             self._minimum_time = max(self._minimum_time, end)
 
-    def draw_put_task(self, source: int, target: int, start: int, switch: int,
-                      end: int) -> None:
+    def draw_blocking_put_task(self, source: int, target: int, start: int,
+                               end: int) -> None:
+        """
+        Draw a blocking put between source and target.
+        """
+
+        assert source >= 0
+        assert target >= 0
+        assert start >= 0
+        assert end > start
+
+        if not PYPY_ENVIRONMENT:
+            attrs = [pyx.trafo.scale(self.TIME_SCALE, 1)]
+
+            source_offset = self.process_offset(source)
+            target_offset = self.process_offset(target)
+            
+            self._canvas.stroke(pyx.path.line(start, source_offset,
+                                              end, target_offset), attrs)
+
+            self._processes[source] = True
+            self._processes[target] = True
+            self._minimum_time = max(self._minimum_time, end)
+
+
+    def draw_non_blocking_put_task(self, source: int, target: int, start: int,
+                                   switch: int, end: int) -> None:
         """
         Draw filled rectangle for occupied time on source and draw transfer
         line.
@@ -259,15 +283,15 @@ class Canvas:
         assert switch > start
         assert end > switch
 
-        if not PYPY_ENVIRONMENT:
-            attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(0.0, self.process_offset(source))]
+        # if not PYPY_ENVIRONMENT:
+        #     attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
+        #              pyx.trafo.translate(0.0, self.process_offset(source))]
 
-            self._canvas.fill(pyx.path.rect(start, -0.25, switch-start, 0.5), attrs)
+        #     self._canvas.fill(pyx.path.rect(start, -0.25, switch-start, 0.5), attrs)
 
-            self._canvas.stroke(pyx.path.line(), attrs)
-            # TODO draw transfer line
+        #     self._canvas.stroke(pyx.path.line(), attrs)
+        #     # TODO draw transfer line
 
-            self._processes[source] = True
-            self._processes[target] = True
-            self._minimum_time = max(self._minimum_time, end)
+        #     self._processes[source] = True
+        #     self._processes[target] = True
+        #     self._minimum_time = max(self._minimum_time, end)

@@ -93,14 +93,10 @@ class LBMachine(Machine):
         Execute the put task.
         """
 
-        logging.debug('ProxyTask for process %i at %i', task.process, time)
-
-        # put side
         put_time = self._alpha + self._beta * task.message_size
         time_arrival = time + put_time
 
         # blocking put and put and same with LB machine
-
         self._set_process_time(task.process, time_arrival)
 
         if self.draw_mode:

@@ -2,17 +2,14 @@
 This module defines the machines for the latency-bandwidth models.
 """
 
-from typing import Iterable, Tuple
 import logging
 
 
 from fennel.core.machine import Machine
-from fennel.core.program import Program
-from fennel.core.task import Task
 from fennel.tasks.start import StartTask
 from fennel.tasks.put import PutTask
 from fennel.tasks.compute import ComputeTask
-from fennel.tasks.proxy import ProxyTask
+from fennel.tasks.sleep import SleepTask
 
 
 class LBMachine(Machine):
@@ -24,171 +21,92 @@ class LBMachine(Machine):
         super().__init__(nodes)
 
         # model parameters
+        # network parameters
+        # time
         self._alpha = latency
+        # time / byte
         self._beta = bandwidth
+        # compute parameters
+        # time / byte
         self._gamma = compute
 
-        # process times
-        self._process_times = [0] * self.nodes
-
         # set supported tasks for LBMachine model
-        self._task_handlers['StartTask'] = self.execute_start_task
-        self._task_handlers['ProxyTask'] = self.execute_proxy_task
-        self._task_handlers['SleepTask'] = self.execute_sleep_task
-        self._task_handlers['ComputeTask'] = self.execute_compute_task
-        self._task_handlers['PutTask'] = self.execute_put_task
+        self._task_handlers['StartTask'] = self._execute_start_task
+        self._task_handlers['SleepTask'] = self._execute_sleep_task
+        self._task_handlers['ComputeTask'] = self._execute_compute_task
+        self._task_handlers['PutTask'] = self._execute_put_task
 
-    def execute_start_task(self,
-                           time: int,
-                           program: Program,
-                           task: StartTask
-                           ) -> Iterable[Tuple[int, Task]]:
+    def _execute_start_task(self,
+                            time: int,
+                            task: StartTask
+                            ) -> int:
         """
         Execute the starting task.
         """
 
-        # logic
-        if self._process_times[task.process] > time:
-            return [(self._process_times[task.process], task)]
+        time_start = time + task.skew
+        self._set_process_time(task.process, time_start)
 
-        logging.debug('StartTask for process %i at %i', task.process, time)
+        if self.draw_mode:
+            self.canvas.draw_start_task(task.process, time_start)
 
-        # forward proc
-        self._process_times[task.process] = time + task.skew
-        self._maximum_time = max(self._maximum_time,
-                                 self._process_times[task.process])
+        return time_start
 
-        if self._canvas:
-            self._canvas.draw_start_task()
+    def _execute_sleep_task(self,
+                            time: int,
+                            task: SleepTask
+                            ) -> int:
+        """
+        Executes the sleep task on this machine.
 
-        # return list of dependencies which are fulfilled
-        return self._complete_task(self._process_times[task.process],
-                                   program,
-                                   task)
+        The sleep tasks just suspends execution for a time delay.
+        """
 
-#    def drawStart(self, time, task):
-#        if self.context:
-#            start_height = self.context.start_heighhaht
-#            start_radius = self.context.start_radius
-#
-#            self.context.drawVLine(task.process, time, start_height, start_height, 'std')
-#            self.context.drawCircle(task.process, time, -start_height, start_radius)
+        time_sleep = time + task.delay
+        self._set_process_time(task.process, time_sleep)
 
-    def execute_proxy_task(self,
-                           time: int,
-                           program: Program,
-                           task: ProxyTask
-                           ) -> Iterable[Tuple[int, Task]]:
+        if self.draw_mode:
+            self.canvas.draw_sleep_task()
+
+        return time_sleep
+
+    def _execute_compute_task(self,
+                              time: int,
+                              task: ComputeTask
+                              ) -> int:
         """
         """
 
-        logging.debug('ProxyTask for process %i at %i', task.process, time)
+        time_compute = time + task.size * self._gamma
+        self._set_process_time(task.process, time_compute)
 
-        self._process_times[task.process] = time
-        self._maximum_time = max(self._maximum_time, time)
+        if self.draw_mode:
+            self.canvas.draw_compute_task()
 
-        return self._complete_task(self._process_times[task.process],
-                                   program,
-                                   task)
+        return time_compute
 
-    def execute_sleep_task(self, time, program, task):
-        """
-        """
-
-        if self._process_times[task.process] > time:
-            return [(self._process_times[task.process], task)]
-
-        self._process_times[task.process] = time + task.delay
-
-        if self._canvas:
-            self._canvas.draw_sleep_task()
-
-        return self._complete_task(task,
-                                   program,
-                                   self._process_times[task.process])
-
-
-#    def drawSleepTask(self, time, task):
-#        """
-#        """
-#
-#        if self.context is not None:
-#            self.context.drawHLine(task.process, time, task.delay, -self.context.sleep_height, 'std')  
-
-    def execute_compute_task(self,
-                             time: int,
-                             program: Program,
-                             task: ComputeTask
-                             ) -> Iterable[Tuple[int, Task]]:
-        """
-        """
-
-        if self._process_times[task.process] > time:
-            return [(self._process_times[task.process], task)]
-
-        self._process_times[task.process] = time + task.size * self._gamma
-
-        if self._canvas:
-            self._canvas.draw_compute_task()
-
-        return self._complete_task(self._process_times[task.process],
-                                   program,
-                                   task)
-
-#    def drawCompute(self, task, time, noise):               
-#        """
-#        """
-#
-#        if self.context is not None:
-#            self.context.drawRectangle(task.process, time, task.delay, Visual.compute_base, Visual.compute_height, 'std')
-#
-#            if self.host_noise is not None:
-#                self.context.drawRectangle(task.process, time+task.delay, noise, -self.context.compute_height/2, self.context.compute_height, 'err')
-
-    def execute_put_task(self,
-                         time: int,
-                         program: Program,
-                         task: PutTask
-                         ) -> Iterable[Tuple[int, Task]]:
+    def _execute_put_task(self,
+                          time: int,
+                          task: PutTask
+                          ) -> int:
         """
         Execute the put task.
         """
-
-        if self._process_times[task.process] > time:
-            return [(self._process_times[task.process], task)]
 
         logging.debug('ProxyTask for process %i at %i', task.process, time)
 
         # put side
         put_time = self._alpha + self._beta * task.message_size
-        # noise_put = self.getNetworkNoise(put_time)
-        arrival = time + put_time
-        # time_put = arrival + noise_put
+        time_arrival = time + put_time
 
-        # blocking put and put and same under LB machine
+        # blocking put and put and same with LB machine
 
-        self._process_times[task.process] = arrival
-        self._maximum_time = max(self._maximum_time, arrival)
+        self._set_process_time(task.process, time_arrival)
 
-        if self._canvas:
-            self._canvas.draw_put_task()
+        if self.draw_mode:
+            self.canvas.draw_put_task()
 
-        return self._complete_task(arrival, program, task)
-
-#    def drawPut(self, task, time, arrival, noise):
-#        # check for visual context
-#        if self.context:
-#            side = 1 if task.process < task.target else -1
-#            
-#            # draw put msg
-#            self.context.drawVLine(task.process, time, Visual.put_base, Visual.put_height*side, 'std')
-#            self.context.drawSLine(task.process, time, Visual.put_height, task.target, arrival, 'std')
-#            self.context.drawVLine(task.target, arrival, Visual.put_base, Visual.put_height*-side, 'std')
-#    
-#            # draw noise
-#            if noise != 0:
-#                self.context.drawHLine(task.target, arrival, noise, -Visual.put_height*side, 'err')     
-#                self.context.drawVLine(task.target, arrival+noise, Visual.put_base, -Visual.put_height*side, 'err')
+        return time_arrival
 
 
 class LBPMachine(LBMachine):
@@ -206,59 +124,39 @@ class LBPMachine(LBMachine):
 
         self._kappa = pipelining
 
-    def execute_put_task(self, time, program, task):
+    def _execute_put_task(self,
+                          time: int,
+                          task: PutTask
+                          ) -> int:
         """
         Execute the put task.
         """
 
-        if self._process_times[task.process] > time:
-            # reinsert task at delayed time
-            return [(self._process_times[task.process], task)]
-
-        # pipeline
         pipe_time = self._kappa
         time_pipe = time + pipe_time
 
-        #  XXX NETWORK LOCK quick and dirty
-        # this was part of the push for a network implementation
-        # if self.network_lock[time_pipe // 50]:
-        #        return [(((time_pipe // 50) + 1) * 50, task)]
-        # self.network_lock[time_pipe // 50] = True
-
-        # put side
         put_time = self._alpha + self._beta * task.message_size
-        arrival = time_pipe + put_time
-
-        # draw put side
-        # self.drawPut(task, time_pipe, arrival, noise_put)
+        time_arrival = time_pipe + put_time
 
         if task.blocking:
-            self._process_times[task.process] = arrival
+            self._set_process_time(task.process, time_arrival)
+
+            # if self.draw_mode:
+            #     self.canvas.draw_put_task()
 
         else:
-            self._process_times[task.process] = time_pipe
+            self._set_process_time(task.process, time_pipe)
 
-        self._maximum_time = max(self._maximum_time, arrival)
+            # if self.draw_mode:
+            #     self.canvas.draw_put_task()
 
-        if self._canvas:
-            self._canvas.draw_put_task()
+        # expliclty update maximum time, because there may not be successors
+        # and that would not give the correct maximum time
+        self._update_maximum_time(time_arrival)
 
-        return self._complete_task(arrival, program, task)
+        return time_arrival
 
-#     def drawPipe(self, task, time, delay, noise):
-#             #
-#             if self.context:
-#                     side = 1 if task.process < task.target else -1
-#
-#                     self.context.drawVLine(task.process, time, Visual.put_base, Visual.put_height*side, 'std')
-#
-#                     boxheight = Visual.put_height - Visual.put_offset
-#                     offset = boxheight/2 + Visual.put_offset
-#                     self.context.drawRectangle(task.process, time, delay, offset*side, boxheight, 'std')
-#
-#                     if noise != 0:
-#                             self.context.drawHLine(task.process, time+delay, noise, Visual.put_height*side, 'err')
-
+# congestion
 # class LBPCMachine(LBPMachine):
 #     def __init__(self, nodes, latency, bandwidth, pipelining, congest):
 #             super().__init__(nodes, latency, bandwidth, pipelining)
@@ -273,7 +171,7 @@ class LBPMachine(LBMachine):
 #     def getMaximumTime(self):
 #             return self.maximum_time
 # 
-#     def executePutTask(self, time, program, task):
+#     def _executePutTask(self, time, program, task):
 #             # 
 #             if self._process_times[task.process] > time:
 #                     # fail
@@ -315,7 +213,7 @@ class LBPMachine(LBMachine):
 # 
 #             return [(time_put, msgtask)]
 # 
-#     def executeMsgTask(self, time, program, task):
+#     def _executeMsgTask(self, time, program, task):
 #             #print(task.name, time, self.nic_recv[task.target])
 #             if self.nic_recv[task.target] > time:
 #                     # reinsert

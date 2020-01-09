@@ -3,17 +3,19 @@ Defines the abstract class for machine models.
 """
 
 import heapq
-import abc
-from typing import Iterable, Tuple, Optional, MutableSet, MutableMapping, Callable, List
+from abc import ABC
+from typing import (Iterable, Tuple, Optional, MutableSet, MutableMapping,
+                    Callable, List)
 from collections import defaultdict
 
 from fennel.core.program import Program
 from fennel.core.task import Task
 from fennel.visual.canvas import Canvas
 from fennel.core.instrument import Instrument
+from fennel.tasks.proxy import ProxyTask
 
 
-class Machine(abc.ABC):
+class Machine(ABC):
     """
     Abstract class for all machine models.
     """
@@ -21,20 +23,26 @@ class Machine(abc.ABC):
     def __init__(self, nodes: int):
         self._nodes = nodes
         self._maximum_time = 0
+        self._process_times: MutableMapping[int, int] = defaultdict(lambda: 0)
+        #self._process_times = [0] * self._nodes
 
         self._instruments: MutableSet[Instrument] = set()
 
         # fulfilled dependency counter
+        # TODO could be MachineState abstraction
         self._dependencies: MutableMapping[str, int] = defaultdict(lambda: 0)
 
         # max time of dependency, gives task begin time
         # starts will not be included
         self._dtimes: MutableMapping[str, int] = defaultdict(lambda: 0)
 
-        # task handlers
-        self._task_handlers: MutableMapping[str, Optional[Callable[[int, Program, Task], Iterable[Tuple[int, Task]]]]] = defaultdict(lambda: None)
+        self._task_handlers: MutableMapping[str,
+                                            Optional[Callable[[int, Task], int]]] = defaultdict(lambda: None)
+
+        self._task_handlers['ProxyTask'] = self._execute_proxy_task
 
         # program counter
+        # TODO where is this used???
         self._program_counter = 0
 
         self._canvas: Optional[Canvas] = None
@@ -63,10 +71,29 @@ class Machine(abc.ABC):
 
         self._canvas = canvas
 
+    @property
+    def draw_mode(self) -> bool:
+        """
+        Determine draw mode from canvas presence.
+        """
+
+        return self._canvas is not None
+
+    @property
+    def maximum_time(self) -> int:
+        """
+        Get maximum time of run.
+        """
+
+        return self._maximum_time
+
     def run(self, program: Program) -> None:
         """
         Runs the given program on this machine.
         """
+
+        # TODO if sampling mode, then multiprocessing here
+        # separate MachineState
 
         if program.get_process_count() > self.nodes:
             raise RuntimeError(f'{program} requires greater node count '
@@ -76,6 +103,7 @@ class Machine(abc.ABC):
         # TODO how does this need to change to accomodate network simulation?
 
         # task priority queue
+        # this is the core of the simulation
         task_queue: List[Tuple[int, Task]] = []
 
         # insert all start tasks
@@ -96,6 +124,21 @@ class Machine(abc.ABC):
             for successor in successors:
                 heapq.heappush(task_queue, successor)
 
+    def _set_process_time(self, process: int, time: int) -> None:
+        """
+        Convenience function to update time of process.
+        """
+
+        self._process_times[process] = time
+        self._update_maximum_time(time)
+
+    def _update_maximum_time(self, time: int) -> None:
+        """
+        Convience function to update the maximum time of the machine.
+        """
+
+        self._maximum_time = max(self._maximum_time, time)
+
     def _execute(self,
                  time: int,
                  program: Program,
@@ -108,14 +151,21 @@ class Machine(abc.ABC):
 
         assert time >= 0
 
+        # delay task if process time is further
+        if self._process_times[task.process] > time:
+            return [(self._process_times[task.process], task)]
+
         # look up task handler and execute
-        callable = self._task_handlers[task.__class__.__name__]
+        handler = self._task_handlers[task.__class__.__name__]
 
-        if not callable:
-            raise RuntimeError('callable is None')
+        if not handler:
+            raise RuntimeError('callable look up is None')
 
-        return callable(time, program, task)
+        time_successors = handler(time, task)
 
+        return self._complete_task(time_successors,
+                                   program,
+                                   task)
 
     def _run_instruments(self,
                          time: int,
@@ -165,14 +215,25 @@ class Machine(abc.ABC):
 
         return successors
 
-    @property
-    def maximum_time(self) -> int:
+    def _execute_proxy_task(self,
+                            time: int,
+                            task: ProxyTask
+                            ) -> int:
         """
-        Get maximum time of run.
+        Executes proxy task.
+
+        Proxy tasks are used to allow for easier program construction; they
+        have no simulation effect therefore just complete the task and return
+        the successor tasks.
         """
 
-        return self._maximum_time
+        # proxy tasks complete immediately in simulation time therefore no
+        # time is used
+        # self._set_process_time(task.process, time)
 
+        # proxy tasks are never drawn
+
+        return time
 
 
 

@@ -14,9 +14,10 @@ def main() -> None:
     canvas.draw_compute_task(0, 20, 30)
     canvas.draw_sleep_task(0, 30, 40)
     canvas.draw_blocking_put_task(0, 1, 50, 60)
-    canvas.draw_blocking_put_task(1, 0, 60, 70)
+    canvas.draw_non_blocking_put_task(1, 0, 60, 70, 80)
+    canvas.draw_non_blocking_put_task(0, 1, 100, 110, 120)
 
-    canvas.minimum_time = 1000
+    canvas.minimum_time = 200
 
     canvas.write("output.pdf")
 

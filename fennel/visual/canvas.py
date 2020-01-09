@@ -20,33 +20,11 @@ class Canvas:
     Canvas to draw program task timeline.
     """
 
-    # xmargin = 0.5
-    # ymargin = 1
-
-    # tl_ymargin = 0.5
-    # tick_freq = 100
-    # tick_height = 0.1
-
-    # proc_height = 2
-
-    # compute_height = 0.1
-    # compute_base = 0.0
-
-    # sleep_height = 0.1
-
-    # start_height = 0.3
-    # start_radius = 0.075
-
-    # put_base = 0.0
-    # put_height = 0.15
-    # put_offset = 0.075
-
-    # scale = 1/72
-
     MARGIN = 1
     TIME_SCALE = 0.01
 
-    # TIME_WIDTH instead of scale
+    # TODO TIME_WIDTH instead of scale
+    # find resolution scale
 
     PROCESS_SPACING = 0.0
     PROCESS_HEIGHT = 1.0
@@ -130,6 +108,7 @@ class Canvas:
                 self._canvas.stroke(pyx.path.line(tick * self.TICK_RESOLUTION, -0.5,
                                                   tick * self.TICK_RESOLUTION, -0.15), attrs)
 
+                # TODO tick labeling
                 # self._canvas.text(tick * self.TICK_RESOLUTION, 0.0, str(tick * self.TICK_RESOLUTION), attrs)
 
     def _draw_process_lines(self) -> None:
@@ -261,7 +240,7 @@ class Canvas:
 
             source_offset = self.process_offset(source)
             target_offset = self.process_offset(target)
-            
+
             self._canvas.stroke(pyx.path.line(start, source_offset,
                                               end, target_offset), attrs)
 
@@ -283,15 +262,26 @@ class Canvas:
         assert switch > start
         assert end > switch
 
-        # if not PYPY_ENVIRONMENT:
-        #     attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-        #              pyx.trafo.translate(0.0, self.process_offset(source))]
+        if not PYPY_ENVIRONMENT:
+            attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
+                     pyx.trafo.translate(0.0, self.process_offset(source))]
 
-        #     self._canvas.fill(pyx.path.rect(start, -0.25, switch-start, 0.5), attrs)
+            side = 1 if source < target else -1
 
-        #     self._canvas.stroke(pyx.path.line(), attrs)
-        #     # TODO draw transfer line
+            self._canvas.stroke(pyx.path.line(start, 0.0, start, side * 0.25), attrs)
+            self._canvas.stroke(pyx.path.line(start, side * 0.25, switch, side * 0.25), attrs)
 
-        #     self._processes[source] = True
-        #     self._processes[target] = True
-        #     self._minimum_time = max(self._minimum_time, end)
+            # transfer line
+            attrs = [pyx.trafo.scale(self.TIME_SCALE, 1)]
+
+            source_offset = self.process_offset(source)
+            target_offset = self.process_offset(target)
+
+            self._canvas.stroke(pyx.path.line(switch,
+                                              (source_offset -
+                                               side * 0.25 * self.PROCESS_SCALE),
+                                              end, target_offset), attrs)
+
+            self._processes[source] = True
+            self._processes[target] = True
+            self._minimum_time = max(self._minimum_time, end)

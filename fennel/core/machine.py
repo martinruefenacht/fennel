@@ -10,6 +10,9 @@ from collections import defaultdict
 
 from fennel.core.program import Program
 from fennel.core.task import Task
+from fennel.core.compute import ComputeModel
+from fennel.core.network import NetworkModel
+
 from fennel.visual.canvas import Canvas
 from fennel.core.instrument import Instrument
 from fennel.tasks.proxy import ProxyTask
@@ -24,9 +27,15 @@ class Machine(ABC):
     Abstract class for all machine models.
     """
 
-    def __init__(self, nodes: int):
+    def __init__(self,
+                 nodes: int,
+                 compute: ComputeModel,
+                 network: NetworkModel):
         self._nodes = nodes
         self._maximum_time = 0
+
+        self._compute_model = compute
+        self._network_model = network
 
         # TODO could be MachineState abstraction
         self._process_times: MutableMapping[int, int] = defaultdict(lambda: 0)
@@ -51,6 +60,10 @@ class Machine(ABC):
                                                 ]] = defaultdict(lambda: None)
 
         self._task_handlers['ProxyTask'] = self._execute_proxy_task
+        self._task_handlers['StartTask'] = self._execute_start_task
+        self._task_handlers['SleepTask'] = self._execute_sleep_task
+        self._task_handlers['ComputeTask'] = self._execute_compute_task
+        self._task_handlers['PutTask'] = self._execute_put_task
 
         self._parallel_processes = 1
 
@@ -220,6 +233,10 @@ class Machine(ABC):
         all such successors.
         """
 
+        # TODO branching tasks say which successors
+        #      if task
+        #      partitioned send executes dynamically?
+
         successors = set()
 
         for successor in program.get_successors_to_task(task.name):
@@ -266,8 +283,100 @@ class Machine(ABC):
 
         return time
 
+    def _execute_start_task(self,
+                            time: int,
+                            task: StartTask
+                            ) -> int:
+        """
+        Execute the starting task.
+        """
 
+        time_start = time + task.skew
+        self._set_process_time(task.process, time_start)
 
+        if self.draw_mode:
+            assert self.canvas is not None
+            self.canvas.draw_start_task(task.process, time_start)
+
+        return time_start
+
+    def _execute_sleep_task(self,
+                            time: int,
+                            task: SleepTask
+                            ) -> int:
+        """
+        Executes the sleep task on this machine.
+
+        The sleep tasks just suspends execution for a time delay.
+        """
+
+        time_sleep = time + task.delay
+        self._set_process_time(task.process, time_sleep)
+
+        if self.draw_mode:
+            assert self.canvas is not None
+            self.canvas.draw_sleep_task(task.process,
+                                        time,
+                                        time_sleep)
+
+        return time_sleep
+
+    def _execute_compute_task(self,
+                              time: int,
+                              task: ComputeTask
+                              ) -> int:
+        """
+        Evaluates the given compute model.
+        """
+
+        time_compute = time + self._compute_model.evaluate(task)
+
+        # if self._compute_noise is not None:
+        #     time_noise = self._compute_noise.sample()
+        #     time_compute += time_noise
+
+        self._set_process_time(task.process, time_compute)
+
+        if self.draw_mode:
+            assert self.canvas is not None
+            self.canvas.draw_compute_task(task.process,
+                                          time,
+                                          time_compute)
+
+            # if self._compute_noise is not None:
+            #     self.canvas.draw_noise_overlay(task.process,
+            #                                    time_compute - time_noise,
+            #                                    time_compute)
+
+        return time_compute
+
+    def _execute_put_task(self,
+                          time: int,
+                          task: PutTask
+                          ) -> int:
+        """
+        Execute the put task.
+        """
+
+        local_time, remote_time = self._network_model.evaluate(task)
+
+        # if self._network_noise is not None:
+        #     time_noise = self._network_noise.sample()
+        #     time_arrival += time_noise
+
+        self._set_process_time(task.process, time + local_time)
+
+        if self.draw_mode:
+            self.canvas.draw_blocking_put_task(task.process,
+                                               task.target,
+                                               time,
+                                               time + remote_time)
+
+            # TODO draw noise on transfer line somehow
+#             if self._network_noise is not None:
+#                 self._canvas.draw_noise_overlay(task.target,
+
+        return time + local_time
 
 
 # remove magic 1000, require some intelligent way of memory requirement

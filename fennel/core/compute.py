@@ -1,0 +1,21 @@
+"""
+Definition of the abstact ComputeModel.
+"""
+
+
+from abc import ABC, abstractmethod
+
+
+from fennel.tasks.compute import ComputeTask
+
+
+class ComputeModel(ABC):
+    """
+    Abstract class for all compute models.
+    """
+
+    @abstractmethod
+    def evaluate(self, task: ComputeTask) -> int:
+        """
+        The evaluation of the model for a given task.
+        """

@@ -6,6 +6,7 @@ from fennel.core.program import Program
 from fennel.tasks.start import StartTask
 from fennel.tasks.put import PutTask
 from fennel.tasks.proxy import ProxyTask
+from fennel.tasks.compute import ComputeTask
 
 
 def generate_multicast(message_size: int, width: int) -> Program:
@@ -72,3 +73,78 @@ def generate_pingpong(message_size: int, rounds: int) -> Program:
         prog.add_edge(f'p1_{ridx}', f'x0_{ridx+1}')
 
     return prog
+
+
+def generate_partitioned_send(message_size: int,
+                              partitions: int,
+                              rounds: int
+                              ) -> Program:
+    """
+    Generate a partitioned send program.
+    """
+
+    assert message_size >= 0
+    assert partitions >= 1
+    assert rounds > 0
+
+    program = Program()
+
+    program.add_node(StartTask("s_0", 0))
+
+    program.add_node(ProxyTask("x_0_0", 0))
+
+    program.add_node(ComputeTask("c_0_0", 0, 1024))
+    program.add_node(ComputeTask("c_0_1", 0, 1024))
+
+    program.add_node(PutTask("p_0", 0, 1, 2048))
+
+    program.add_node(ProxyTask("x_0_1", 0))
+
+    program.add_node(ComputeTask("c_0_2", 0, 1024))
+    program.add_node(ComputeTask("c_0_3", 0, 1024))
+
+    program.add_node(PutTask("p_1", 0, 1, 2048))
+
+    program.add_node(StartTask("s_1", 1))
+
+    program.add_node(ProxyTask("x_1_0", 1))
+
+    program.add_node(ComputeTask("c_1_0", 1, 1024))
+    program.add_node(ComputeTask("c_1_1", 1, 1024))
+
+    program.add_node(ProxyTask("x_1_1", 1))
+
+    program.add_node(ComputeTask("c_1_2", 1, 1024))
+    program.add_node(ComputeTask("c_1_3", 1, 1024))
+
+    program.add_edge("s_0", "x_0_0")
+    program.add_edge("x_0_0", "c_0_0")
+    program.add_edge("x_0_0", "c_0_1")
+
+    program.add_edge("c_0_0", "p_0")
+    program.add_edge("c_0_1", "p_0")
+
+    program.add_edge("c_0_0", "x_0_1")
+    program.add_edge("c_0_1", "x_0_1")
+    program.add_edge("p_0", "x_0_1")
+
+    program.add_edge("x_0_1", "c_0_2")
+    program.add_edge("x_0_1", "c_0_3")
+
+    program.add_edge("c_0_2", "p_1")
+    program.add_edge("c_0_3", "p_1")
+
+    program.add_edge("s_1", "x_1_0")
+    program.add_edge("p_0", "x_1_0")
+
+    program.add_edge("x_1_0", "c_1_0")
+    program.add_edge("x_1_0", "c_1_1")
+
+    program.add_edge("c_1_0", "x_1_1")
+    program.add_edge("c_1_1", "x_1_1")
+    program.add_edge("p_1", "x_1_1")
+
+    program.add_edge("x_1_1", "c_1_2")
+    program.add_edge("x_1_1", "c_1_3")
+
+    return program

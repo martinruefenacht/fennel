@@ -166,10 +166,6 @@ class Machine(ABC):
             # execute task
             successors = self._execute(time, program, task)
 
-            # only proxy tasks can have no successors
-            if not isinstance(task, ProxyTask) and not successors:
-                raise RuntimeError('All programs must end with proxy tasks.')
-
             # insert all successor tasks
             for successor in successors:
                 heapq.heappush(task_queue, successor)
@@ -238,6 +234,11 @@ class Machine(ABC):
         and update the time. If all dependencies are complete then return
         all such successors.
         """
+
+        # only proxy tasks can have no successors
+        if (not isinstance(task, ProxyTask) and
+                not program.get_successors_to_task(task.name)):
+            raise RuntimeError(f'All programs must end with proxy tasks. {task.name}')
 
         successors = set()
 

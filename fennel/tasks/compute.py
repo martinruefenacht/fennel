@@ -10,8 +10,8 @@ class ComputeTask(Task):
     takes place.
     """
 
-    def __init__(self, name: str, node: int, size: int):
-        super().__init__(name, node)
+    def __init__(self, name: str, node: int, size: int, concurrent: bool):
+        super().__init__(name, node, concurrent)
 
         self._size = size
         self._concurrent = False
@@ -31,11 +31,3 @@ class ComputeTask(Task):
         """
 
         return self._concurrent
-
-    @concurrent.setter
-    def concurrent(self, concurrent: bool) -> None:
-        """
-        Set threadablility.
-        """
-
-        self._concurrent = concurrent

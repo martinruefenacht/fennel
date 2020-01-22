@@ -9,8 +9,10 @@ from pyvis.network import Network
 
 
 from fennel.core.program import Program
-from fennel.generators.p2p import generate_partitioned_send
 from fennel.tasks.proxy import ProxyTask
+
+from fennel.generators.p2p import generate_partitioned_send
+from fennel.generators.compute import generate_compute
 
 
 def convert(program: Program) -> Network:
@@ -37,7 +39,14 @@ def convert(program: Program) -> Network:
                 subs = program.get_successors_to_task(sub)
 
                 for sub2 in subs:
-                    net.add_edge(name, sub2)
+                    if sub2.startswith('x'):
+                        subs2 = program.get_successors_to_task(sub2)
+
+                        for sub3 in subs2:
+                            net.add_edge(name, sub3)
+
+                    else:
+                        net.add_edge(name, sub2)
 
             else:
                 net.add_edge(name, sub)
@@ -54,7 +63,9 @@ def main() -> None:
 
     # prog = generate_multicast(0, 10)
 
-    prog = generate_partitioned_send(0, 4, 2, 1)
+    # prog = generate_partitioned_send(0, 4, 2, 1)
+
+    prog = generate_compute(1, 2, 10, False, 3)
 
     net = convert(prog)
 

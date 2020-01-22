@@ -77,14 +77,19 @@ def generate_pingpong(message_size: int, rounds: int) -> Program:
 
 def generate_partitioned_send(message_size: int,
                               partitions: int,
+                              threshold: int,
                               rounds: int
                               ) -> Program:
     """
-    Generate a partitioned send program.
+    Generate a two phase partitioned send Program.
     """
 
+    # TODO this should be generalized
+    # threshold value
+
     assert message_size >= 0
-    assert partitions >= 1
+    assert partitions > 0
+    assert threshold > 0 and threshold <= partitions
     assert rounds > 0
 
     program = Program()

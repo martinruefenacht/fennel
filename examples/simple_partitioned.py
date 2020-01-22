@@ -15,10 +15,15 @@ def main() -> None:
     Generates a multicast program and executes it using LBMachine model.
     """
 
-    program = generate_partitioned_send(1, 4, 1)
+    # TODO this is hardcoded
+    program = generate_partitioned_send(1, 4, 2, 1)
+
+
 
     # TODO no concurrency for compute at the moment
+    # TODO add compute noise
     compute = GammaModel(0.1)
+
     network = LBPModel(100, 0.1, 200)
 
     machine = Machine(2, compute, network)

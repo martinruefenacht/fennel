@@ -14,7 +14,6 @@ class ComputeTask(Task):
         super().__init__(name, node, concurrent)
 
         self._size = size
-        self._concurrent = False
 
     @property
     def size(self) -> int:
@@ -23,11 +22,3 @@ class ComputeTask(Task):
         """
 
         return self._size
-
-    @property
-    def concurrent(self) -> bool:
-        """
-        Get threadablility of this compute task.
-        """
-
-        return self._concurrent

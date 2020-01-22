@@ -194,6 +194,7 @@ class Machine(ABC):
             tmp = list(proc for proc in self._node_times[task.node])
             earliest = min(tmp)
             process = tmp.index(earliest)
+            print(process)
 
         else:
             earliest = max(proc for proc in self._node_times[task.node])

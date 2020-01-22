@@ -64,3 +64,16 @@ def test_single_process():
 
     assert machine.maximum_time == 100
 
+
+def test_multi_process():
+    """
+    """
+
+    program = generate_compute(1, 10, 10, True, 1)
+
+    compute = GammaModel(1)
+
+    machine = Machine(1, 2, compute, None)
+    machine.run(program)
+
+    assert machine.maximum_time == 50

@@ -54,7 +54,7 @@ def main() -> None:
 
     # prog = generate_multicast(0, 10)
 
-    prog = generate_partitioned_send(0, 4, 1)
+    prog = generate_partitioned_send(0, 4, 2, 1)
 
     net = convert(prog)
 

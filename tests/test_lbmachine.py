@@ -25,7 +25,7 @@ def test_lbmachine():
 
     program = generate_pingpong(msg_size, rounds)
 
-    machine = Machine(nodes, GammaModel(0), LBModel(latency, 0))
+    machine = Machine(nodes, 1, GammaModel(0), LBModel(latency, 0))
     machine.run(program)
 
     assert machine.maximum_time == rounds * 2 * latency

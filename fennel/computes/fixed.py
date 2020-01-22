@@ -25,10 +25,10 @@ class FixedTimeModel(ComputeModel):
 
         return self._duration
 
-    def evaluate(self, task: ComputeTask) -> int:
+    def evaluate(self, time: int, task: ComputeTask) -> int:
         """
         Evaluate the fixed time model.
         """
 
         # ignores the size of the task
-        return self._duration
+        return time + self._duration

@@ -25,11 +25,18 @@ def generate_multicast(message_size: int, width: int) -> Program:
     for cidx in range(nodes):
         prog.add_node(StartTask(f's_{cidx}', cidx))
 
+        prog.add_node(ProxyTask(f'x_{cidx}', cidx))
+
+        prog.add_edge(f's_{cidx}', f'x_{cidx}')
+
     # create put nodes
     for cidx in range(1, nodes):
         prog.add_node(PutTask(f'p0_{cidx}', 0, cidx, message_size))
+
         prog.add_edge(f's_{cidx}', f'p0_{cidx}')
+
         prog.add_edge('s_0', f'p0_{cidx}')
+        prog.add_edge(f'p0_{cidx}', f'x_{cidx}')
 
     return prog
 

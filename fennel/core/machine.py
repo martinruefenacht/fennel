@@ -2,16 +2,19 @@
 Defines the abstract class for machine models.
 """
 
+
 import heapq
 from abc import ABC
 from typing import (Iterable, Tuple, Optional, MutableSet, MutableMapping,
                     Callable, List, Union)
 from collections import defaultdict
 
+
 from fennel.core.program import Program
 from fennel.core.task import Task
 from fennel.core.compute import ComputeModel
 from fennel.core.network import NetworkModel
+
 
 from fennel.visual.canvas import Canvas
 from fennel.core.instrument import Instrument
@@ -29,17 +32,14 @@ class Machine(ABC):
 
     def __init__(self,
                  nodes: int,
+                 processes: int,
                  compute: ComputeModel,
                  network: NetworkModel):
         self._nodes = nodes
-        self._maximum_time = 0
+        self._processes = processes
 
         self._compute_model = compute
         self._network_model = network
-
-        # TODO could be MachineState abstraction
-        self._process_times: MutableMapping[int, int] = defaultdict(lambda: 0)
-        # self._process_times = [0] * self._nodes
 
         self._instruments: MutableSet[Instrument] = set()
 
@@ -50,6 +50,9 @@ class Machine(ABC):
         # starts will not be included
         self._dtimes: MutableMapping[str, int] = defaultdict(lambda: 0)
 
+        self._node_times: MutableMapping[int, [int, int]]
+        self._node_times = [[0] * processes] * nodes
+
         self._task_handlers: MutableMapping[str,
                                             Union[
                                                 Callable[[int, StartTask], int],
@@ -57,7 +60,7 @@ class Machine(ABC):
                                                 Callable[[int, SleepTask], int],
                                                 Callable[[int, ComputeTask], int],
                                                 Callable[[int, PutTask], int],
-                                                ]] = defaultdict(lambda: None)
+                                                ]] = dict()
 
         self._task_handlers['ProxyTask'] = self._execute_proxy_task
         self._task_handlers['StartTask'] = self._execute_start_task
@@ -65,23 +68,7 @@ class Machine(ABC):
         self._task_handlers['ComputeTask'] = self._execute_compute_task
         self._task_handlers['PutTask'] = self._execute_put_task
 
-        self._parallel_processes = 1
-
         self._canvas: Optional[Canvas] = None
-
-    @property
-    def parallel_processes(self) -> int:
-        """
-        """
-
-        return self._parallel_processes
-
-    @parallel_processes.setter
-    def parallel_processes(self, processes: int) -> None:
-        """
-        """
-
-        self._parallel_processes = processes
 
     @property
     def nodes(self) -> int:
@@ -90,6 +77,14 @@ class Machine(ABC):
         """
 
         return self._nodes
+
+    @property
+    def processes(self) -> int:
+        """
+        Get the process count.
+        """
+
+        return self._processes
 
     @property
     def canvas(self) -> Optional[Canvas]:
@@ -121,7 +116,12 @@ class Machine(ABC):
         Get maximum time of run.
         """
 
-        return self._maximum_time
+        time = max((proc_time
+                    for node in self._node_times
+                    for proc_time in node))
+
+        assert time >= 0
+        return time
 
     def run(self, program: Program) -> None:
         """
@@ -143,6 +143,7 @@ class Machine(ABC):
 
     def _run_program(self, program: Program) -> None:
         """
+        Run the given Program on the current machine state.
         """
 
         # task priority queue
@@ -160,27 +161,25 @@ class Machine(ABC):
             time: int
             time, task = heapq.heappop(task_queue)
 
+            assert time >= 0
+
             # execute task
             successors = self._execute(time, program, task)
+
+            # only proxy tasks can have no successors
+            if not isinstance(task, ProxyTask) and not successors:
+                raise RuntimeError('All programs must end with proxy tasks.')
 
             # insert all successor tasks
             for successor in successors:
                 heapq.heappush(task_queue, successor)
 
-    def _set_process_time(self, process: int, time: int) -> None:
+    def _set_process_time(self, node: int, process: int, time: int) -> None:
         """
-        Convenience function to update time of process.
-        """
-
-        self._process_times[process] = time
-        self._update_maximum_time(time)
-
-    def _update_maximum_time(self, time: int) -> None:
-        """
-        Convience function to update the maximum time of the machine.
+        Convenience function to update time of (node, process).
         """
 
-        self._maximum_time = max(self._maximum_time, time)
+        self._node_times[node][process] = time
 
     def _execute(self,
                  time: int,
@@ -194,18 +193,25 @@ class Machine(ABC):
 
         assert time >= 0
 
+        # find earliest time to execute
+        if task.concurrent:
+            tmp = list(proc for proc in self._node_times[task.node])
+            earliest = min(tmp)
+            process = tmp.index(earliest)
+
+        else:
+            earliest = max(proc for proc in self._node_times[task.node])
+            process = 0
+
         # delay task if process time is further
-        if self._process_times[task.process] > time:
+        if earliest > time:
             # TODO what is the reason for the delaying?
-            return [(self._process_times[task.process], task)]
+            return [(earliest, task)]
 
         # look up task handler and execute
         handler = self._task_handlers[task.__class__.__name__]
 
-        if handler is None:
-            raise RuntimeError('callable look up is None')
-
-        time_successors = handler(time, task)
+        time_successors = handler(time, task, process)
 
         return self._complete_task(time_successors,
                                    program,
@@ -233,10 +239,6 @@ class Machine(ABC):
         all such successors.
         """
 
-        # TODO branching tasks say which successors
-        #      if task
-        #      partitioned send executes dynamically?
-
         successors = set()
 
         for successor in program.get_successors_to_task(task.name):
@@ -263,9 +265,11 @@ class Machine(ABC):
 
         return successors
 
-    def _execute_proxy_task(self,
+    @classmethod
+    def _execute_proxy_task(cls,
                             time: int,
-                            task: ProxyTask
+                            task: ProxyTask,
+                            process: int
                             ) -> int:
         """
         Executes proxy task.
@@ -275,9 +279,12 @@ class Machine(ABC):
         the successor tasks.
         """
 
+        assert time >= 0
+        assert task is not None
+        assert process >= 0
+
         # proxy tasks complete immediately in simulation time therefore no
         # time is used
-        # self._set_process_time(task.process, time)
 
         # proxy tasks are never drawn
 
@@ -285,24 +292,26 @@ class Machine(ABC):
 
     def _execute_start_task(self,
                             time: int,
-                            task: StartTask
+                            task: StartTask,
+                            process: int
                             ) -> int:
         """
         Execute the starting task.
         """
 
         time_start = time + task.skew
-        self._set_process_time(task.process, time_start)
+        self._set_process_time(task.node, process, time_start)
 
         if self.draw_mode:
             assert self.canvas is not None
-            self.canvas.draw_start_task(task.process, time_start)
+            self.canvas.draw_start_task(task.node, time_start)
 
         return time_start
 
     def _execute_sleep_task(self,
                             time: int,
-                            task: SleepTask
+                            task: SleepTask,
+                            process: int
                             ) -> int:
         """
         Executes the sleep task on this machine.
@@ -311,11 +320,11 @@ class Machine(ABC):
         """
 
         time_sleep = time + task.delay
-        self._set_process_time(task.process, time_sleep)
+        self._set_process_time(task.node, process, time_sleep)
 
         if self.draw_mode:
             assert self.canvas is not None
-            self.canvas.draw_sleep_task(task.process,
+            self.canvas.draw_sleep_task(task.node,
                                         time,
                                         time_sleep)
 
@@ -323,36 +332,29 @@ class Machine(ABC):
 
     def _execute_compute_task(self,
                               time: int,
-                              task: ComputeTask
+                              task: ComputeTask,
+                              process: int
                               ) -> int:
         """
         Evaluates the given compute model.
         """
 
-        time_compute = time + self._compute_model.evaluate(task)
+        time_compute = self._compute_model.evaluate(time, task)
 
-        # if self._compute_noise is not None:
-        #     time_noise = self._compute_noise.sample()
-        #     time_compute += time_noise
-
-        self._set_process_time(task.process, time_compute)
+        self._set_process_time(task.node, process, time_compute)
 
         if self.draw_mode:
             assert self.canvas is not None
-            self.canvas.draw_compute_task(task.process,
+            self.canvas.draw_compute_task(task.node,
                                           time,
                                           time_compute)
-
-            # if self._compute_noise is not None:
-            #     self.canvas.draw_noise_overlay(task.process,
-            #                                    time_compute - time_noise,
-            #                                    time_compute)
 
         return time_compute
 
     def _execute_put_task(self,
                           time: int,
-                          task: PutTask
+                          task: PutTask,
+                          process: int
                           ) -> int:
         """
         Execute the put task.
@@ -360,21 +362,14 @@ class Machine(ABC):
 
         local_time, remote_time = self._network_model.evaluate(task)
 
-        # if self._network_noise is not None:
-        #     time_noise = self._network_noise.sample()
-        #     time_arrival += time_noise
-
-        self._set_process_time(task.process, time + local_time)
+        self._set_process_time(task.node, process, time + local_time)
 
         if self.draw_mode:
-            self.canvas.draw_blocking_put_task(task.process,
+            assert self._canvas is not None
+            self.canvas.draw_blocking_put_task(task.node,
                                                task.target,
                                                time,
                                                time + remote_time)
-
-            # TODO draw noise on transfer line somehow
-#             if self._network_noise is not None:
-#                 self._canvas.draw_noise_overlay(task.target,
 
         return time + local_time
 
@@ -386,18 +381,3 @@ class Machine(ABC):
 # while not task_queue.isEmpty():
 # time, task = task_queue.pop()
 # task_queue.push(*successor)
-
-#     def drawMachine(self):
-#         """
-#         """
-
-#         # find max time
-#         max_time = int((math.ceil(self.getMaximumTime() / 500) * 500))
-#         # TODO required minimum
-#         max_time = max(max_time, 2000)
-
-#         # draw time line
-#         self.context.drawTimeLine(max_time)
-
-#         # draw process lines
-#         self.context.drawProcessLines(self.node_count, max_time)

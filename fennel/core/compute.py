@@ -15,7 +15,7 @@ class ComputeModel(ABC):
     """
 
     @abstractmethod
-    def evaluate(self, task: ComputeTask) -> int:
+    def evaluate(self, time: int, task: ComputeTask) -> int:
         """
         The evaluation of the model for a given task.
         """

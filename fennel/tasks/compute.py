@@ -10,8 +10,8 @@ class ComputeTask(Task):
     takes place.
     """
 
-    def __init__(self, name: str, proc: int, size: int):
-        super().__init__(name, proc)
+    def __init__(self, name: str, node: int, size: int):
+        super().__init__(name, node)
 
         self._size = size
         self._concurrent = False

@@ -7,9 +7,10 @@ class Task:
 
     task_counter: int = 0
 
-    def __init__(self, name: str, proc: int):
+    def __init__(self, name: str, node: int, concurrent: bool = False):
         self._name = name
-        self._proc = proc
+        self._node = node
+        self._concurrent = concurrent
 
         self._taskid = Task.task_counter
         Task.task_counter += 1
@@ -26,17 +27,25 @@ class Task:
         return self._taskid
 
     @property
-    def process(self) -> int:
+    def node(self) -> int:
         """
-        Get process id
+        Get node id
         """
 
-        return self._proc
+        return self._node
 
     @property
     def name(self) -> str:
         """
-        Get process name.
+        Get task name.
         """
 
         return self._name
+
+    @property
+    def concurrent(self) -> bool:
+        """
+        Gets concurrency.
+        """
+
+        return self._concurrent

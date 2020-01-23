@@ -6,6 +6,9 @@ Defines the gamma compute model.
 from fennel.core.compute import ComputeModel
 from fennel.tasks.compute import ComputeTask
 
+from scipy.stats import norm
+import random
+
 
 class GammaModel(ComputeModel):
     """
@@ -34,3 +37,22 @@ class GammaModel(ComputeModel):
         """
 
         return time + int(task.size * self._gamma)
+
+
+class NoisyGammaModel(GammaModel):
+    """
+    """
+
+    def __init__(self, gamma):
+        super().__init__(gamma)
+
+        self._prep = norm.rvs(1.0, 0.06, size=1000)
+
+    def evaluate(self, time: int, task: ComputeTask) -> int:
+        """
+        Evaluate the gamma model.
+        """
+
+        noise = random.choice(self._prep)
+
+        return time + int(task.size * self._gamma * noise)

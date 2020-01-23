@@ -28,6 +28,3 @@ def test_negative_gamma_fails(gamma):
         model = GammaModel(gamma)
 
         assert model.gamma == gamma
-
-
-# TODO test evaluation

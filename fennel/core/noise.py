@@ -57,17 +57,3 @@ class NormalNoise(NoiseModel):
         """
 
         return choice(self._rvs)
-
-
-class BetaPrimeNoise(NoiseModel):
-    """
-    """
-
-    def __init__(self, seed: int, a: float, b: float) -> None:
-        super().__init__(seed)
-
-    def sample(self) -> int:
-        """
-        """
-
-        return -1

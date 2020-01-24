@@ -29,6 +29,9 @@ class Program:
 
         return self._metadata.get(name)
 
+    def __getitem__(self, key: str) -> Optional[Task]:
+        return self.get_task(key)
+
     def add_node(self, task: Task) -> None:
         """
         Adds a node to this program.

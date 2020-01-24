@@ -1,6 +1,10 @@
 """
 """
 
+
+from typing import Optional
+
+
 class Task:
     """
     """
@@ -11,6 +15,7 @@ class Task:
         self._name = name
         self._node = node
         self._concurrent = concurrent
+        self._any = None
 
         self._taskid = Task.task_counter
         Task.task_counter += 1
@@ -49,3 +54,15 @@ class Task:
         """
 
         return self._concurrent
+
+    @property
+    def any(self) -> Optional[int]:
+        """
+        Gets the any count if not None.
+        """
+
+        return self._any
+
+    @any.setter
+    def any(self, any_count: int) -> None:
+        self._any = any_count

@@ -3,6 +3,7 @@ Defines the abstract class for machine models.
 """
 
 
+import logging
 import heapq
 from abc import ABC
 from typing import (Iterable, Tuple, Optional, MutableSet, MutableMapping,
@@ -69,6 +70,13 @@ class Machine(ABC):
         self._task_handlers['PutTask'] = self._execute_put_task
 
         self._canvas: Optional[Canvas] = None
+
+    def is_finished(self) -> bool:
+        """
+        Checks whether the machine is finished.
+        """
+
+        return not self._dependencies and not self._dtimes
 
     @property
     def nodes(self) -> int:
@@ -189,12 +197,13 @@ class Machine(ABC):
 
         assert time >= 0
 
+        logging.debug('execute %s @ %i', task.name, time)
+
         # find earliest time to execute
         if task.concurrent:
             tmp = list(proc for proc in self._node_times[task.node])
             earliest = min(tmp)
             process = tmp.index(earliest)
-            print(process)
 
         else:
             earliest = max(proc for proc in self._node_times[task.node])
@@ -209,6 +218,8 @@ class Machine(ABC):
         handler = self._task_handlers[task.__class__.__name__]
 
         time_successors = handler(time, task, process)
+
+        logging.debug('%s ended %i', task.name, time_successors)
 
         return self._complete_task(time_successors,
                                    program,
@@ -236,36 +247,57 @@ class Machine(ABC):
         all such successors.
         """
 
+        sucs = list(program.get_successors_to_task(task.name))
+        # TODO generator is a problem
+
         # only proxy tasks can have no successors
         if (not isinstance(task, ProxyTask) and
-                not program.get_successors_to_task(task.name)):
-            raise RuntimeError(f'All programs must end with proxy tasks. {task.name}')
+                not sucs):
+            raise RuntimeError('All programs must end with proxy tasks. '
+                               f'{task.name} is not a ProxyTask.')
 
         successors = set()
 
-        for successor in program.get_successors_to_task(task.name):
+        for successor in sucs:
             # increment completed dependencies for successor
             self._dependencies[successor] += 1
 
             # forward task to last dependency
             self._dtimes[successor] = max(self._dtimes[successor], time)
 
-            # check for completion
-            if (self._dependencies[successor] ==
+            # if successor is any capable
+            # TODO clean up logic
+            if (program[successor].any and
+                    self._dependencies[successor] >= program[successor].any):
+                # execute this task
+                successors.add(self._load_task(successor, program))
+
+            # check for completion of all dependencies
+            elif (self._dependencies[successor] ==
                     program.get_in_degree(successor)):
-                successor_task = program.get_task(successor)
-                if not successor_task:
-                    raise RuntimeError('Successor does not exist.')
 
-                time_next = self._dtimes[successor]
-
-                # delete record of program
-                del self._dtimes[successor]
-                del self._dependencies[successor]
-
-                successors.add((time_next, successor_task))
+                successors.add(self._load_task(successor, program))
 
         return successors
+
+    def _load_task(self,
+                   successor: str,
+                   program: Program
+                   ) -> Tuple[int, Task]:
+        """
+        """
+
+        successor_task = program.get_task(successor)
+        if not successor_task:
+            raise RuntimeError('Successor does not exist.')
+
+        time_next = self._dtimes[successor]
+
+        # delete record of program
+        del self._dtimes[successor]
+        del self._dependencies[successor]
+
+        return (time_next, successor_task)
 
     @classmethod
     def _execute_proxy_task(cls,
@@ -274,6 +306,7 @@ class Machine(ABC):
                             process: int
                             ) -> int:
         """
+
         Executes proxy task.
 
         Proxy tasks are used to allow for easier program construction; they

@@ -36,6 +36,9 @@ class GammaModel(ComputeModel):
         Evaluate the gamma model.
         """
 
+        if task.time is not None:
+            return time + task.time
+
         return time + int(task.size * self._gamma)
 
 

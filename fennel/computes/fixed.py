@@ -30,5 +30,8 @@ class FixedTimeModel(ComputeModel):
         Evaluate the fixed time model.
         """
 
+        if task.time is not None:
+            return time + task.time
+
         # ignores the size of the task
         return time + self._duration

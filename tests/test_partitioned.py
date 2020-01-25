@@ -61,5 +61,5 @@ def test_partitioned_pattern():
 
     logging.info(machine._node_times)
 
-    assert all(process <= 10 for process in machine._node_times[1])
+    assert all(process <= 20 for process in machine._node_times[1])
     assert all(process <= 100 for process in machine._node_times[0])

@@ -12,6 +12,7 @@ import pytest
 from fennel.core.program import Program
 from fennel.tasks.compute import ComputeTask
 from fennel.tasks.start import StartTask
+from fennel.tasks.sleep import SleepTask
 from fennel.tasks.proxy import ProxyTask
 from fennel.core.machine import Machine
 from fennel.computes.gamma import GammaModel
@@ -33,7 +34,7 @@ def test_start_proxy():
     machine = Machine(1, 1, None, None)
     machine.run(prog)
 
-    assert machine
+    assert machine.maximum_time == 0
 
 
 def test_start_compute_proxy():
@@ -54,7 +55,7 @@ def test_start_compute_proxy():
     machine = Machine(1, 1, GammaModel(1), None)
     machine.run(prog)
 
-    assert machine
+    assert machine.maximum_time == 100
 
 
 def test_proxy_end_requirement():
@@ -86,8 +87,7 @@ def test_any_property():
 
     prog.add_node(StartTask('s0', 0))
 
-    # never executed
-    prog.add_node(ProxyTask('x0', 0))
+    prog.add_node(SleepTask('d0', 0, 1000))
 
     c0 = ComputeTask('c0', 0, 100)
     c0.any = 1
@@ -95,7 +95,8 @@ def test_any_property():
     prog.add_node(ProxyTask('x1', 0))
 
     prog.add_edge('s0', 'c0')
-    prog.add_edge('x0', 'c0')
+    prog.add_edge('s0', 'd0')
+    prog.add_edge('d0', 'c0')
     prog.add_edge('c0', 'x1')
 
     # machine

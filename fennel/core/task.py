@@ -2,11 +2,27 @@
 """
 
 
-from typing import Optional
+from typing import Optional, Tuple
+from enum import Enum, auto
+
+
+from fennel.core.time import Time
+
+
+PlannedTask = Tuple[Time, 'Task']
+
+
+class TaskEvent(Enum):
+    SCHEDULED = auto()
+    DELAYED = auto()
+    EXECUTED = auto()
+    COMPLETED = auto()
+    LOADED = auto()
 
 
 class Task:
     """
+    The abstract definition of what a task is.
     """
 
     task_counter: int = 0
@@ -14,7 +30,9 @@ class Task:
     def __init__(self, name: str, node: int, concurrent: bool = False):
         self._name = name
         self._node = node
+
         self._concurrent = concurrent
+
         self._any = None
 
         self._taskid = Task.task_counter
@@ -55,6 +73,10 @@ class Task:
 
         return self._concurrent
 
+    @concurrent.setter
+    def concurrent(self, concurrency: bool) -> None:
+        self._concurrent = concurrency
+
     @property
     def any(self) -> Optional[int]:
         """
@@ -65,4 +87,7 @@ class Task:
 
     @any.setter
     def any(self, any_count: int) -> None:
+        if any_count <= 0:
+            raise RuntimeError('Any property must be greater than 0.')
+
         self._any = any_count

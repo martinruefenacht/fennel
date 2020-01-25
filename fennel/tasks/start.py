@@ -13,7 +13,14 @@ class StartTask(Task):
         super().__init__(name, proc)
 
         # initial skew time, asymmetric arrival time
+        assert skew >= 0
         self._skew = skew
+
+    def __repr__(self) -> str:
+        if self._skew > 0:
+            return f'start {self._name} skew {self._skew}'
+
+        return f'start {self._name}'
 
     @property
     def skew(self) -> int:

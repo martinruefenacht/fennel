@@ -18,11 +18,21 @@ class ComputeTask(Task):
                  name: str,
                  node: int,
                  size: Optional[int] = None,
+                 time: Optional[int] = None,
                  concurrent: bool = False):
         super().__init__(name, node, concurrent)
 
+        if not time and not size:
+            raise RuntimeError('ComputeTask needs either size or time.')
+
         self._size = size
-        self._time = None
+        self._time = time
+
+    def __repr__(self) -> str:
+        if self._size:
+            return f'compute {self._name} size {self._size}'
+
+        return f'compute {self._name} time {self._time}'
 
     @property
     def size(self) -> int:

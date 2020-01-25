@@ -4,17 +4,18 @@ Defines the abstract class for machine models.
 
 
 import logging
-import heapq
 from abc import ABC
 from typing import (Iterable, Tuple, Optional, MutableSet, MutableMapping,
-                    Callable, List, Union)
+                    Callable, List, Union, Collection, NewType)
 from collections import defaultdict
 
 
+from fennel.core.time import Time
 from fennel.core.program import Program
-from fennel.core.task import Task
+from fennel.core.task import Task, PlannedTask, TaskEvent
 from fennel.core.compute import ComputeModel
 from fennel.core.network import NetworkModel
+from fennel.core.priorityqueue import PriorityQueue
 
 
 from fennel.visual.canvas import Canvas
@@ -24,6 +25,10 @@ from fennel.tasks.put import PutTask
 from fennel.tasks.start import StartTask
 from fennel.tasks.sleep import SleepTask
 from fennel.tasks.compute import ComputeTask
+
+
+# type aliases
+Node = NewType('Node', int)
 
 
 class Machine(ABC):
@@ -42,25 +47,34 @@ class Machine(ABC):
         self._compute_model = compute
         self._network_model = network
 
-        self._instruments: MutableSet[Instrument] = set()
+        # registered instruments
+        self._registered_instruments: MutableMapping[TaskEvent,
+                                                     List[Instrument]]
+        self._registered_instruments = defaultdict(lambda: [])
 
         # fulfilled dependency counter
         self._dependencies: MutableMapping[str, int] = defaultdict(lambda: 0)
 
         # max time of dependency, gives task begin time
         # starts will not be included
-        self._dtimes: MutableMapping[str, int] = defaultdict(lambda: 0)
+        self._dtimes: MutableMapping[str, List[Time]] = defaultdict(lambda: [])
 
-        self._node_times: MutableMapping[int, [int, int]]
-        self._node_times = [[0] * processes] * nodes
+        self._node_times: List[List[int, Time]]
+        # self._node_times = [[0] * processes] * nodes needs deepcopy!
+        # self._node_times = defaultdict(lambda: defaultdict(lambda: 0))
+        self._node_times = []
+        for nidx in range(nodes):
+            self._node_times.append([])
+            for _ in range(processes):
+                self._node_times[nidx].append(0)
 
         self._task_handlers: MutableMapping[str,
                                             Union[
-                                                Callable[[int, StartTask], int],
-                                                Callable[[int, ProxyTask], int],
-                                                Callable[[int, SleepTask], int],
-                                                Callable[[int, ComputeTask], int],
-                                                Callable[[int, PutTask], int],
+                                                Callable[[Time, StartTask], int],
+                                                Callable[[Time, ProxyTask], int],
+                                                Callable[[Time, SleepTask], int],
+                                                Callable[[Time, ComputeTask], int],
+                                                Callable[[Time, PutTask], int],
                                                 ]] = dict()
 
         self._task_handlers['ProxyTask'] = self._execute_proxy_task
@@ -71,9 +85,21 @@ class Machine(ABC):
 
         self._canvas: Optional[Canvas] = None
 
+    def register_instrument(self,
+                            event: TaskEvent,
+                            instrument: Instrument
+                            ) -> None:
+        """
+        Register an instrument for a specific task event.
+
+        Observer pattern is used for instruments.
+        """
+
+        self._registered_instruments[event].append(instrument)
+
     def is_finished(self) -> bool:
         """
-        Checks whether the machine is finished.
+        Checks whether the machine is finished, i.e. no waiting tasks.
         """
 
         return not self._dependencies and not self._dtimes
@@ -119,7 +145,7 @@ class Machine(ABC):
         return self._canvas is not None
 
     @property
-    def maximum_time(self) -> int:
+    def maximum_time(self) -> Time:
         """
         Get maximum time of run.
         """
@@ -136,6 +162,7 @@ class Machine(ABC):
         Runs the given program on this machine.
         """
 
+        # check if program requires larger machine
         if program.get_process_count() > self.nodes:
             raise RuntimeError(f'{program} requires greater node count '
                                f'{program.get_process_count()} than '
@@ -147,59 +174,49 @@ class Machine(ABC):
         #     multiprocessing.pool
         #     # give different seeds to the machines
 
-        self._run_program(program)
+        self._run(program)
 
-    def _run_program(self, program: Program) -> None:
+    def _run(self, program: Program) -> None:
         """
         Run the given Program on the current machine state.
         """
 
-        # task priority queue
-        # this is the core of the simulation
-        task_queue: List[Tuple[int, Task]] = []
+        queue = PriorityQueue()
 
         # insert all start tasks
-        task: Task
-        for task in program.get_start_tasks():
-            heapq.heappush(task_queue, (0, task))
+        starts = program.get_start_tasks()
+        assert starts
+        queue.push_iterable_with_time(0, starts)
 
         # process entire queue
-        while task_queue:
-            # retrieve next global clock event
-            time: int
-            time, task = heapq.heappop(task_queue)
+        while queue.is_not_empty():
+            logging.debug(queue._task_queue)
 
-            assert time >= 0
-
-            # execute task
-            successors = self._execute(time, program, task)
+            # execute next task
+            successors = self._execute(program, queue.pop())
 
             # insert all successor tasks
-            for successor in successors:
-                heapq.heappush(task_queue, successor)
-
-    def _set_process_time(self, node: int, process: int, time: int) -> None:
-        """
-        Convenience function to update time of (node, process).
-        """
-
-        self._node_times[node][process] = time
+            queue.push_iterable(successors)
 
     def _execute(self,
-                 time: int,
                  program: Program,
-                 task: Task
-                 ) -> Iterable[Tuple[int, Task]]:
+                 planned_task: PlannedTask
+                 ) -> List[PlannedTask]:
         """
         Looks up required handler for task and executes task using that
         handler.
         """
 
+        assert program is not None
+        
+        time, task = planned_task
+
+        assert task is not None
         assert time >= 0
 
-        logging.debug('execute %s @ %i', task.name, time)
+        logging.debug('scheduled %s @ %i', task.name, time)
 
-        # find earliest time to execute
+        # find earliest time to execute of processes in node
         if task.concurrent:
             tmp = list(proc for proc in self._node_times[task.node])
             earliest = min(tmp)
@@ -211,100 +228,108 @@ class Machine(ABC):
 
         # delay task if process time is further
         if earliest > time:
-            # TODO what is the reason for the delaying?
+            logging.debug('delay   %s > %i', task.name, earliest)
+            # this happens with multiple successors on the same node
             return [(earliest, task)]
 
         # look up task handler and execute
         handler = self._task_handlers[task.__class__.__name__]
 
-        time_successors = handler(time, task, process)
+        logging.debug('execute %s @ %i', task.name, time)
 
-        logging.debug('%s ended %i', task.name, time_successors)
+        time_successors = handler(time, task, process)
+        # TODO branching tasks would require dependency mapping here
+        #      instead of returning successors return dict mapping of:
+        #      name: time
+        #      name: never
+
+        logging.debug('ended   %s @ %i', task.name, time_successors)
 
         return self._complete_task(time_successors,
                                    program,
                                    task)
 
-    def _run_instruments(self,
-                         time: int,
-                         program: Program,
-                         task: Task) -> None:
-        """
-        Run all instruments on the task completion.
-        """
-
-        for instrument in self._instruments:
-            instrument.measure(time, program, task)
-
     def _complete_task(self,
                        time: int,
                        program: Program,
                        task: Task
-                       ) -> Iterable[Tuple[int, Task]]:
+                       ) -> List[PlannedTask]:
         """
         For every successor of this task, increment a completion counter,
         and update the time. If all dependencies are complete then return
         all such successors.
         """
 
-        sucs = list(program.get_successors_to_task(task.name))
-        # TODO generator is a problem
+        successors = program.get_successors(task.name)
 
         # only proxy tasks can have no successors
-        if (not isinstance(task, ProxyTask) and
-                not sucs):
+        if not (isinstance(task, ProxyTask) or successors):
             raise RuntimeError('All programs must end with proxy tasks. '
                                f'{task.name} is not a ProxyTask.')
 
-        successors = set()
+        planned = []
 
-        for successor in sucs:
+        for successor in successors:
             # increment completed dependencies for successor
+            # forward task to last dependency
             self._dependencies[successor] += 1
 
-            # forward task to last dependency
-            self._dtimes[successor] = max(self._dtimes[successor], time)
+            # save successors dependency end time
+            self._dtimes[successor].append(time)
 
-            # if successor is any capable
-            # TODO clean up logic
-            if (program[successor].any and
-                    self._dependencies[successor] >= program[successor].any):
-                # execute this task
-                successors.add(self._load_task(successor, program))
+            # check there aren't more dependencies completed than there are
+            # dependencies for the task
+            assert (self._dependencies[successor] <=
+                    program.get_in_degree(successor))
 
-            # check for completion of all dependencies
-            elif (self._dependencies[successor] ==
+            # check if all dependencies completed
+            if (self._dependencies[successor] ==
                     program.get_in_degree(successor)):
 
-                successors.add(self._load_task(successor, program))
+                planned.append(self._load_task(successor, program))
 
-        return successors
+        return planned
+
+    def _set_process_time(self, node: Node, process: int, time: Time) -> None:
+        """
+        Convenience function to update time of (node, process).
+        """
+
+        self._node_times[node][process] = time
 
     def _load_task(self,
-                   successor: str,
+                   name: str,
                    program: Program
-                   ) -> Tuple[int, Task]:
+                   ) -> PlannedTask:
         """
+        Loads the Task from the Program and creates a PlannedTask.
         """
 
-        successor_task = program.get_task(successor)
-        if not successor_task:
+        task = program[name]
+        if not task:
             raise RuntimeError('Successor does not exist.')
 
-        time_next = self._dtimes[successor]
+        # find successor start time
+        if task.any is not None:
+            # find lowest end time of dependencies of any #
+            time_next = sorted(self._dtimes[name])[task.any - 1]
+
+        else:
+            time_next = max(self._dtimes[name])
+
+        assert isinstance(time_next, int), time_next
 
         # delete record of program
-        del self._dtimes[successor]
-        del self._dependencies[successor]
+        del self._dtimes[name]
+        del self._dependencies[name]
 
-        return (time_next, successor_task)
+        return (time_next, task)
 
-    @classmethod
-    def _execute_proxy_task(cls,
-                            time: int,
+    def _execute_proxy_task(self,
+                            time: Time,
                             task: ProxyTask,
                             process: int
-                            ) -> int:
+                            ) -> Time:
         """
 
         Executes proxy task.
@@ -321,15 +346,17 @@ class Machine(ABC):
         # proxy tasks complete immediately in simulation time therefore no
         # time is used
 
+        self._set_process_time(task.node, process, time)
+
         # proxy tasks are never drawn
 
         return time
 
     def _execute_start_task(self,
-                            time: int,
+                            time: Time,
                             task: StartTask,
                             process: int
-                            ) -> int:
+                            ) -> Time:
         """
         Execute the starting task.
         """
@@ -344,10 +371,10 @@ class Machine(ABC):
         return time_start
 
     def _execute_sleep_task(self,
-                            time: int,
+                            time: Time,
                             task: SleepTask,
                             process: int
-                            ) -> int:
+                            ) -> Time:
         """
         Executes the sleep task on this machine.
 
@@ -373,6 +400,8 @@ class Machine(ABC):
         """
         Evaluates the given compute model.
         """
+        
+        logging.debug('compute task @ %i on (%i, %i)', time, task.node, process)
 
         time_compute = self._compute_model.evaluate(time, task)
 
@@ -387,10 +416,10 @@ class Machine(ABC):
         return time_compute
 
     def _execute_put_task(self,
-                          time: int,
+                          time: Time,
                           task: PutTask,
                           process: int
-                          ) -> int:
+                          ) -> Time:
         """
         Execute the put task.
         """

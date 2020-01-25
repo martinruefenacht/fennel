@@ -3,7 +3,7 @@ Defines the Program class.
 """
 
 
-from typing import MutableMapping, Iterable, Optional, MutableSet
+from typing import MutableMapping, Iterable, Optional, MutableSet, Generator, List
 from collections import defaultdict
 
 
@@ -44,6 +44,12 @@ class Program:
         Adds an edge to this program.
         """
 
+        if not name_from in self._metadata:
+            raise RuntimeError('%s not in nodes.', name_from)
+
+        if not name_to in self._metadata:
+            raise RuntimeError('%s not in nodes.', name_to)
+
         self._edges_out[name_from].add(name_to)
         self._edges_in[name_to].add(name_from)
 
@@ -64,16 +70,15 @@ class Program:
         return (task for task in self._metadata.values()
                 if isinstance(task, StartTask))
 
-    def get_successors_to_task(self, name: str) -> Iterable[str]:
+    def get_successors(self, name: str) -> List[str]:
         """
-        Get all tasks that depend on this task.
+        Get all tasks dependent on this task.
         """
 
-        # end of process check
-        if name in self._edges_out:
-            # dependent tasks
-            for eid in self._edges_out[name]:
-                yield eid
+        if name not in self._edges_out:
+            return []
+
+        return [task for task in self._edges_out[name]]
 
     def get_in_degree(self, name: str) -> int:
         """

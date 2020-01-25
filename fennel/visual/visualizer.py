@@ -13,6 +13,7 @@ from fennel.tasks.proxy import ProxyTask
 
 from fennel.generators.p2p import generate_send_partitioned_p2p
 from fennel.generators.compute import generate_compute
+from fennel.generators.broadcast import generate_broacast_ring
 
 
 def convert(program: Program) -> Network:
@@ -50,7 +51,9 @@ def main() -> None:
     Main function.
     """
 
-    prog = generate_send_partitioned_p2p(10, 2, 1, 2)
+    # prog = generate_send_partitioned_p2p(10, 2, 1, 2)
+
+    prog = generate_broacast_ring(3, 0, 0)
 
     net = convert(prog)
 

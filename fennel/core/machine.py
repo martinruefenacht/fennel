@@ -157,6 +157,13 @@ class Machine(ABC):
         assert time >= 0
         return time
 
+    def get_node_process_time(self, node: Node, process: int) -> Time:
+        """
+
+        """
+
+        return self._node_times[node][process]
+
     def run(self, program: Program) -> None:
         """
         Runs the given program on this machine.

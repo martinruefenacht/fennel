@@ -22,6 +22,11 @@ class Program:
         self._edges_out: MutableMapping[str, MutableSet[str]] = defaultdict(lambda: set())
         self._metadata: MutableMapping[str, Task] = dict()
 
+    def __eq__(self, program: 'Program') -> bool:
+        return (self._metadata == program._metadata and
+                self._edges_in == program._edges_in and
+                self._edges_out == program._edges_out)
+
     def get_task(self, name: str) -> Optional[Task]:
         """
         Get a task by name.

@@ -25,13 +25,7 @@ def convert(program: Program) -> Network:
     net.barnes_hut(overlap=0)
 
     for name, task in program._metadata.items():
-        if task.node == 0:
-            color = '#A5BE00'
-
-        elif task.node == 1:
-            color = '#427AA1'
-
-        net.add_node(name, color=color)
+        net.add_node(name)
 
     for name in program._metadata.keys():
         names = program.get_predecessors(name)
@@ -53,7 +47,7 @@ def main() -> None:
 
     # prog = generate_send_partitioned_p2p(10, 2, 1, 2)
 
-    prog = generate_broacast_ring(3, 0, 0)
+    prog = generate_broacast_ring(3, None, 0)
 
     net = convert(prog)
 

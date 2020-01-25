@@ -193,7 +193,12 @@ class Machine(ABC):
             logging.debug(queue._task_queue)
 
             # execute next task
-            successors = self._execute(program, queue.pop())
+            plannedtask = queue.pop()
+
+            # for instrument in self._registered_instruments[TaskEvent.SCHEDULED]:
+            #     instrument.task_scheduled(plannedtask)
+
+            successors = self._execute(program, plannedtask)
 
             # insert all successor tasks
             queue.push_iterable(successors)
@@ -409,8 +414,10 @@ class Machine(ABC):
         Evaluates the given compute model.
         """
         
-        logging.debug('compute task @ %i on (%i, %i)', time, task.node, process)
+        logging.debug('compute task @ %i on (%i, %i)', time,
+                      task.node, process)
 
+        assert self._compute_model is not None
         time_compute = self._compute_model.evaluate(time, task)
 
         self._set_process_time(task.node, process, time_compute)
@@ -432,6 +439,7 @@ class Machine(ABC):
         Execute the put task.
         """
 
+        assert self._network_model is not None
         local_time, remote_time = self._network_model.evaluate(task)
 
         self._set_process_time(task.node, process, time + local_time)

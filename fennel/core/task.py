@@ -13,16 +13,19 @@ PlannedTask = Tuple[Time, 'Task']
 
 
 class TaskEvent(Enum):
-    #
+    # triggered when the task is taken from the priority
+    # queue
     SCHEDULED = auto()
 
-    #
+    # triggered when the task is delayed because of the
+    # process time
     DELAYED = auto()
 
-    #
+    # triggered during the execution function 
     EXECUTED = auto()
 
-    #
+    # triggered when the task is completed before any
+    # successors are being loaded
     COMPLETED = auto()
 
     # triggered when the _load_task method is called

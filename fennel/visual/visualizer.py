@@ -11,7 +11,7 @@ from pyvis.network import Network
 from fennel.core.program import Program
 from fennel.tasks.proxy import ProxyTask
 
-from fennel.generators.p2p import generate_partitioned_send
+from fennel.generators.p2p import generate_send_partitioned_p2p
 from fennel.generators.compute import generate_compute
 
 
@@ -24,32 +24,23 @@ def convert(program: Program) -> Network:
     net.barnes_hut(overlap=0)
 
     for name, task in program._metadata.items():
-        if isinstance(task, ProxyTask):
-            continue
+        if task.node == 0:
+            color = '#A5BE00'
 
-        net.add_node(name, label=str(task.__class__.__name__))
+        elif task.node == 1:
+            color = '#427AA1'
 
-    for name, task in program._metadata.items():
-        if isinstance(task, ProxyTask):
-            continue
+        net.add_node(name, color=color)
 
-        names = program.get_successors_to_task(name)
+    for name in program._metadata.keys():
+        names = program.get_predecessors(name)
         for sub in names:
-            if sub.startswith('x'):
-                subs = program.get_successors_to_task(sub)
+            color = '#05668D'
 
-                for sub2 in subs:
-                    if sub2.startswith('x'):
-                        subs2 = program.get_successors_to_task(sub2)
+            if program[name].any is not None:
+                color = '#679436'
 
-                        for sub3 in subs2:
-                            net.add_edge(name, sub3)
-
-                    else:
-                        net.add_edge(name, sub2)
-
-            else:
-                net.add_edge(name, sub)
+            net.add_edge(sub, name, color=color)
 
     return net
 
@@ -59,13 +50,7 @@ def main() -> None:
     Main function.
     """
 
-    # prog = generate_pingpong(1, 10)
-
-    # prog = generate_multicast(0, 10)
-
-    # prog = generate_partitioned_send(0, 4, 2, 1)
-
-    prog = generate_compute(1, 2, 10, False, 3)
+    prog = generate_send_partitioned_p2p(10, 2, 1, 2)
 
     net = convert(prog)
 

@@ -7,6 +7,8 @@ import logging
 
 
 import pytest
+from hypothesis import given
+from hypothesis.strategies import integers
 
 
 from fennel.core.program import Program
@@ -18,14 +20,15 @@ from fennel.core.machine import Machine
 from fennel.computes.gamma import GammaModel
 
 
-def test_start_proxy():
+@given(integers(min_value=0))
+def test_start_proxy(skew):
     """
     Tests whether the Any propery
     """
 
     prog = Program()
 
-    prog.add_node(StartTask('s0', 0))
+    prog.add_node(StartTask('s0', 0, skew))
     prog.add_node(ProxyTask('x0', 0))
 
     prog.add_edge('s0', 'x0')
@@ -34,7 +37,7 @@ def test_start_proxy():
     machine = Machine(1, 1, None, None)
     machine.run(prog)
 
-    assert machine.maximum_time == 0
+    assert machine.maximum_time == skew
 
 
 def test_start_compute_proxy():

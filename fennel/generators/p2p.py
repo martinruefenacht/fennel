@@ -2,6 +2,11 @@
 Module for generators of point-to-point programs.
 """
 
+
+import math
+from pprint import pprint
+
+
 from fennel.core.program import Program
 from fennel.tasks.start import StartTask
 from fennel.tasks.put import PutTask
@@ -82,81 +87,116 @@ def generate_pingpong(message_size: int, rounds: int) -> Program:
     return prog
 
 
-def generate_partitioned_send(message_size: int,
-                              partitions: int,
-                              threshold: int,
-                              rounds: int
-                              ) -> Program:
+def _generate_send_partition_block(size: int,
+                                   partitions: int,
+                                   threshold: int,
+                                   round: int,
+                                   program: Program
+                                   ) -> None:
     """
-    Generate a two phase partitioned send Program.
     """
 
-    # TODO this should be generalized
-    # threshold value
+    # start sentinels
+    program.add_node(ProxyTask(f'w_0_{round}_l', 0))
+    program.add_node(ProxyTask(f'w_0_{round}_h', 0))
 
-    assert message_size >= 0
+    program.add_edge(f'r_0_{round-1}_l', f'w_0_{round}_l')
+    program.add_edge(f'r_0_{round-1}_h', f'w_0_{round}_h')
+
+    program.add_node(ProxyTask(f'w_1_{round}_l', 1))
+    program.add_node(ProxyTask(f'w_1_{round}_h', 1))
+
+    program.add_edge(f'r_1_{round-1}_l', f'w_1_{round}_l')
+    program.add_edge(f'r_1_{round-1}_h', f'w_1_{round}_h')
+
+    # create puts
+    # todo replace by puts
+    p0_low = ProxyTask(f'p_0_{round}_l', 0)
+    p0_low.any = threshold
+    program.add_node(p0_low)
+    program.add_node(ProxyTask(f'p_0_{round}_h', 0))
+
+    program.add_edge(f'p_0_{round}_l', f'w_1_{round}_l')
+    program.add_edge(f'p_0_{round}_h', f'w_1_{round}_h')
+
+    p1_low = ProxyTask(f'p_1_{round}_l', 1)
+    p1_low.any = threshold
+    program.add_node(p1_low)
+    program.add_node(ProxyTask(f'p_1_{round}_h', 1))
+
+    # receive sentinels
+    program.add_node(ProxyTask(f'r_0_{round}_l', 0))
+    program.add_node(ProxyTask(f'r_0_{round}_h', 0))
+
+    program.add_node(ProxyTask(f'r_1_{round}_l', 1))
+    program.add_node(ProxyTask(f'r_1_{round}_h', 1))
+
+    program.add_edge(f'p_1_{round}_l', f'r_0_{round}_l')
+    program.add_edge(f'p_1_{round}_h', f'r_0_{round}_h')
+
+    program.add_edge(f'p_1_{round}_l', f'r_1_{round}_l')
+    program.add_edge(f'p_1_{round}_h', f'r_1_{round}_h')
+
+    # computes
+    for partition in range(partitions):
+        program.add_node(ComputeTask(f'c_0_{round}_{partition}', 0, size))
+        program.add_node(ComputeTask(f'c_1_{round}_{partition}', 1, size))
+
+        if partition < threshold:
+            # connect to low w
+            program.add_edge(f'w_0_{round}_l', f'c_0_{round}_{partition}')
+            program.add_edge(f'w_1_{round}_l', f'c_1_{round}_{partition}')
+
+        else:
+            # connect to high w
+            program.add_edge(f'w_0_{round}_h', f'c_0_{round}_{partition}')
+            program.add_edge(f'w_1_{round}_h', f'c_1_{round}_{partition}')
+
+        # connect to puts
+        program.add_edge(f'c_0_{round}_{partition}', f'p_0_{round}_l')
+        program.add_edge(f'c_0_{round}_{partition}', f'p_0_{round}_h')
+
+        program.add_edge(f'c_1_{round}_{partition}', f'p_1_{round}_l')
+        program.add_edge(f'c_1_{round}_{partition}', f'p_1_{round}_h')
+
+
+def generate_send_partitioned_p2p(size: int,
+                                  partitions: int,
+                                  threshold: int,
+                                  rounds: int
+                                  ) -> Program:
+    """
+    Generate a partitioned single threshold compute+put cycle.
+    """
+
+    assert size >= 0
     assert partitions > 0
-    assert 0 < threshold <= partitions
+    assert 0 < threshold < partitions
     assert rounds > 0
+
+    # total size = partitions * message_size
 
     program = Program()
 
-    program.add_node(StartTask("s_0", 0))
+    program.add_node(StartTask('s_0', 0))
+    program.add_node(StartTask('s_1', 1))
 
-    program.add_node(ProxyTask("x_0_0", 0))
+    program.add_node(ProxyTask('r_0_0_l', 0))
+    program.add_node(ProxyTask('r_0_0_h', 0))
 
-    program.add_node(ComputeTask("c_0_0", 0, 1024))
-    program.add_node(ComputeTask("c_0_1", 0, 1024))
+    program.add_edge('s_0', 'r_0_0_l')
+    program.add_edge('s_0', 'r_0_0_h')
 
-    program.add_node(PutTask("p_0", 0, 1, 2048))
+    program.add_node(ProxyTask('r_1_0_l', 1))
+    program.add_node(ProxyTask('r_1_0_h', 1))
+    program.add_edge('s_1', 'r_1_0_l')
+    program.add_edge('s_1', 'r_1_0_h')
 
-    program.add_node(ProxyTask("x_0_1", 0))
+    for ridx in range(1, rounds+1):
+        _generate_send_partition_block(size, partitions, threshold, ridx, program)
 
-    program.add_node(ComputeTask("c_0_2", 0, 1024))
-    program.add_node(ComputeTask("c_0_3", 0, 1024))
-
-    program.add_node(PutTask("p_1", 0, 1, 2048))
-
-    program.add_node(StartTask("s_1", 1))
-
-    program.add_node(ProxyTask("x_1_0", 1))
-
-    program.add_node(ComputeTask("c_1_0", 1, 1024))
-    program.add_node(ComputeTask("c_1_1", 1, 1024))
-
-    program.add_node(ProxyTask("x_1_1", 1))
-
-    program.add_node(ComputeTask("c_1_2", 1, 1024))
-    program.add_node(ComputeTask("c_1_3", 1, 1024))
-
-    program.add_edge("s_0", "x_0_0")
-    program.add_edge("x_0_0", "c_0_0")
-    program.add_edge("x_0_0", "c_0_1")
-
-    program.add_edge("c_0_0", "p_0")
-    program.add_edge("c_0_1", "p_0")
-
-    program.add_edge("c_0_0", "x_0_1")
-    program.add_edge("c_0_1", "x_0_1")
-    program.add_edge("p_0", "x_0_1")
-
-    program.add_edge("x_0_1", "c_0_2")
-    program.add_edge("x_0_1", "c_0_3")
-
-    program.add_edge("c_0_2", "p_1")
-    program.add_edge("c_0_3", "p_1")
-
-    program.add_edge("s_1", "x_1_0")
-    program.add_edge("p_0", "x_1_0")
-
-    program.add_edge("x_1_0", "c_1_0")
-    program.add_edge("x_1_0", "c_1_1")
-
-    program.add_edge("c_1_0", "x_1_1")
-    program.add_edge("c_1_1", "x_1_1")
-    program.add_edge("p_1", "x_1_1")
-
-    program.add_edge("x_1_1", "c_1_2")
-    program.add_edge("x_1_1", "c_1_3")
+    pprint(program._metadata)
+    pprint(program._edges_in)
+    pprint(program._edges_out)
 
     return program

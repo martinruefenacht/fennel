@@ -80,6 +80,16 @@ class Program:
 
         return [task for task in self._edges_out[name]]
 
+    def get_predecessors(self, name: str) -> List[str]:
+        """
+        Get all tasks who are predecessors. 
+        """
+
+        if name not in self._edges_in:
+            return []
+
+        return [task for task in self._edges_in[name]]
+
     def get_in_degree(self, name: str) -> int:
         """
         Get the number of dependencies of the node.

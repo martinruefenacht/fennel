@@ -113,6 +113,7 @@ def _generate_send_partition_block(size: int,
     # todo replace by puts
     p0_low = ProxyTask(f'p_0_{round}_l', 0)
     p0_low.any = threshold
+    p0_low.concurrent = True
     program.add_node(p0_low)
     program.add_node(ProxyTask(f'p_0_{round}_h', 0))
 
@@ -121,6 +122,7 @@ def _generate_send_partition_block(size: int,
 
     p1_low = ProxyTask(f'p_1_{round}_l', 1)
     p1_low.any = threshold
+    p1_low.concurrent = True
     program.add_node(p1_low)
     program.add_node(ProxyTask(f'p_1_{round}_h', 1))
 

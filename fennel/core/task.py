@@ -13,10 +13,19 @@ PlannedTask = Tuple[Time, 'Task']
 
 
 class TaskEvent(Enum):
+    #
     SCHEDULED = auto()
+
+    #
     DELAYED = auto()
+
+    #
     EXECUTED = auto()
+
+    #
     COMPLETED = auto()
+
+    # triggered when the _load_task method is called
     LOADED = auto()
 
 

@@ -96,7 +96,7 @@ def generate_partitioned_send(message_size: int,
 
     assert message_size >= 0
     assert partitions > 0
-    assert threshold > 0 and threshold <= partitions
+    assert 0 < threshold <= partitions
     assert rounds > 0
 
     program = Program()

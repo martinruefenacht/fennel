@@ -228,8 +228,11 @@ class Machine(ABC):
 
         # delay task if process time is further
         if earliest > time:
-            logging.debug('delay   %s > %i', task.name, earliest)
             # this happens with multiple successors on the same node
+
+            for instrument in self._registered_instruments[TaskEvent.DELAYED]:
+                instrument.task_delayed(task, program, time, earliest)
+
             return [(earliest, task)]
 
         # look up task handler and execute
@@ -242,8 +245,6 @@ class Machine(ABC):
         #      instead of returning successors return dict mapping of:
         #      name: time
         #      name: never
-
-        logging.debug('ended   %s @ %i', task.name, time_successors)
 
         return self._complete_task(time_successors,
                                    program,
@@ -259,6 +260,9 @@ class Machine(ABC):
         and update the time. If all dependencies are complete then return
         all such successors.
         """
+
+        for instrument in self._registered_instruments[TaskEvent.COMPLETED]:
+            instrument.task_completed(task, program, time)
 
         successors = program.get_successors(task.name)
 
@@ -318,6 +322,10 @@ class Machine(ABC):
             time_next = max(self._dtimes[name])
 
         assert isinstance(time_next, int), time_next
+
+        # trigger the TaskEvent LOADED
+        for instrument in self._registered_instruments[TaskEvent.LOADED]:
+            instrument.task_loaded(task, program, time_next, self._dtimes[name])
 
         # delete record of program
         del self._dtimes[name]

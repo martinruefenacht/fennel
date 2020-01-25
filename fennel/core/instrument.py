@@ -2,12 +2,13 @@
 Defines the abstract Instrument class.
 """
 
-from abc import ABC, abstractmethod
+from typing import List
 
 from fennel.core.program import Program
 from fennel.core.task import Task
+from fennel.core.time import Time
 
-class Instrument(ABC):
+class Instrument:
     """
     Instrument abstract definition.
     """
@@ -15,9 +16,29 @@ class Instrument(ABC):
     def __init__(self):
         pass
 
-
-    def measure(self, time: int, program: Program, task: Task):
+    def task_loaded(self,
+                    task: Task,
+                    program: Program,
+                    time: Time,
+                    dependent_times: List[Time]):
         """
+        This method is triggered on a listening instrument when the
+        TaskEvent LOADED happens.
         """
 
-        pass
+    def task_delayed(self,
+                     task: Task,
+                     program: Program,
+                     time: Time,
+                     earliest: Time):
+        """
+        This method is triggered when the TaskEvent DELAYED happens.
+        """
+
+    def task_completed(self,
+                       task: Task,
+                       program: Program,
+                       time: Time):
+        """
+        This method is triggered when the TaskEvent COMPLETED happens.
+        """

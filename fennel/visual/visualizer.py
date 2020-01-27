@@ -92,7 +92,12 @@ def main() -> None:
     # prog = generate_multicast(1, 5, False)
     # prog = generate_send(0, False)
     # prog = generate_compute(1, 4, 10, concurrent=False, rounds=5)
-    prog = generate_recursive_doubling(16, 0)
+    # prog = generate_recursive_doubling(16, 0)
+
+    prog = generate_send_partitioned_p2p(1024 * 16,
+                                         4,
+                                         3,
+                                         2)
 
     net = convert(prog)
 

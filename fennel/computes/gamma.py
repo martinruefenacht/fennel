@@ -3,11 +3,13 @@ Defines the gamma compute model.
 """
 
 
-from fennel.core.compute import ComputeModel
-from fennel.tasks.compute import ComputeTask
-
 from scipy.stats import betaprime
 import random
+import math
+
+
+from fennel.core.compute import ComputeModel
+from fennel.tasks.compute import ComputeTask
 
 
 class GammaModel(ComputeModel):
@@ -66,3 +68,33 @@ class NoisyGammaModel(GammaModel):
         noise = random.choice(self._prep)
 
         return time + int(task.size * self._gamma * (1.0 + noise))
+
+
+class SinusoidalGammaModel(GammaModel):
+    """
+    """
+
+    def __init__(self,
+                 gamma: float,
+                 freq: float,
+                 amplitude: float,
+                 offset: float = 0.0):
+        """
+        """
+
+        assert 1.0 > amplitude >= 0.0
+
+        self._gamma = gamma
+        self._freq = freq
+        self._amplitude = amplitude
+        self._offset = offset
+
+    def evaluate(self, time: int, task: ComputeTask) -> int:
+        """
+        """
+
+        if task.time is not None:
+            return time + task.time
+
+        return time + int(task.size * self._gamma * (
+            1.0 + self._amplitude * math.sin(time * self._freq + self._offset)))

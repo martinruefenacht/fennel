@@ -156,15 +156,14 @@ def _generate_send_partition_block(size: int,
     program.add_edge(recv_secondary_high, wait_secondary_high)
 
     # create puts
-    # todo replace by puts
     put_primary_low = f'p_0_{rnd}_l'
     put_primary_high = f'p_0_{rnd}_h'
 
-    p0_low = ProxyTask(put_primary_low, 0)
+    p0_low = PutTask(put_primary_low, 0, 1, size*threshold)
     p0_low.any = threshold
     p0_low.concurrent = True
     program.add_node(p0_low)
-    program.add_node(ProxyTask(put_primary_high, 0))
+    program.add_node(PutTask(put_primary_high, 0, 1, size))
 
     program.add_edge(put_primary_low, wait_secondary_low)
     program.add_edge(put_primary_high, wait_secondary_high)
@@ -172,11 +171,11 @@ def _generate_send_partition_block(size: int,
     put_secondary_low = f'p_1_{rnd}_l'
     put_secondary_high = f'p_1_{rnd}_h'
 
-    p1_low = ProxyTask(put_secondary_low, 1)
+    p1_low = PutTask(put_secondary_low, 1, 0, size*threshold)
     p1_low.any = threshold
     p1_low.concurrent = True
     program.add_node(p1_low)
-    program.add_node(ProxyTask(put_secondary_high, 1))
+    program.add_node(PutTask(put_secondary_high, 1, 0, size))
 
     # receive sentinels
     recv_primary_low = f'r_0_{rnd}_l'

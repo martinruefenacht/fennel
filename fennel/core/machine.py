@@ -220,7 +220,8 @@ class Machine(ABC):
         """
 
         assert program is not None
-        
+        assert planned_task is not None
+
         time, task = planned_task
 
         assert task is not None
@@ -246,6 +247,10 @@ class Machine(ABC):
                 instrument.task_delayed(task, program, time, earliest)
 
             return [(earliest, task)]
+
+        # 
+        for instrument in self._registered_instruments[TaskEvent.EXECUTED]:
+            instrument.task_executed(task, program, earliest)
 
         # look up task handler and execute
         handler = self._task_handlers[task.__class__.__name__]

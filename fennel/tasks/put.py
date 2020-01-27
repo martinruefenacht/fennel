@@ -32,10 +32,18 @@ class PutTask(Task):
     @property
     def message_size(self) -> int:
         """
-        Get put message size.
+        get put message size.
         """
 
         return self._size
+
+    @property
+    def size(self) -> int:
+        """
+        get put message size.
+        """
+
+        return self.message_size
 
     @property
     def blocking(self) -> bool:

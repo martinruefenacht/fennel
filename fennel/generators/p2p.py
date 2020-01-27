@@ -14,7 +14,41 @@ from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.compute import ComputeTask
 
 
-def generate_multicast(message_size: int, width: int) -> Program:
+def generate_send(message_size: int, blocking: bool) -> Program:
+    """
+    Generate a single send from rank 0 -> rank 1.
+    """
+
+    assert message_size >= 0
+
+    prog = Program()
+
+    # generate start tasks for all procs
+    prog.add_node(StartTask('s0', 0))
+    prog.add_node(StartTask('s1', 1))
+
+    # generate single put task for rank 0
+    prog.add_node(PutTask('p', 0, 1, message_size, block=blocking))
+
+    # generate end tasks for all procs
+    prog.add_node(ProxyTask('x0', 0))
+    prog.add_node(ProxyTask('x1', 1))
+
+    # rank 0 dependencies
+    prog.add_edge('s0', 'p')
+    prog.add_edge('p', 'x0')
+
+    # rank 1 dependencies
+    prog.add_edge('s1', 'x1')
+    prog.add_edge('p', 'x1')
+
+    return prog
+
+
+def generate_multicast(message_size: int,
+                       width: int,
+                       blocking: bool
+                       ) -> Program:
     """
     Generate a multicast program.
     """
@@ -36,12 +70,13 @@ def generate_multicast(message_size: int, width: int) -> Program:
 
     # create put nodes
     for cidx in range(1, nodes):
-        prog.add_node(PutTask(f'p0_{cidx}', 0, cidx, message_size))
+        prog.add_node(PutTask(f'p0_{cidx}', 0, cidx,
+                              message_size, block=blocking))
 
-        prog.add_edge(f's_{cidx}', f'p0_{cidx}')
+        prog.add_edge(f's_{cidx}', f'p_{cidx}')
 
-        prog.add_edge('s_0', f'p0_{cidx}')
-        prog.add_edge(f'p0_{cidx}', f'x_{cidx}')
+        prog.add_edge('s_0', f'p_{cidx}')
+        prog.add_edge(f'p_{cidx}', f'x_{cidx}')
 
     return prog
 
@@ -90,24 +125,24 @@ def generate_pingpong(message_size: int, rounds: int) -> Program:
 def _generate_send_partition_block(size: int,
                                    partitions: int,
                                    threshold: int,
-                                   round: int,
+                                   rnd: int,
                                    program: Program
                                    ) -> None:
     """
     """
 
     # start sentinels
-    wait_primary_low = f'w_0_{round}_l'
-    wait_primary_high = f'w_0_{round}_h'
+    wait_primary_low = f'w_0_{rnd}_l'
+    wait_primary_high = f'w_0_{rnd}_h'
 
-    wait_secondary_low = f'w_1_{round}_l'
-    wait_secondary_high = f'w_1_{round}_h'
+    wait_secondary_low = f'w_1_{rnd}_l'
+    wait_secondary_high = f'w_1_{rnd}_h'
 
-    recv_primary_low = f'r_0_{round-1}_l'
-    recv_primary_high = f'r_0_{round-1}_h'
+    recv_primary_low = f'r_0_{rnd-1}_l'
+    recv_primary_high = f'r_0_{rnd-1}_h'
 
-    recv_secondary_low = f'r_1_{round-1}_l'
-    recv_secondary_high = f'r_1_{round-1}_h'
+    recv_secondary_low = f'r_1_{rnd-1}_l'
+    recv_secondary_high = f'r_1_{rnd-1}_h'
 
     program.add_node(ProxyTask(wait_primary_low, 0))
     program.add_node(ProxyTask(wait_primary_high, 0))
@@ -123,8 +158,8 @@ def _generate_send_partition_block(size: int,
 
     # create puts
     # todo replace by puts
-    put_primary_low = f'p_0_{round}_l'
-    put_primary_high = f'p_0_{round}_h'
+    put_primary_low = f'p_0_{rnd}_l'
+    put_primary_high = f'p_0_{rnd}_h'
 
     p0_low = ProxyTask(put_primary_low, 0)
     p0_low.any = threshold
@@ -135,8 +170,8 @@ def _generate_send_partition_block(size: int,
     program.add_edge(put_primary_low, wait_secondary_low)
     program.add_edge(put_primary_high, wait_secondary_high)
 
-    put_secondary_low = f'p_1_{round}_l'
-    put_secondary_high = f'p_1_{round}_h'
+    put_secondary_low = f'p_1_{rnd}_l'
+    put_secondary_high = f'p_1_{rnd}_h'
 
     p1_low = ProxyTask(put_secondary_low, 1)
     p1_low.any = threshold
@@ -145,11 +180,11 @@ def _generate_send_partition_block(size: int,
     program.add_node(ProxyTask(put_secondary_high, 1))
 
     # receive sentinels
-    recv_primary_low = f'r_0_{round}_l'
-    recv_primary_high = f'r_0_{round}_h'
+    recv_primary_low = f'r_0_{rnd}_l'
+    recv_primary_high = f'r_0_{rnd}_h'
 
-    recv_secondary_low = f'r_1_{round}_l'
-    recv_secondary_high = f'r_1_{round}_h'
+    recv_secondary_low = f'r_1_{rnd}_l'
+    recv_secondary_high = f'r_1_{rnd}_h'
 
     program.add_node(ProxyTask(recv_primary_low, 0))
     program.add_node(ProxyTask(recv_primary_high, 0))
@@ -165,11 +200,11 @@ def _generate_send_partition_block(size: int,
 
     # computes
     for partition in range(partitions):
-        compute_primary = f'c_0_{round}_{partition}'
+        compute_primary = f'c_0_{rnd}_{partition}'
         program.add_node(ComputeTask(compute_primary,
                                      0, size, concurrent=True))
 
-        compute_secondary = f'c_1_{round}_{partition}'
+        compute_secondary = f'c_1_{rnd}_{partition}'
         program.add_node(ComputeTask(compute_secondary,
                                      1, size, concurrent=True))
 

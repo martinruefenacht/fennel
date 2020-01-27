@@ -42,3 +42,4 @@ def test_put_task():
     assert task.target == 1
     assert task.message_size == 100
     assert task.blocking
+

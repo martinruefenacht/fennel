@@ -6,7 +6,8 @@ from hypothesis import given
 from hypothesis.strategies import floats
 
 
-from fennel.computes.gamma import GammaModel
+from fennel.computes.gamma import GammaModel, NoisyGammaModel
+from fennel.tasks.compute import ComputeTask
 
 
 @given(floats(0.0))
@@ -28,3 +29,6 @@ def test_negative_gamma_fails(gamma):
         model = GammaModel(gamma)
 
         assert model.gamma == gamma
+
+
+

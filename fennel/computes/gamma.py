@@ -46,15 +46,18 @@ class NoisyGammaModel(GammaModel):
     """
     """
 
-    def __init__(self, gamma):
+    def __init__(self, gamma: float, stdev: float):
         super().__init__(gamma)
 
-        self._prep = norm.rvs(1.0, 0.06, size=1000)
+        self._prep = norm.rvs(1.0, stdev, size=1000)
 
     def evaluate(self, time: int, task: ComputeTask) -> int:
         """
         Evaluate the gamma model.
         """
+
+        if task.time is not None:
+            return time + task.time
 
         noise = random.choice(self._prep)
 

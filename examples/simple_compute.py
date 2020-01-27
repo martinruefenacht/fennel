@@ -1,40 +1,57 @@
+"""
+Compute sampling
+"""
+
 from fennel.core.program import Program
 
 from fennel.tasks.start import StartTask
+from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.compute import ComputeTask
 
 from fennel.core.machine import Machine
-from fennel.computes.gamma import GammaModel, NoisyGammaModel
+from fennel.computes.gamma import NoisyGammaModel
 from fennel.networks.lbmodel import LBModel
 
+
 import statistics
+
 
 def sample():
     program = Program()
 
     program.add_node(StartTask('c0', 0))
 
-    for idx in range(1, 100):
+    for idx in range(1, 10):
         program.add_node(ComputeTask(f'c{idx}', 0, 10000, False))
         program.add_edge(f'c{idx-1}', f'c{idx}')
 
     # bytes 10000, 10kb
 
-    machine = Machine(1, 1, NoisyGammaModel(0.1), LBModel(100, 0))
+    program.add_node(ProxyTask('x', 0))
+    program.add_edge('c9', 'x')
+
+    machine = Machine(1, 1, NoisyGammaModel(0.1, 0.05), LBModel(100, 0))
     machine.run(program)
 
     return machine.maximum_time
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """
+    Main function.
+    """
+
     samples = []
 
-    for idx in range(1000):
+    for _ in range(1000):
         samples.append(sample())
 
     m = statistics.mean(samples)
 
-    print(m)
+    print(m, statistics.median(samples), min(samples), max(samples))
     print((min(samples) - m) / m)
     print((max(samples) - m) / m)
 
+
+if __name__ == "__main__":
+    main()

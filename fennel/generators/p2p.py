@@ -97,69 +97,98 @@ def _generate_send_partition_block(size: int,
     """
 
     # start sentinels
-    program.add_node(ProxyTask(f'w_0_{round}_l', 0))
-    program.add_node(ProxyTask(f'w_0_{round}_h', 0))
+    wait_primary_low = f'w_0_{round}_l'
+    wait_primary_high = f'w_0_{round}_h'
 
-    program.add_edge(f'r_0_{round-1}_l', f'w_0_{round}_l')
-    program.add_edge(f'r_0_{round-1}_h', f'w_0_{round}_h')
+    wait_secondary_low = f'w_1_{round}_l'
+    wait_secondary_high = f'w_1_{round}_h'
 
-    program.add_node(ProxyTask(f'w_1_{round}_l', 1))
-    program.add_node(ProxyTask(f'w_1_{round}_h', 1))
+    recv_primary_low = f'r_0_{round-1}_l'
+    recv_primary_high = f'r_0_{round-1}_h'
 
-    program.add_edge(f'r_1_{round-1}_l', f'w_1_{round}_l')
-    program.add_edge(f'r_1_{round-1}_h', f'w_1_{round}_h')
+    recv_secondary_low = f'r_1_{round-1}_l'
+    recv_secondary_high = f'r_1_{round-1}_h'
+
+    program.add_node(ProxyTask(wait_primary_low, 0))
+    program.add_node(ProxyTask(wait_primary_high, 0))
+
+    program.add_edge(recv_primary_low, wait_primary_low)
+    program.add_edge(recv_primary_high, wait_primary_high)
+
+    program.add_node(ProxyTask(wait_secondary_low, 1))
+    program.add_node(ProxyTask(wait_secondary_high, 1))
+
+    program.add_edge(recv_secondary_low, wait_secondary_low)
+    program.add_edge(recv_secondary_high, wait_secondary_high)
 
     # create puts
     # todo replace by puts
-    p0_low = ProxyTask(f'p_0_{round}_l', 0)
+    put_primary_low = f'p_0_{round}_l'
+    put_primary_high = f'p_0_{round}_h'
+
+    p0_low = ProxyTask(put_primary_low, 0)
     p0_low.any = threshold
     p0_low.concurrent = True
     program.add_node(p0_low)
-    program.add_node(ProxyTask(f'p_0_{round}_h', 0))
+    program.add_node(ProxyTask(put_primary_high, 0))
 
-    program.add_edge(f'p_0_{round}_l', f'w_1_{round}_l')
-    program.add_edge(f'p_0_{round}_h', f'w_1_{round}_h')
+    program.add_edge(put_primary_low, wait_secondary_low)
+    program.add_edge(put_primary_high, wait_secondary_high)
 
-    p1_low = ProxyTask(f'p_1_{round}_l', 1)
+    put_secondary_low = f'p_1_{round}_l'
+    put_secondary_high = f'p_1_{round}_h'
+
+    p1_low = ProxyTask(put_secondary_low, 1)
     p1_low.any = threshold
     p1_low.concurrent = True
     program.add_node(p1_low)
-    program.add_node(ProxyTask(f'p_1_{round}_h', 1))
+    program.add_node(ProxyTask(put_secondary_high, 1))
 
     # receive sentinels
-    program.add_node(ProxyTask(f'r_0_{round}_l', 0))
-    program.add_node(ProxyTask(f'r_0_{round}_h', 0))
+    recv_primary_low = f'r_0_{round}_l'
+    recv_primary_high = f'r_0_{round}_h'
 
-    program.add_node(ProxyTask(f'r_1_{round}_l', 1))
-    program.add_node(ProxyTask(f'r_1_{round}_h', 1))
+    recv_secondary_low = f'r_1_{round}_l'
+    recv_secondary_high = f'r_1_{round}_h'
 
-    program.add_edge(f'p_1_{round}_l', f'r_0_{round}_l')
-    program.add_edge(f'p_1_{round}_h', f'r_0_{round}_h')
+    program.add_node(ProxyTask(recv_primary_low, 0))
+    program.add_node(ProxyTask(recv_primary_high, 0))
 
-    program.add_edge(f'p_1_{round}_l', f'r_1_{round}_l')
-    program.add_edge(f'p_1_{round}_h', f'r_1_{round}_h')
+    program.add_node(ProxyTask(recv_secondary_low, 1))
+    program.add_node(ProxyTask(recv_secondary_high, 1))
+
+    program.add_edge(put_secondary_low, recv_primary_low)
+    program.add_edge(put_secondary_high, recv_primary_high)
+
+    program.add_edge(put_secondary_low, recv_secondary_low)
+    program.add_edge(put_secondary_high, recv_secondary_high)
 
     # computes
     for partition in range(partitions):
-        program.add_node(ComputeTask(f'c_0_{round}_{partition}', 0, size))
-        program.add_node(ComputeTask(f'c_1_{round}_{partition}', 1, size))
+        compute_primary = f'c_0_{round}_{partition}'
+        program.add_node(ComputeTask(compute_primary,
+                                     0, size, concurrent=True))
+
+        compute_secondary = f'c_1_{round}_{partition}'
+        program.add_node(ComputeTask(compute_secondary,
+                                     1, size, concurrent=True))
 
         if partition < threshold:
             # connect to low w
-            program.add_edge(f'w_0_{round}_l', f'c_0_{round}_{partition}')
-            program.add_edge(f'w_1_{round}_l', f'c_1_{round}_{partition}')
+            program.add_edge(wait_primary_low, compute_primary)
+            program.add_edge(wait_secondary_low, compute_secondary)
 
         else:
             # connect to high w
-            program.add_edge(f'w_0_{round}_h', f'c_0_{round}_{partition}')
-            program.add_edge(f'w_1_{round}_h', f'c_1_{round}_{partition}')
+            program.add_edge(wait_primary_high, compute_primary)
+            program.add_edge(wait_secondary_high, compute_secondary)
 
         # connect to puts
-        program.add_edge(f'c_0_{round}_{partition}', f'p_0_{round}_l')
-        program.add_edge(f'c_0_{round}_{partition}', f'p_0_{round}_h')
+        program.add_edge(compute_primary, put_primary_low)
+        program.add_edge(compute_primary, put_primary_high)
 
-        program.add_edge(f'c_1_{round}_{partition}', f'p_1_{round}_l')
-        program.add_edge(f'c_1_{round}_{partition}', f'p_1_{round}_h')
+        program.add_edge(compute_secondary, put_secondary_low)
+        program.add_edge(compute_secondary, put_secondary_high)
 
 
 def generate_send_partitioned_p2p(size: int,
@@ -195,7 +224,8 @@ def generate_send_partitioned_p2p(size: int,
     program.add_edge('s_1', 'r_1_0_h')
 
     for ridx in range(1, rounds+1):
-        _generate_send_partition_block(size, partitions, threshold, ridx, program)
+        _generate_send_partition_block(size, partitions, threshold,
+                                       ridx, program)
 
     pprint(program._metadata)
     pprint(program._edges_in)

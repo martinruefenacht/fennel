@@ -1,1 +1,14 @@
 pytest
+pytest-cov
+pytest-sugar
+pytest-picked
+pytest-instafail
+pytest-tldr
+pytest-xdist
+pytest-parallel
+pytest-deadfixtures
+pytest-datadir
+pytest-randomly
+pytest-mock
+pytest-benchmark
+hypothesis

@@ -1,5 +1,5 @@
 """
-Plots a bandwidth vs size plot for given modelled machine.
+Plots a latency vs size plot.
 """
 
 
@@ -9,35 +9,23 @@ import numpy as np
 
 
 from fennel.core.machine import Machine
-from fennel.core.task import TaskEvent
 
 
 from fennel.generators.p2p import generate_send
-from fennel.instruments.bandwidth import BandwidthInstrument
 from fennel.networks.lbmodel import LBModel
 
 
 def sample(size: int) -> float:
     """
-    Calculate the bandwidth using the machine for a given transfer
-    size.
+    Calculate the latency of a transfer at the size.
     """
-
-    instrument = BandwidthInstrument()
 
     prog = generate_send(size, True)
     network = LBModel(4000, 0.1)
     machine = Machine(2, 1, None, network)
-
-    machine.register_instrument(TaskEvent.EXECUTED, instrument)
-    machine.register_instrument(TaskEvent.COMPLETED, instrument)
-
     machine.run(prog)
-    usage = instrument.calculate_bandwidth()
 
-    # B/ns -> MB/s
-    usage *= 953.674
-    return usage
+    return machine.maximum_time / 1000.0
 
 
 def main() -> None:
@@ -59,8 +47,8 @@ def main() -> None:
     plt.xscale('log')
     plt.yscale('log')
 
+    plt.ylabel('latency (s)')
     plt.xlabel('size (MB)')
-    plt.ylabel('bandwidth (MB/s)')
 
     plt.show()
 

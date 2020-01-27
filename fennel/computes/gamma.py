@@ -6,7 +6,7 @@ Defines the gamma compute model.
 from fennel.core.compute import ComputeModel
 from fennel.tasks.compute import ComputeTask
 
-from scipy.stats import norm
+from scipy.stats import betaprime
 import random
 
 
@@ -44,12 +44,16 @@ class GammaModel(ComputeModel):
 
 class NoisyGammaModel(GammaModel):
     """
+    A noise influenced GammaModel.
+
+    The noise distribution is a Betaprime distribution(2,3).
+    The noise function sample is then used as a percentage + 100%.
     """
 
     def __init__(self, gamma: float, stdev: float):
         super().__init__(gamma)
 
-        self._prep = norm.rvs(1.0, stdev, size=1000)
+        self._prep = betaprime.rvs(2.0, 3.0, stdev, size=1000)
 
     def evaluate(self, time: int, task: ComputeTask) -> int:
         """
@@ -61,4 +65,4 @@ class NoisyGammaModel(GammaModel):
 
         noise = random.choice(self._prep)
 
-        return time + int(task.size * self._gamma * noise)
+        return time + int(task.size * self._gamma * (1.0 + noise))

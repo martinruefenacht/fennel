@@ -19,11 +19,11 @@ def _target_rd(ridx: int, process: int) -> int:
     """
     """
 
-    smask = 2 ** ridx
-    sbase = 2 ** (ridx+1)
+    mask = 2 ** ridx
+    base = 2 ** (ridx+1)
 
-    block = (process // sbase) * sbase
-    offset = (process + smask) % sbase
+    block = (process // base) * base
+    offset = (process + mask) % base
 
     return block + offset
 
@@ -33,6 +33,7 @@ def generate_recursive_doubling(processes: int, message_size: int) -> Program:
     Generate a recursive doubling schedule.
     """
 
+    # power of two requirement
     assert math.log2(processes).is_integer()
     assert message_size >= 0
 
@@ -46,29 +47,37 @@ def generate_recursive_doubling(processes: int, message_size: int) -> Program:
 
         program.add_edge(f's{process}', f'x_{process}_0')
 
+    # generate each round
     rounds = int(math.log2(processes))
-    for ridx in range(rounds):
+    for ridx in range(1, rounds+1):
+        # generate required tasks for round
         for process in range(processes):
-            proxy_name = f'x_{process}_{ridx+1}'
             compute_name = f'c_{process}_{ridx}'
             put_name = f'p_{process}_{ridx}'
-
-            # generate put
-            target = _target_rd(ridx, process)
-
-            program.add_node(PutTask(put_name, process, target, message_size))
-
-            program.add_edge(put_name, f'c_{target}_{ridx}')
-            program.add_edge(f'x_{process}_{ridx}', put_name)
-
-            # generate proxy
-            program.add_node(ProxyTask(proxy_name, process))
+            proxy_name = f'x_{process}_{ridx}'
 
             # generate compute
             program.add_node(ComputeTask(compute_name, process, message_size))
 
-            program.add_edge(f'x_{process}_{ridx}', compute_name)
-            program.add_edge(compute_name, f'x_{process}_{ridx+1}')
+            # generate put
+            target = _target_rd(ridx-1, process)
+            program.add_node(PutTask(put_name, process, target, message_size))
+
+            # generate round end proxy
+            program.add_node(ProxyTask(proxy_name, process))
+
+        # generate the dependencies
+        for process in range(processes):
+            compute_name = f'c_{process}_{ridx}'
+            put_name = f'p_{process}_{ridx}'
+            proxy_name = f'x_{process}_{ridx}'
+            target = _target_rd(ridx-1, process)
+
+            program.add_edge(f'x_{process}_{ridx-1}', compute_name)
+            program.add_edge(compute_name, proxy_name)
+
+            program.add_edge(f'x_{process}_{ridx-1}', put_name)
+            program.add_edge(put_name, f'c_{target}_{ridx}')
 
     return program
 

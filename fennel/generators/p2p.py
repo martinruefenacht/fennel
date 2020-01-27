@@ -70,13 +70,12 @@ def generate_multicast(message_size: int,
 
     # create put nodes
     for cidx in range(1, nodes):
-        prog.add_node(PutTask(f'p0_{cidx}', 0, cidx,
+        prog.add_node(PutTask(f'p_{cidx}', 0, cidx,
                               message_size, block=blocking))
 
-        prog.add_edge(f's_{cidx}', f'p_{cidx}')
-
-        prog.add_edge('s_0', f'p_{cidx}')
         prog.add_edge(f'p_{cidx}', f'x_{cidx}')
+        prog.add_edge(f'p_{cidx}', f'x_0')
+        prog.add_edge('s_0', f'p_{cidx}')
 
     return prog
 

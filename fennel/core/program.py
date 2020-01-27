@@ -49,11 +49,11 @@ class Program:
         Adds an edge to this program.
         """
 
-        if not name_from in self._metadata:
-            raise RuntimeError('%s not in nodes.', name_from)
+        if name_from not in self._metadata:
+            raise RuntimeError(f'{name_from} not in nodes.')
 
-        if not name_to in self._metadata:
-            raise RuntimeError('%s not in nodes.', name_to)
+        if name_to not in self._metadata:
+            raise RuntimeError(f'{name_to} not in nodes.')
 
         self._edges_out[name_from].add(name_to)
         self._edges_in[name_to].add(name_from)

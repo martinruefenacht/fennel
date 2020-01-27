@@ -22,7 +22,7 @@ class ComputeTask(Task):
                  concurrent: bool = False):
         super().__init__(name, node, concurrent)
 
-        if not time and not size:
+        if time is None and size is None:
             raise RuntimeError('ComputeTask needs either size or time.')
 
         self._size = size

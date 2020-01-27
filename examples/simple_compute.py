@@ -22,7 +22,7 @@ def sample():
     program.add_node(StartTask('c0', 0))
 
     for idx in range(1, 10):
-        program.add_node(ComputeTask(f'c{idx}', 0, 10000, False))
+        program.add_node(ComputeTask(f'c{idx}', 0, size=10000))
         program.add_edge(f'c{idx-1}', f'c{idx}')
 
     # bytes 10000, 10kb
@@ -30,7 +30,7 @@ def sample():
     program.add_node(ProxyTask('x', 0))
     program.add_edge('c9', 'x')
 
-    machine = Machine(1, 1, NoisyGammaModel(0.1, 0.05), LBModel(100, 0))
+    machine = Machine(1, 1, NoisyGammaModel(0.1, 0.05), None)
     machine.run(program)
 
     return machine.maximum_time
@@ -46,7 +46,10 @@ def main() -> None:
     for _ in range(1000):
         samples.append(sample())
 
+    assert samples
+
     m = statistics.mean(samples)
+    assert m != 0.0
 
     print(m, statistics.median(samples), min(samples), max(samples))
     print((min(samples) - m) / m)

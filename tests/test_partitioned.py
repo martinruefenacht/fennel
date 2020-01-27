@@ -15,6 +15,7 @@ from fennel.core.machine import Machine
 from fennel.core.task import TaskEvent
 
 
+from fennel.networks.lbmodel import LBModel
 from fennel.generators.p2p import generate_send_partitioned_p2p
 from fennel.tasks.start import StartTask
 from fennel.tasks.compute import ComputeTask
@@ -93,11 +94,11 @@ def test_partitioned_generator():
     # each parition of size 50
     # 2 partitions
     # threshold for partitioned send is 1
-    prog = generate_send_partitioned_p2p(50, 2, 1, 1)
+    prog = generate_send_partitioned_p2p(1024 * 16, 2, 1, 1)
 
     recorder = RecorderInstrument()
 
-    machine = Machine(2, 2, GammaModel(1), None)
+    machine = Machine(2, 2, GammaModel(0.1), LBModel(1000, 0.1))
     machine.register_instrument(TaskEvent.COMPLETED, recorder)
     machine.run(prog)
 
@@ -105,10 +106,10 @@ def test_partitioned_generator():
 
     logging.info(pformat(record))
 
-    assert machine.maximum_time == 100
+    assert machine.maximum_time == 12190
 
-    assert record['c_0_1_0'] == 50
-    assert record['c_0_1_1'] == 50
+    assert record['c_0_1_0'] == 1638
+    assert record['c_0_1_1'] == 1638
 
-    assert record['c_1_1_0'] == 100
-    assert record['c_1_1_1'] == 100
+    assert record['c_1_1_0'] == 5914
+    assert record['c_1_1_1'] == 8552

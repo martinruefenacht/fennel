@@ -25,6 +25,12 @@ class ComputeTask(Task):
         if time is None and size is None:
             raise RuntimeError('ComputeTask needs either size or time.')
 
+        if size is not None:
+            assert size >= 0
+
+        if time is not None:
+            assert time >= 0
+
         self._size = size
         self._time = time
 

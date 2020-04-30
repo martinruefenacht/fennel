@@ -41,6 +41,8 @@ class Task:
 
     def __init__(self, name: str, node: int, concurrent: bool = False):
         self._name = name
+
+        assert node >= 0
         self._node = node
 
         self._concurrent = concurrent

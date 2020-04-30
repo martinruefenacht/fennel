@@ -21,12 +21,14 @@ class PriorityQueue:
 
     def is_not_empty(self) -> bool:
         """
+        Deteremines whether the queue is empty.
         """
 
         return bool(self._task_queue)
 
     def pop(self) -> PlannedTask:
         """
+        Removes the high priority PlannedTask.
         """
 
         return heapq.heappop(self._task_queue)
@@ -42,14 +44,16 @@ class PriorityQueue:
                                 time: Time,
                                 tasks: Iterable[Task]) -> None:
         """
+        Appends all Tasks to the queue with a globally given time..
         """
 
         for task in tasks:
             self.push(time, task)
 
-    def push_iterable(self, iterable: Iterable[PlannedTask]) -> None:
+    def push_iterable(self, tasks: Iterable[PlannedTask]) -> None:
         """
+        Appens all Tasks to the queue with each having a given time.
         """
 
-        for combined in iterable:
+        for combined in tasks:
             heapq.heappush(self._task_queue, combined)

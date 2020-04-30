@@ -8,6 +8,7 @@ from fennel.core.program import Program
 from fennel.core.task import Task
 from fennel.core.time import Time
 
+
 class Instrument:
     """
     Instrument abstract definition.

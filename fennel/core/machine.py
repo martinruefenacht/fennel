@@ -166,7 +166,7 @@ class Machine(ABC):
 
     def run(self, program: Program) -> None:
         """
-        Runs the given program on this machine.
+        Runs the given Program on this machine.
         """
 
         # check if program requires larger machine

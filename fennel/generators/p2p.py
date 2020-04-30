@@ -14,7 +14,12 @@ from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.compute import ComputeTask
 
 
-def generate_send(message_size: int, blocking: bool) -> Program:
+def generate_send(
+        message_size: int,
+        blocking: bool,
+        sender: int = 0,
+        receiver: int = 1
+        ) -> Program:
     """
     Generate a single send from rank 0 -> rank 1.
     """
@@ -24,31 +29,32 @@ def generate_send(message_size: int, blocking: bool) -> Program:
     prog = Program()
 
     # generate start tasks for all procs
-    prog.add_node(StartTask('s0', 0))
-    prog.add_node(StartTask('s1', 1))
+    prog.add_node(StartTask(f's{sender}', sender))
+    prog.add_node(StartTask(f's{receiver}', receiver))
 
     # generate single put task for rank 0
-    prog.add_node(PutTask('p', 0, 1, message_size, block=blocking))
+    prog.add_node(PutTask('p', sender, receiver, message_size, block=blocking))
 
     # generate end tasks for all procs
-    prog.add_node(ProxyTask('x0', 0))
-    prog.add_node(ProxyTask('x1', 1))
+    prog.add_node(ProxyTask(f'x{sender}', sender))
+    prog.add_node(ProxyTask(f'x{receiver}', receiver))
 
     # rank 0 dependencies
-    prog.add_edge('s0', 'p')
-    prog.add_edge('p', 'x0')
+    prog.add_edge(f's{sender}', 'p')
+    prog.add_edge('p', f'x{sender}')
 
     # rank 1 dependencies
-    prog.add_edge('s1', 'x1')
-    prog.add_edge('p', 'x1')
+    prog.add_edge(f's{receiver}', f'x{receiver}')
+    prog.add_edge('p', f'x{receiver}')
 
     return prog
 
 
-def generate_multicast(message_size: int,
-                       width: int,
-                       blocking: bool
-                       ) -> Program:
+def generate_multicast(
+        message_size: int,
+        width: int,
+        blocking: bool
+        ) -> Program:
     """
     Generate a multicast program.
     """
@@ -80,7 +86,12 @@ def generate_multicast(message_size: int,
     return prog
 
 
-def generate_pingpong(message_size: int, rounds: int) -> Program:
+def generate_pingpong(
+        message_size: int,
+        rounds: int,
+        sender: int = 0,
+        receiver: int = 1
+        ) -> Program:
     """
     Generate a ping pong program.
     """
@@ -90,33 +101,33 @@ def generate_pingpong(message_size: int, rounds: int) -> Program:
 
     prog = Program()
 
-    prog.add_node(StartTask('s0', 0))
-    prog.add_node(StartTask('s1', 1))
+    prog.add_node(StartTask(f's{sender}', sender))
+    prog.add_node(StartTask(f's{receiver}', receiver))
 
-    prog.add_node(ProxyTask('x0_0', 0))
-    prog.add_node(ProxyTask('x1_0', 1))
+    prog.add_node(ProxyTask(f'x{sender}_0', sender))
+    prog.add_node(ProxyTask(f'x{receiver}_0', receiver))
 
-    prog.add_edge('s0', 'x0_0')
-    prog.add_edge('s1', 'x1_0')
+    prog.add_edge(f's{sender}', f'x{sender}_0')
+    prog.add_edge(f's{receiver}', f'x{receiver}_0')
 
     for ridx in range(0, rounds):
-        prog.add_node(PutTask(f'p0_{ridx}', 0, 1, message_size))
-        prog.add_node(PutTask(f'p1_{ridx}', 1, 0, message_size))
+        prog.add_node(PutTask(f'p{sender}_{ridx}', sender, receiver, message_size))
+        prog.add_node(PutTask(f'p{receiver}_{ridx}', receiver, sender, message_size))
 
-        prog.add_edge(f'x0_{ridx}', f'p0_{ridx}')
-        prog.add_edge(f'x1_{ridx}', f'p1_{ridx}')
+        prog.add_edge(f'x{sender}_{ridx}', f'p{sender}_{ridx}')
+        prog.add_edge(f'x{receiver}_{ridx}', f'p{receiver}_{ridx}')
 
-        prog.add_node(ProxyTask(f'x0_{ridx+1}', 0))
-        prog.add_node(ProxyTask(f'x1_{ridx+1}', 1))
+        prog.add_node(ProxyTask(f'x{sender}_{ridx+1}', sender))
+        prog.add_node(ProxyTask(f'x{receiver}_{ridx+1}', receiver))
 
-        prog.add_edge(f'p0_{ridx}', f'x0_{ridx+1}')
-        prog.add_edge(f'p1_{ridx}', f'x1_{ridx+1}')
+        prog.add_edge(f'p{sender}_{ridx}', f'x{sender}_{ridx+1}')
+        prog.add_edge(f'p{receiver}_{ridx}', f'x{receiver}_{ridx+1}')
 
         # ping
-        prog.add_edge(f'p0_{ridx}', f'p1_{ridx}')
+        prog.add_edge(f'p{sender}_{ridx}', f'p{receiver}_{ridx}')
 
         # pong
-        prog.add_edge(f'p1_{ridx}', f'x0_{ridx+1}')
+        prog.add_edge(f'p{receiver}_{ridx}', f'x{sender}_{ridx+1}')
 
     return prog
 

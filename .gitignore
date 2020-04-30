@@ -5,3 +5,4 @@ __pycache__/
 .coverage
 .hypothesis
 *.html
+test-output.xml

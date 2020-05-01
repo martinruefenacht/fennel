@@ -64,7 +64,7 @@ class Canvas:
 
         self._minimum_time = value
 
-    def process_offset(self, process: int) -> float:
+    def _process_offset(self, process: int) -> float:
         """
         Find the vertical offset for the given process number.
         """
@@ -73,37 +73,6 @@ class Canvas:
         timeline_spacing = 0.5
 
         return (process * vertical_space + timeline_spacing) * -1
-
-#    def drawTimeLine(self, max_time):
-#        stmax = max_time * Canvas.scale
-#
-#        # draw base time line
-#        bx = Canvas.xmargin
-#        by = -Canvas.tl_ymargin
-#        base = pyx.path.line(bx, by, bx + stmax, by)
-#        self._canvas.stroke(base)
-#
-#        # draw white frame line
-#        # TODO move to drawProcessLines
-#        bottom = pyx.path.line(0, 0, bx*2 + stmax, 0)
-#        self._canvas.stroke(bottom, [pyx.color.rgb.white])
-#
-#        self._canvas.text(Canvas.xmargin, 0.1-Canvas.tl_ymargin, 'nanoseconds', [pyx.text.size.large])   
-#
-#        # draw ticks
-#        tick_count = int((max_time / Canvas.tick_freq) + 1)
-#        for tid in range(tick_count):
-#            tx = Canvas.xmargin + tid * Canvas.tick_freq * Canvas.scale
-#            ty = -Canvas.tl_ymargin
-#
-#            tick = pyx.path.line(tx, ty, tx, ty - Canvas.tick_height)
-#            self._canvas.stroke(tick)
-#
-#            # draw numbers
-#            if tid % 5 == 0:
-#                tex =  str(int(tid * Canvas.tick_freq))
-#                xoffset = len(tex) * 0.1
-#                self._canvas.text(tx - xoffset, ty - 0.5, tex, [pyx.text.size.large])
 
     def _draw_timeline(self) -> None:
         """
@@ -144,7 +113,7 @@ class Canvas:
         if not PYPY_ENVIRONMENT:
             for process in range(len(self._processes)):
                 attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                         pyx.trafo.translate(0, self.process_offset(process)),
+                         pyx.trafo.translate(0, self._process_offset(process)),
                          pyx.style.linestyle.dotted]
 
                 self._plot.stroke(pyx.path.line(0, 0,
@@ -176,7 +145,7 @@ class Canvas:
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(0.0, self.process_offset(process)),
+                     pyx.trafo.translate(0.0, self._process_offset(process)),
                      pyx.color.rgb.red]
 
             self._canvas.stroke(pyx.path.circle(0, 0, 0.1), attrs)
@@ -216,12 +185,12 @@ class Canvas:
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(time, self.process_offset(process))]
+                     pyx.trafo.translate(time, self._process_offset(process))]
 
             self._canvas.stroke(pyx.path.line(0.0, 0.0, 0.0, -0.5), attrs)
 
             attrs = [pyx.trafo.scale(self.PROCESS_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(time, self.process_offset(process))]
+                     pyx.trafo.translate(time, self._process_offset(process))]
 
             self._canvas.fill(triangle, attrs)
 
@@ -239,7 +208,7 @@ class Canvas:
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(0.0, self.process_offset(process))]
+                     pyx.trafo.translate(0.0, self._process_offset(process))]
 
             self._canvas.stroke(
                 pyx.path.rect(start, -0.25, end-start, 0.5),
@@ -259,7 +228,7 @@ class Canvas:
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(0.0, self.process_offset(process)),
+                     pyx.trafo.translate(0.0, self._process_offset(process)),
                      pyx.deco.filled([pyx.pattern.crosshatched45.SMall]),
                      pyx.deco.stroked]
 
@@ -284,8 +253,8 @@ class Canvas:
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, 1)]
 
-            source_offset = self.process_offset(source)
-            target_offset = self.process_offset(target)
+            source_offset = self._process_offset(source)
+            target_offset = self._process_offset(target)
 
             self._canvas.stroke(pyx.path.line(start, source_offset,
                                               end, target_offset), attrs)
@@ -309,23 +278,30 @@ class Canvas:
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(0.0, self.process_offset(source))]
+                     pyx.trafo.translate(0.0, self._process_offset(source))]
 
             side = 1 if source < target else -1
 
-            self._canvas.stroke(pyx.path.line(start, 0.0, start, side * 0.25), attrs)
-            self._canvas.stroke(pyx.path.line(start, side * 0.25, switch, side * 0.25), attrs)
+            self._canvas.stroke(
+                pyx.path.line(start, 0.0, start, side * 0.25),
+                attrs)
+            self._canvas.stroke(
+                pyx.path.line(start, side * 0.25, switch, side * 0.25),
+                attrs)
 
             # transfer line
             attrs = [pyx.trafo.scale(self.TIME_SCALE, 1)]
 
-            source_offset = self.process_offset(source)
-            target_offset = self.process_offset(target)
+            source_offset = self._process_offset(source)
+            target_offset = self._process_offset(target)
 
-            self._canvas.stroke(pyx.path.line(switch,
-                                              (source_offset -
-                                               side * 0.25 * self.PROCESS_SCALE),
-                                              end, target_offset), attrs)
+            self._canvas.stroke(
+                pyx.path.line(
+                    switch,
+                    source_offset - side * 0.25 * self.PROCESS_SCALE,
+                    end,
+                    target_offset),
+                attrs)
 
             self._processes[source] = True
             self._processes[target] = True
@@ -333,6 +309,7 @@ class Canvas:
 
     def draw_noise_overlay(self, process: int, start: int, end: int) -> None:
         """
+        Draws an additional layered color to represent noise.
         """
 
         assert process >= 0
@@ -341,8 +318,8 @@ class Canvas:
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(0.0, self.process_offset(process)),
-                     pyx.color.rgb.red,
+                     pyx.trafo.translate(0.0, self._process_offset(process)),
+                     pyx.color.cmyk.Sepia,
                      pyx.style.linewidth.Thick]
 
             self._canvas.stroke(pyx.path.line(start, 0.1, end, 0.1), attrs)

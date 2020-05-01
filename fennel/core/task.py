@@ -39,7 +39,12 @@ class Task:
 
     task_counter: int = 0
 
-    def __init__(self, name: str, node: int, concurrent: bool = False):
+    def __init__(self,
+                 name: str,
+                 node: int,
+                 concurrent: bool = False,
+                 drawable: bool = True
+                 ) -> None:
         self._name = name
 
         assert node >= 0
@@ -48,6 +53,8 @@ class Task:
         self._concurrent = concurrent
 
         self._any = None
+
+        self._drawable = drawable
 
         self._taskid = Task.task_counter
         Task.task_counter += 1
@@ -90,6 +97,14 @@ class Task:
     @concurrent.setter
     def concurrent(self, concurrency: bool) -> None:
         self._concurrent = concurrency
+
+    @property
+    def drawable(self) -> bool:
+        """
+        Gets the drawable property.
+        """
+
+        return self._drawable
 
     @property
     def any(self) -> Optional[int]:

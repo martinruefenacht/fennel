@@ -4,12 +4,33 @@ Module for generators of point-to-point programs.
 
 from fennel.core.program import Program
 from fennel.tasks.start import StartTask
-from fennel.tasks.put import PutTask
 from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.compute import ComputeTask
 
 
-def generate_compute(nodes: int,
+def compute(size: int, rounds: int) -> Program:
+    """
+    Generate a single process with compute tasks.
+    """
+
+    prog = Program()
+
+    prog.add_node(StartTask('s', 0))
+    prog.add_node(ProxyTask('x_0_1', 0))
+    prog.add_edge('s', 'x_0_1')
+
+    for ridx in range(1, rounds):
+        prog.add_node(ProxyTask(f'x_{ridx}', 0))
+        prog.add_node(ComputeTask(0, f'c_{ridx}', size))
+
+        prog.add_edge(f'x_{ridx-1}', f'c_{ridx}')
+        prog.add_edge(f'c_{ridx}', f'x_{ridx}')
+
+    return prog
+    :wq
+
+
+def parallel_compute(nodes: int,
                      count: int,
                      size: int,
                      concurrent: bool,

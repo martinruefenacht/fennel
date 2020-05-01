@@ -389,7 +389,7 @@ class Machine(ABC):
         time_start = time + task.skew
         self._set_process_time(task.node, process, time_start)
 
-        if self.draw_mode:
+        if self.draw_mode and task.drawable:
             assert self.canvas is not None
             self.canvas.draw_start_task(task.node, time_start)
 
@@ -409,7 +409,7 @@ class Machine(ABC):
         time_sleep = time + task.delay
         self._set_process_time(task.node, process, time_sleep)
 
-        if self.draw_mode:
+        if self.draw_mode and task.drawable:
             assert self.canvas is not None
             self.canvas.draw_sleep_task(task.node,
                                         time,
@@ -434,7 +434,7 @@ class Machine(ABC):
 
         self._set_process_time(task.node, process, time_compute)
 
-        if self.draw_mode:
+        if self.draw_mode and task.drawable:
             assert self.canvas is not None
             self.canvas.draw_compute_task(task.node,
                                           time,
@@ -456,7 +456,7 @@ class Machine(ABC):
 
         self._set_process_time(task.node, process, time + times.local)
 
-        if self.draw_mode:
+        if self.draw_mode and task.drawable:
             assert self._canvas is not None
 
             if task.blocking:

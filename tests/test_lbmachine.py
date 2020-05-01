@@ -3,11 +3,7 @@ Verifies all LB machines.
 """
 
 
-import math
-
-
-from fennel.generators.p2p import generate_pingpong, generate_multicast
-from fennel.generators.allreduce import generate_recursive_doubling
+import fennel.generators.p2p as p2p
 from fennel.core.machine import Machine
 from fennel.networks.lbmodel import LBModel
 from fennel.computes.gamma import GammaModel
@@ -23,7 +19,7 @@ def test_lbmachine():
     rounds = 1
     latency = 1000
 
-    program = generate_pingpong(msg_size, rounds)
+    program = p2p.pingpong(msg_size, rounds)
 
     machine = Machine(nodes, 1, GammaModel(0), LBModel(latency, 0))
     machine.run(program)

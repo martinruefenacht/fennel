@@ -16,7 +16,7 @@ from fennel.core.task import TaskEvent
 
 
 from fennel.networks.lbmodel import LBModel
-from fennel.generators.p2p import generate_send_partitioned_p2p
+from fennel.generators.p2p import send_partitioned
 from fennel.tasks.start import StartTask
 from fennel.tasks.compute import ComputeTask
 from fennel.tasks.proxy import ProxyTask
@@ -94,7 +94,7 @@ def test_partitioned_generator():
     # each parition of size 50
     # 2 partitions
     # threshold for partitioned send is 1
-    prog = generate_send_partitioned_p2p(1024 * 16, 2, 1, 1)
+    prog = send_partitioned(1024 * 16, 2, 1, 1)
 
     recorder = RecorderInstrument()
 

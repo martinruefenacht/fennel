@@ -10,7 +10,7 @@ from fennel.core.machine import Machine
 from fennel.core.task import TaskEvent
 
 
-from fennel.generators.p2p import generate_send
+import fennel.generators.p2p as p2p
 from fennel.instruments.bandwidth import BandwidthInstrument
 from fennel.networks.lbmodel import LBModel
 
@@ -23,7 +23,7 @@ def test_bandwidth_single_put():
     instrument = BandwidthInstrument()
 
     # send 125000B 125KB 0.125MB
-    prog = generate_send(125000, True)
+    prog = p2p.send(125000, True)
     network = LBModel(100, 1)
     machine = Machine(2, 1, None, network)
 

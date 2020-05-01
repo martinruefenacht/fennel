@@ -2,12 +2,6 @@
 """
 
 
-import math
-
-
-from fennel.generators.p2p import generate_pingpong, generate_multicast
-from fennel.generators.allreduce import generate_recursive_doubling
-
 # def test_pingpong_lbpmachine():
 #     """
 #     Test LBPMachine with a PingPong program.

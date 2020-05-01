@@ -3,10 +3,6 @@ Module for generators of point-to-point programs.
 """
 
 
-import math
-from pprint import pprint
-
-
 from fennel.core.program import Program
 from fennel.tasks.start import StartTask
 from fennel.tasks.put import PutTask
@@ -14,7 +10,7 @@ from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.compute import ComputeTask
 
 
-def generate_send(
+def send(
         message_size: int,
         blocking: bool,
         sender: int = 0,
@@ -50,7 +46,7 @@ def generate_send(
     return prog
 
 
-def generate_multicast(
+def multicast(
         message_size: int,
         width: int,
         blocking: bool
@@ -86,7 +82,7 @@ def generate_multicast(
     return prog
 
 
-def generate_pingpong(
+def pingpong(
         message_size: int,
         rounds: int,
         sender: int = 0,
@@ -235,11 +231,12 @@ def _generate_send_partition_block(size: int,
         program.add_edge(compute_secondary, put_secondary_high)
 
 
-def generate_send_partitioned_p2p(size: int,
-                                  partitions: int,
-                                  threshold: int,
-                                  rounds: int
-                                  ) -> Program:
+def send_partitioned(
+        size: int,
+        partitions: int,
+        threshold: int,
+        rounds: int
+        ) -> Program:
     """
     Generate a partitioned single threshold compute+put cycle.
     """
@@ -271,8 +268,14 @@ def generate_send_partitioned_p2p(size: int,
         _generate_send_partition_block(size, partitions, threshold,
                                        ridx, program)
 
-    pprint(program._metadata)
-    pprint(program._edges_in)
-    pprint(program._edges_out)
-
     return program
+
+
+def request_response_transfer_ack(
+    message_size: int,
+    rounds: int,
+    sender: int = 0,
+    receiver: int = 1
+    ) -> Program:
+
+    raise NotImplementedError

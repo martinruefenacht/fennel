@@ -11,8 +11,8 @@ from fennel.core.machine import Machine
 from fennel.networks.lbmodel import LBModel
 from fennel.networks.lbpmodel import LBPModel
 from fennel.computes.gamma import GammaModel
-from fennel.generators.p2p import generate_send, generate_multicast
 
+import fennel.generators.p2p as p2p
 import fennel.generators.allreduce as allreduce
 import fennel.generators.allgather as allgather
 
@@ -65,7 +65,7 @@ def test_send_canvas(shared_datadir):
 
     path = Path().cwd() / "tests/" / name
 
-    program = generate_send(10, True)
+    program = p2p.send(10, True)
 
     canvas = Canvas()
 
@@ -97,7 +97,7 @@ def test_lbpmachine_multicast(shared_datadir):
                       LBPModel(latency, bandwidth, pipeline))
     machine.canvas = canvas
 
-    program = generate_multicast(1, 2, False)
+    program = p2p.multicast(1, 2, False)
     machine.run(program)
 
     canvas.write(str(path))
@@ -140,7 +140,6 @@ def test_pm_rd_allgather(shared_datadir):
     msgsize = 4096
 
     path = Path.cwd() / "tests" / name
-
 
     machine = Machine(nodes, 1, GammaModel(1), LBModel(latency, bandwidth))
     machine.canvas = Canvas()

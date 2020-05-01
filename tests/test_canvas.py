@@ -15,6 +15,7 @@ from fennel.computes.gamma import GammaModel
 import fennel.generators.p2p as p2p
 import fennel.generators.allreduce as allreduce
 import fennel.generators.allgather as allgather
+import fennel.generators.compute as compute
 
 
 def compare_eps_files(reference: Path, newest: Path) -> bool:
@@ -145,6 +146,29 @@ def test_pm_rd_allgather(shared_datadir):
     machine.canvas = Canvas()
 
     program = allgather.recursive_doubling(nodes, msgsize)
+
+    machine.run(program)
+    machine.canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_simple_compute(shared_datadir):
+    """
+    Tests a simple compute program and a gamma compute model.
+    """
+
+    name = "compute.eps"
+    msgsize = 1024
+    rounds = 5
+    gamma = 0.05
+
+    path = Path.cwd() / "tests" / name
+
+    machine = Machine(1, 1, GammaModel(gamma), LBModel(0, 0))
+    machine.canvas = Canvas()
+
+    program = compute.simple_compute(msgsize, rounds)
 
     machine.run(program)
     machine.canvas.write(str(path))

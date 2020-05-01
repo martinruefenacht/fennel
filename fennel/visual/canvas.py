@@ -162,7 +162,7 @@ class Canvas:
             self._plot.stroke(
                 pyx.path.rect(-self.MARGIN, self.MARGIN*2.5,
                               self.minimum_time*self.TIME_SCALE + 2*self.MARGIN,
-                              (len(self._processes) + 1) * -self.PROCESS_SCALE - 3.5*self.MARGIN),
+                              (len(self._processes) + 1) * -self.PROCESS_SCALE - 4*self.MARGIN),
                 attrs)
 
     def _draw_process_bound(self, process) -> None:
@@ -200,7 +200,6 @@ class Canvas:
         assert process >= 0
 
         if not PYPY_ENVIRONMENT:
-
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
                      pyx.trafo.translate(time, self.process_offset(process))]
 
@@ -212,7 +211,7 @@ class Canvas:
             self._canvas.fill(pyx.path.circle(0.0, -0.5, 0.1), attrs)
 
             self._processes[process] = True
-            self._minimum_time = max(self._minimum_time, time+1)
+            self._minimum_time = max(self._minimum_time, time + 1)
 
     def draw_sleep_task(self, process: int, start: int, end: int):
         """

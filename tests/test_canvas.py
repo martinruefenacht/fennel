@@ -9,8 +9,9 @@ import re
 from fennel.visual.canvas import Canvas
 from fennel.core.machine import Machine
 from fennel.networks.lbmodel import LBModel
+from fennel.networks.lbpmodel import LBPModel
 from fennel.computes.gamma import GammaModel
-from fennel.generators.p2p import generate_send
+from fennel.generators.p2p import generate_send, generate_multicast
 
 
 def compare_eps_files(reference: Path, newest: Path) -> bool:
@@ -59,6 +60,33 @@ def test_send_canvas(shared_datadir):
 
     machine = Machine(2, 1, GammaModel(0), LBModel(latency, 0))
     machine.canvas = canvas
+    machine.run(program)
+
+    canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_lbpmachine_multicast(shared_datadir):
+    """
+    Tests if the pipelining postal model is correct with two sends.
+    """
+
+    name = "ppm_double_send.eps"
+    latency = 500
+    bandwidth = 0
+    pipeline = 100
+
+    path = Path().cwd() / "tests/" / name
+
+    canvas = Canvas()
+
+    machine = Machine(3, 1,
+                      GammaModel(0),
+                      LBPModel(latency, bandwidth, pipeline))
+    machine.canvas = canvas
+
+    program = generate_multicast(1, 2, False)
     machine.run(program)
 
     canvas.write(str(path))

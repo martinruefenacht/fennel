@@ -3,6 +3,9 @@ Definition of the abstact ComputeModel.
 """
 
 
+# pylint: disable=too-few-public-methods
+
+
 from abc import ABC, abstractmethod
 
 from fennel.tasks.compute import ComputeTask

@@ -3,6 +3,9 @@ Defines the latency-bandwidth-pipeline model.
 """
 
 
+from typing import Tuple
+
+
 from fennel.core.network import NetworkModel, NetworkTime
 from fennel.tasks.put import PutTask
 
@@ -19,12 +22,14 @@ class LBPModel(NetworkModel):
         self._bandwidth = bandwidth
         self._pipeline = pipeline
 
-    def evaluate(self, task: PutTask) -> (int, int):
+    def evaluate(self, task: PutTask) -> NetworkTime:
         """
         Evaluate the latency-bandwidth network model.
         """
 
         local = self._pipeline
-        remote = local + self._latency + self._bandwidth * task.message_size
+        remote = int(local +
+                     self._latency +
+                     self._bandwidth * task.message_size)
 
         return NetworkTime(local, remote)

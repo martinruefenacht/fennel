@@ -248,7 +248,7 @@ class Machine(ABC):
 
             return [(earliest, task)]
 
-        # 
+        # execute instruments for EXECUTED event
         for instrument in self._registered_instruments[TaskEvent.EXECUTED]:
             instrument.task_executed(task, program, earliest)
 

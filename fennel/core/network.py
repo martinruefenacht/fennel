@@ -3,14 +3,18 @@ Defines the NetworkModel and NetworkTime classes.
 """
 
 
+# pylint: disable=too-few-public-methods
+
+
 from abc import ABC, abstractmethod
-from typing import NamedTuple
+from dataclasses import dataclass
 
 
 from fennel.tasks.put import PutTask
 
 
-class NetworkTime(NamedTuple):
+@dataclass
+class NetworkTime():
     """
     Dataclass used to represent local return time
     and remote arrival time for a network operation.

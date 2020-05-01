@@ -13,3 +13,4 @@ pytest-randomly
 pytest-mock
 pytest-benchmark
 hypothesis
+mutatest

@@ -12,6 +12,7 @@ from fennel.networks.lbmodel import LBModel
 from fennel.networks.lbpmodel import LBPModel
 from fennel.computes.gamma import GammaModel
 from fennel.generators.p2p import generate_send, generate_multicast
+from fennel.generators.allreduce import generate_recursive_doubling
 
 
 def compare_eps_files(reference: Path, newest: Path) -> bool:
@@ -90,5 +91,28 @@ def test_lbpmachine_multicast(shared_datadir):
     machine.run(program)
 
     canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_pm_rd(shared_datadir):
+    """
+    Tests whether a recursive doubling pattern with a postal model
+    machine is regression correct.
+    """
+
+    name = "pm_rd_allreduce.eps"
+    latency = 200
+    bandwidth = 0
+
+    path = Path.cwd() / "tests" / name
+
+    machine = Machine(8, 1, GammaModel(1), LBModel(latency, bandwidth))
+    machine.canvas = Canvas()
+
+    program = generate_recursive_doubling(8, 100)
+
+    machine.run(program)
+    machine.canvas.write(str(path))
 
     assert compare_eps_files(shared_datadir / name, path)

@@ -259,9 +259,13 @@ class Canvas:
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(0.0, self.process_offset(process))]
+                     pyx.trafo.translate(0.0, self.process_offset(process)),
+                     pyx.deco.filled([pyx.pattern.crosshatched45.SMall]),
+                     pyx.deco.stroked]
 
-            self._canvas.fill(pyx.path.rect(start, -0.25, end-start, 0.5), attrs)
+            self._canvas.draw(
+                pyx.path.rect(start, -0.2, end-start, 0.4),
+                attrs)
 
             self._processes[process] = True
             self._minimum_time = max(self._minimum_time, end)

@@ -1,4 +1,5 @@
 """
+The Canvas class is the drawn representation of a simulation.
 """
 
 import math
@@ -6,6 +7,9 @@ from pathlib import Path
 from typing import MutableMapping
 from collections import defaultdict
 
+
+# special testing for pypy environment, pypy can be used to accelerate
+# simulation, but cannot be used with drawing (pyx)
 PYPY_ENVIRONMENT = False
 try:
     import __pypy__
@@ -20,7 +24,7 @@ class Canvas:
     Canvas to draw program task timeline.
     """
 
-    MARGIN = 1
+    MARGIN = 0.5
     TIME_SCALE = 0.01
 
     # TODO TIME_WIDTH instead of scale
@@ -42,12 +46,13 @@ class Canvas:
         else:
             self._canvas = None
 
-        self._minimum_time = 100
+        self._minimum_time = 1000
         self._processes: MutableMapping[int, bool] = defaultdict(lambda: False)
 
     @property
     def minimum_time(self) -> int:
         """
+        Find the minimum time to draw the canvas to.
         """
 
         return int(math.ceil(self._minimum_time / 100.0)) * 100
@@ -59,11 +64,15 @@ class Canvas:
 
         self._minimum_time = value
 
-    def process_offset(self, process) -> float:
+    def process_offset(self, process: int) -> float:
         """
+        Find the vertical offset for the given process number.
         """
 
-        return (process * (self.PROCESS_HEIGHT + self.PROCESS_SPACING) + 0.5) * -1
+        vertical_space = self.PROCESS_HEIGHT + self.PROCESS_SPACING
+        timeline_spacing = 0.5
+
+        return (process * vertical_space + timeline_spacing) * -1
 
 #    def drawTimeLine(self, max_time):
 #        stmax = max_time * Canvas.scale
@@ -103,16 +112,30 @@ class Canvas:
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE)]
 
-            self._plot.stroke(pyx.path.line(0.0, -0.25, self.minimum_time, -0.25), attrs)
+            self._plot.stroke(pyx.path.line(0.0, -0.25,
+                                            self.minimum_time, -0.25),
+                              attrs)
 
             ticks = int(math.ceil(self.minimum_time / self.TICK_RESOLUTION))
             for tick in range(ticks+1):
                 # 1000 ticks bigger than 100s
-                self._plot.stroke(pyx.path.line(tick * self.TICK_RESOLUTION, -0.5,
-                                                  tick * self.TICK_RESOLUTION, -0.15), attrs)
+                self._plot.stroke(
+                    pyx.path.line(
+                        tick * self.TICK_RESOLUTION, -0.5,
+                        tick * self.TICK_RESOLUTION, -0.25),
+                    attrs)
 
-                # TODO tick labeling
-                # self._canvas.text(tick * self.TICK_RESOLUTION, 0.0, str(tick * self.TICK_RESOLUTION), attrs)
+                # tick labeling
+                if (tick % 5) == 0:
+                    label = str(tick * self.TICK_RESOLUTION)
+                    shift = -1 * (7.5 * len(label))
+                    self._canvas.text(
+                        (tick * self.TICK_RESOLUTION + shift) * self.TIME_SCALE,
+                        0.3,
+                        label,
+                        [pyx.text.size.footnotesize])
+
+            self._canvas.text(0, 0.6, "nanoseconds", [pyx.text.size.footnotesize])
 
     def _draw_process_lines(self) -> None:
         """
@@ -137,9 +160,9 @@ class Canvas:
 
             # TODO review this, it is broken!
             self._plot.stroke(
-                pyx.path.rect(-self.MARGIN, self.MARGIN,
+                pyx.path.rect(-self.MARGIN, self.MARGIN*2.5,
                               self.minimum_time*self.TIME_SCALE + 2*self.MARGIN,
-                              (len(self._processes) + 1) * -self.PROCESS_SCALE - 3*self.MARGIN),
+                              (len(self._processes) + 1) * -self.PROCESS_SCALE - 3.5*self.MARGIN),
                 attrs)
 
     def _draw_process_bound(self, process) -> None:

@@ -458,10 +458,19 @@ class Machine(ABC):
 
         if self.draw_mode:
             assert self._canvas is not None
-            self.canvas.draw_blocking_put_task(task.node,
-                                               task.target,
-                                               time,
-                                               time + times.remote)
+
+            if task.blocking:
+                self.canvas.draw_blocking_put_task(task.node,
+                                                   task.target,
+                                                   time,
+                                                   time + times.remote)
+
+            else:
+                self.canvas.draw_non_blocking_put_task(task.node,
+                                                       task.target,
+                                                       time,
+                                                       time + times.local,
+                                                       time + times.remote)
 
         return time + times.remote
 

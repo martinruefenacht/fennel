@@ -12,7 +12,9 @@ from fennel.networks.lbmodel import LBModel
 from fennel.networks.lbpmodel import LBPModel
 from fennel.computes.gamma import GammaModel
 from fennel.generators.p2p import generate_send, generate_multicast
-from fennel.generators.allreduce import generate_recursive_doubling
+
+import fennel.generators.allreduce as allreduce
+import fennel.generators.allgather as allgather
 
 
 def compare_eps_files(reference: Path, newest: Path) -> bool:
@@ -118,7 +120,32 @@ def test_pm_rd(shared_datadir):
     machine = Machine(8, 1, GammaModel(1), LBModel(latency, bandwidth))
     machine.canvas = Canvas()
 
-    program = generate_recursive_doubling(8, 100)
+    program = allreduce.generate_recursive_doubling(8, 100)
+
+    machine.run(program)
+    machine.canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_pm_rd_allgather(shared_datadir):
+    """
+    Tests the postal model recursive doubling allgather algorithm drawing.
+    """
+
+    name = "pm_rd_allgather.eps"
+    latency = 100
+    bandwidth = 0.02
+    nodes = 8
+    msgsize = 4096
+
+    path = Path.cwd() / "tests" / name
+
+
+    machine = Machine(nodes, 1, GammaModel(1), LBModel(latency, bandwidth))
+    machine.canvas = Canvas()
+
+    program = allgather.recursive_doubling(nodes, msgsize)
 
     machine.run(program)
     machine.canvas.write(str(path))

@@ -19,11 +19,11 @@ def _target_rd(ridx: int, process: int) -> int:
     """
     """
 
-    smask = 2 ** ridx
-    sbase = 2 ** (ridx+1)
+    mask = 2 ** ridx
+    base = 2 ** (ridx+1)
 
-    block = process // sbase
-    offset = (process + smask) % sbase
+    block = (process // base) * base
+    offset = (process + mask) % base
 
     return block + offset
 
@@ -50,28 +50,23 @@ def recursive_doubling(processes: int, message_size: int) -> Program:
     for ridx in range(rounds):
         for process in range(processes):
             proxy_name = f'x_{process}_{ridx+1}'
-            compute_name = f'c_{process}_{ridx}'
             put_name = f'p_{process}_{ridx}'
 
-            # generate put
             target = _target_rd(ridx, process)
-
             program.add_node(PutTask(put_name, process, target,
                                      message_size * (2 ** ridx)))
-
-            program.add_edge(put_name, f'c_{target}_{ridx}')
-            program.add_edge(f'x_{process}_{ridx}', put_name)
 
             # generate proxy
             program.add_node(ProxyTask(proxy_name, process))
 
-            # generate compute
-            # TODO there isnot really a compute phase
-            program.add_node(ComputeTask(compute_name, process,
-                                         message_size * (2 ** ridx)))
+        for process in range(processes):
+            target = _target_rd(ridx, process)
+            proxy_name = f'x_{process}_{ridx+1}'
+            put_name = f'p_{process}_{ridx}'
 
-            program.add_edge(f'x_{process}_{ridx}', compute_name)
-            program.add_edge(compute_name, f'x_{process}_{ridx+1}')
+            program.add_edge(f'x_{process}_{ridx}', proxy_name)
+            program.add_edge(put_name, f'x_{target}_{ridx+1}')
+            program.add_edge(f'x_{process}_{ridx}', put_name)
 
     return program
 

@@ -158,11 +158,16 @@ class Canvas:
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.color.rgb.white]
 
-            # TODO review this, it is broken!
+            origin = 0.75 + self.MARGIN
+            height = (origin +
+                      len(self._processes) * self.PROCESS_HEIGHT)
+
             self._plot.stroke(
-                pyx.path.rect(-self.MARGIN, self.MARGIN*2.5,
-                              self.minimum_time*self.TIME_SCALE + 2*self.MARGIN,
-                              (len(self._processes) + 1) * -self.PROCESS_SCALE - 4*self.MARGIN),
+                pyx.path.rect(
+                    -self.MARGIN,
+                    origin,
+                    self.minimum_time*self.TIME_SCALE + 2*self.MARGIN,
+                    -height),
                 attrs)
 
     def _draw_process_bound(self, process) -> None:
@@ -188,6 +193,10 @@ class Canvas:
         self._draw_margin()
         self._draw_timeline()
         self._draw_process_lines()
+
+        # debug draw red boxes around processes
+        # for process in range(len(self._processes)):
+        #     self._draw_process_bound(process)
 
         self._base.writetofile(str(path))
 

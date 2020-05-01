@@ -148,7 +148,7 @@ class Canvas:
                          pyx.style.linestyle.dotted]
 
                 self._plot.stroke(pyx.path.line(0, 0,
-                                                  self.minimum_time, 0), attrs)
+                                                self.minimum_time, 0), attrs)
 
     def _draw_margin(self) -> None:
         """
@@ -199,6 +199,12 @@ class Canvas:
         assert time >= 0
         assert process >= 0
 
+        triangle = pyx.path.path(
+            pyx.path.moveto(0, -0.4),
+            pyx.path.lineto(-0.1, -0.6),
+            pyx.path.lineto(0.1, -0.6),
+            pyx.path.closepath())
+
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
                      pyx.trafo.translate(time, self.process_offset(process))]
@@ -208,7 +214,7 @@ class Canvas:
             attrs = [pyx.trafo.scale(self.PROCESS_SCALE, -self.PROCESS_SCALE),
                      pyx.trafo.translate(time, self.process_offset(process))]
 
-            self._canvas.fill(pyx.path.circle(0.0, -0.5, 0.1), attrs)
+            self._canvas.fill(triangle, attrs)
 
             self._processes[process] = True
             self._minimum_time = max(self._minimum_time, time + 1)

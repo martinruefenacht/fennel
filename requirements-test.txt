@@ -1,4 +1,5 @@
 pytest
+pytest-ordering
 pytest-cov
 pytest-sugar
 pytest-picked

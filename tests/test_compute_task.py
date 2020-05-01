@@ -7,10 +7,13 @@ import pytest
 
 
 from fennel.tasks.compute import ComputeTask
-from fennel.computes.gamma import GammaModel, NoisyGammaModel
+from fennel.computes.gamma import GammaModel
 
 
-@pytest.mark.parametrize('model', [GammaModel(0.0), NoisyGammaModel(0.0, 0.0)])
+@pytest.mark.parametrize(
+    'model',
+    [GammaModel(0.0)],
+    ids=lambda model: model.__class__)
 def test_fixed_compute(model):
     """
     Tests whether a fixed time compute task is correctly simulated.

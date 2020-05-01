@@ -6,6 +6,7 @@ Defines the gamma compute model.
 from scipy.stats import betaprime
 import random
 import math
+from typing import Sequence
 
 
 from fennel.core.compute import ComputeModel
@@ -33,15 +34,22 @@ class GammaModel(ComputeModel):
 
         return self._gamma
 
+    def _evaluate_independent(self, task: ComputeTask) -> int:
+        """
+        Evaluates the task independent of when.
+        """
+
+        if task.time is not None:
+            return task.time
+
+        return int(task.size * self._gamma)
+
     def evaluate(self, time: int, task: ComputeTask) -> int:
         """
         Evaluate the gamma model.
         """
 
-        if task.time is not None:
-            return time + task.time
-
-        return time + int(task.size * self._gamma)
+        return time + self._evaluate_independent(task)
 
 
 class NoisyGammaModel(GammaModel):
@@ -55,19 +63,31 @@ class NoisyGammaModel(GammaModel):
     def __init__(self, gamma: float, stdev: float):
         super().__init__(gamma)
 
-        self._prep = betaprime.rvs(2.0, 3.0, stdev, size=1000)
+        self.noise: Sequence = betaprime.rvs(2.0, 3.0, stdev, size=100)
 
-    def evaluate(self, time: int, task: ComputeTask) -> int:
+    @property
+    def noise(self) -> Sequence:
+        """Access the noise set."""
+
+        return self._noise
+
+    @noise.setter
+    def noise(self, noise: Sequence) -> None:
+        """Set the noise set."""
+
+        self._noise = noise
+
+    def _evaluate_independent(self, task: ComputeTask) -> int:
         """
-        Evaluate the gamma model.
+        Evaluates the task independent of when.
         """
+
+        noise = random.choice(self.noise)
 
         if task.time is not None:
-            return time + task.time
+            return task.time + noise
 
-        noise = random.choice(self._prep)
-
-        return time + int(task.size * self._gamma * (1.0 + noise))
+        return int(task.size * self._gamma * (1.0 + noise))
 
 
 class SinusoidalGammaModel(GammaModel):

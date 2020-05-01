@@ -1,4 +1,5 @@
 """
+Collection of tests to measure the Gamma compute model.
 """
 
 import pytest
@@ -29,6 +30,3 @@ def test_negative_gamma_fails(gamma):
         model = GammaModel(gamma)
 
         assert model.gamma == gamma
-
-
-

@@ -5,7 +5,6 @@ Definition of the abstact ComputeModel.
 
 from abc import ABC, abstractmethod
 
-
 from fennel.tasks.compute import ComputeTask
 
 

@@ -29,26 +29,29 @@ def compare_eps_files(reference: Path, newest: Path) -> bool:
     return all(test == tests[0] for test in tests)
 
 
-def test_empty(shared_datadir):
+def test_empty_canvas(shared_datadir):
     """
     Draws an empty machine.
     """
 
     name = "empty.eps"
+    path = Path().cwd() / "tests/" / name
 
     canvas = Canvas()
-    canvas.write(name)
+    canvas.write(str(path))
 
-    assert compare_eps_files(shared_datadir / name, Path(name))
+    assert compare_eps_files(shared_datadir / name, path)
 
 
-def test_send(shared_datadir):
+def test_send_canvas(shared_datadir):
     """
     Draws a single send on a LBmachine.
     """
 
     name = "send.eps"
     latency = 100
+
+    path = Path().cwd() / "tests/" / name
 
     program = generate_send(10, True)
 
@@ -58,6 +61,6 @@ def test_send(shared_datadir):
     machine.canvas = canvas
     machine.run(program)
 
-    canvas.write(name)
+    canvas.write(str(path))
 
-    assert compare_eps_files(shared_datadir / name, Path(name))
+    assert compare_eps_files(shared_datadir / name, path)

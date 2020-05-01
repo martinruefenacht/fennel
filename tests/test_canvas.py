@@ -20,13 +20,21 @@ def compare_eps_files(reference: Path, newest: Path) -> bool:
     Compare the two given EPS files.
     """
 
-    pattern = r"%%CreationDate:.*?\n"
+    patterns = [
+        r"%%CreationDate:.*?\n",
+        r"\n.*?pattern\d+.*?\n",
+        ]
 
     tests = []
 
     for path in (reference, newest):
         with path.open() as data:
-            tests.append(hash(re.sub(pattern, "", data.read())))
+            eps = data.read()
+
+            for pattern in patterns:
+                eps = re.sub(pattern, "", eps)
+
+            tests.append(eps)
 
     return all(test == tests[0] for test in tests)
 

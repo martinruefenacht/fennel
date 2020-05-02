@@ -4,12 +4,13 @@ Defines the latency-bandwidth model.
 
 
 import random
-from typing import Sequence
+from typing import Sequence, cast
 
 
-from scipy.stats import betaprime
+from scipy.stats import betaprime  # type: ignore
 
 
+from fennel.core.time import Time
 from fennel.core.network import NetworkModel, NetworkTime
 from fennel.tasks.put import PutTask
 
@@ -25,7 +26,7 @@ class LBModel(NetworkModel):
         self._latency = latency
         self._bandwidth = bandwidth
 
-    def evaluate(self, time: int, task: PutTask) -> NetworkTime:
+    def evaluate(self, time: Time, task: PutTask) -> NetworkTime:
         """
         Evaluate the latency-bandwidth network model.
         """
@@ -33,7 +34,7 @@ class LBModel(NetworkModel):
         time_next = self._latency + int(task.message_size * self._bandwidth)
         time_next += time
 
-        return NetworkTime(time_next, time_next)
+        return NetworkTime(cast(Time, time_next), cast(Time, time_next))
 
 
 class NoisyLBModel(LBModel):
@@ -68,4 +69,4 @@ class NoisyLBModel(LBModel):
         time_next += random.choice(self.noise)
         time_next += time
 
-        return NetworkTime(time_next, time_next)
+        return NetworkTime(cast(Time, time_next), cast(Time, time_next))

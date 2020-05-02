@@ -8,19 +8,11 @@
 from typing import Mapping
 
 
-from pyvis.network import Network
+from pyvis.network import Network  # type: ignore
 
 
 from fennel.core.program import Program
 from fennel.tasks.start import StartTask
-from fennel.tasks.proxy import ProxyTask
-
-from fennel.generators.p2p import generate_send_partitioned_p2p
-from fennel.generators.compute import generate_compute
-from fennel.generators.broadcast import generate_broacast_ring
-from fennel.generators.p2p import generate_multicast
-from fennel.generators.p2p import generate_send
-from fennel.generators.allreduce import generate_recursive_doubling
 
 
 def _find_maximum(name: str, program: Program, level: int = 0) -> int:
@@ -76,33 +68,10 @@ def convert(program: Program) -> Network:
         for sub in names:
             color = '#05668D'
 
+            assert program[name] is not None
             if program[name].any is not None:
                 color = '#679436'
 
             net.add_edge(sub, name, color=color)
 
     return net
-
-
-def main() -> None:
-    """
-    Main function.
-    """
-
-    # prog = generate_multicast(1, 5, False)
-    # prog = generate_send(0, False)
-    # prog = generate_compute(1, 4, 10, concurrent=False, rounds=5)
-    # prog = generate_recursive_doubling(16, 0)
-
-    prog = generate_send_partitioned_p2p(1024 * 16,
-                                         4,
-                                         3,
-                                         2)
-
-    net = convert(prog)
-
-    net.show('test.html')
-
-
-if __name__ == "__main__":
-    main()

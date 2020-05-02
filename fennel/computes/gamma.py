@@ -3,12 +3,15 @@ Defines the gamma compute model.
 """
 
 
-from scipy.stats import betaprime
 import random
 import math
-from typing import Sequence
+from typing import Sequence, cast
 
 
+from scipy.stats import betaprime  # type: ignore
+
+
+from fennel.core.time import Time
 from fennel.core.compute import ComputeModel
 from fennel.tasks.compute import ComputeTask
 
@@ -42,14 +45,15 @@ class GammaModel(ComputeModel):
         if task.time is not None:
             return task.time
 
+        assert task.size is not None
         return int(task.size * self._gamma)
 
-    def evaluate(self, time: int, task: ComputeTask) -> int:
+    def evaluate(self, time: Time, task: ComputeTask) -> Time:
         """
         Evaluate the gamma model.
         """
 
-        return time + self._evaluate_independent(task)
+        return cast(Time, time + self._evaluate_independent(task))
 
 
 class NoisyGammaModel(GammaModel):
@@ -81,34 +85,38 @@ class NoisyGammaModel(GammaModel):
         if task.time is not None:
             return task.time + noise
 
+        assert task.size is not None
         return int(task.size * self._gamma * (1.0 + noise))
 
 
-class SinusoidalGammaModel(GammaModel):
-    """
-    """
-
-    def __init__(self,
-                 gamma: float,
-                 freq: float,
-                 amplitude: float,
-                 offset: float = 0.0):
-        """
-        """
-
-        assert 1.0 > amplitude >= 0.0
-
-        self._gamma = gamma
-        self._freq = freq
-        self._amplitude = amplitude
-        self._offset = offset
-
-    def evaluate(self, time: int, task: ComputeTask) -> int:
-        """
-        """
-
-        if task.time is not None:
-            return time + task.time
-
-        return time + int(task.size * self._gamma * (
-            1.0 + self._amplitude * math.sin(time * self._freq + self._offset)))
+# class SinusoidalGammaModel(GammaModel):
+#     """
+#     """
+#
+#     def __init__(self,
+#                  gamma: float,
+#                  freq: float,
+#                  amplitude: float,
+#                  offset: float = 0.0):
+#         """
+#         """
+#
+#         assert 1.0 > amplitude >= 0.0
+#
+#         self._gamma = gamma
+#         self._freq = freq
+#         self._amplitude = amplitude
+#         self._offset = offset
+#
+#     def evaluate(self, time: int, task: ComputeTask) -> Time:
+#         """
+#         """
+#
+#         if task.time is not None:
+#             return cast(Time, time + task.time)
+#
+#         assert task.size is not None
+#         return cast(Time,
+#             time + int(task.size * self._gamma * (
+#             1.0 + self._amplitude * math.sin(
+#                 time * self._freq + self._offset))))

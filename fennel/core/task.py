@@ -10,6 +10,7 @@ from enum import Enum, auto
 from fennel.core.time import Time
 
 
+# TODO Task could be specific Union, contravariant...
 PlannedTask = Tuple[Time, 'Task']
 
 

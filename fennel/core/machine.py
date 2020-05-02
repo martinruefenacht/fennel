@@ -8,7 +8,7 @@ Defines the abstract class for machine models.
 
 import logging
 from abc import ABC
-from typing import Optional, MutableMapping, Callable, List, Union, NewType
+from typing import Optional, MutableMapping, Callable, List, Union, cast
 from collections import defaultdict
 
 
@@ -27,10 +27,6 @@ from fennel.tasks.put import PutTask
 from fennel.tasks.start import StartTask
 from fennel.tasks.sleep import SleepTask
 from fennel.tasks.compute import ComputeTask
-
-
-# type aliases
-Node = NewType('Node', int)
 
 
 class Machine(ABC):
@@ -65,22 +61,22 @@ class Machine(ABC):
         # starts will not be included
         self._dtimes: MutableMapping[str, List[Time]] = defaultdict(lambda: [])
 
-        self._node_times: List[List[int, Time]]
+        self._node_times: List[List[Time]]
         # self._node_times = [[0] * processes] * nodes needs deepcopy!
         # self._node_times = defaultdict(lambda: defaultdict(lambda: 0))
         self._node_times = []
         for nidx in range(nodes):
             self._node_times.append([])
             for _ in range(processes):
-                self._node_times[nidx].append(0)
+                self._node_times[nidx].append(Time(0))
 
         self._task_handlers: MutableMapping[str,
                                             Union[
-                                                Callable[[Time, StartTask], int],
-                                                Callable[[Time, ProxyTask], int],
-                                                Callable[[Time, SleepTask], int],
-                                                Callable[[Time, ComputeTask], int],
-                                                Callable[[Time, PutTask], int],
+                                                Callable[[Time, StartTask, int], Time],
+                                                Callable[[Time, ProxyTask, int], Time],
+                                                Callable[[Time, SleepTask, int], Time],
+                                                Callable[[Time, ComputeTask, int], Time],
+                                                Callable[[Time, PutTask, int], Time],
                                                 ]] = dict()
 
         self._task_handlers['ProxyTask'] = self._execute_proxy_task
@@ -163,7 +159,7 @@ class Machine(ABC):
         assert time >= 0
         return time
 
-    def get_node_process_time(self, node: Node, process: int) -> Time:
+    def get_node_process_time(self, node: int, process: int) -> Time:
         """
         Get the time of a process in a node.
         """
@@ -199,7 +195,7 @@ class Machine(ABC):
         # insert all start tasks
         starts = program.get_start_tasks()
         assert starts
-        queue.push_iterable_with_time(0, starts)
+        queue.push_iterable_with_time(Time(0), starts)
 
         # process entire queue
         while queue.is_not_empty():
@@ -253,15 +249,18 @@ class Machine(ABC):
             return [(earliest, task)]
 
         # execute instruments for EXECUTED event
-        for instrument in self._registered_instruments[TaskEvent.EXECUTED]:
-            instrument.task_executed(task, program, earliest)
+        # for instrument in self._registered_instruments[TaskEvent.EXECUTED]:
+        #     instrument.task_executed(task, program, earliest)
 
         # look up task handler and execute
         handler = self._task_handlers[task.__class__.__name__]
 
         logging.debug('execute %s @ %i', task.name, time)
 
-        time_successors = handler(time, task, process)
+        # TODO ignored, task is Task object not of subclass type
+        #      we should need to have a specific subclass type cast
+        #      planned task is (Time, Task), cannot be cast to specific one
+        time_successors = handler(time, task, process)  # type: ignore
         # TODO branching tasks would require dependency mapping here
         #      instead of returning successors return dict mapping of:
         #      name: time
@@ -272,7 +271,7 @@ class Machine(ABC):
                                    task)
 
     def _complete_task(self,
-                       time: int,
+                       time: Time,
                        program: Program,
                        task: Task
                        ) -> List[PlannedTask]:
@@ -315,7 +314,7 @@ class Machine(ABC):
 
         return planned
 
-    def _set_process_time(self, node: Node, process: int, time: Time) -> None:
+    def _set_process_time(self, node: int, process: int, time: Time) -> None:
         """
         Convenience function to update time of (node, process).
         """
@@ -390,7 +389,7 @@ class Machine(ABC):
         Execute the starting task.
         """
 
-        time_start = time + task.skew
+        time_start = cast(Time, time + task.skew)
         self._set_process_time(task.node, process, time_start)
 
         if self.draw_mode and task.drawable:
@@ -410,7 +409,8 @@ class Machine(ABC):
         The sleep tasks just suspends execution for a time delay.
         """
 
-        time_sleep = time + task.delay
+        assert task.delay is not None
+        time_sleep = cast(Time, time + task.delay)
         self._set_process_time(task.node, process, time_sleep)
 
         if self.draw_mode and task.drawable:
@@ -422,10 +422,10 @@ class Machine(ABC):
         return time_sleep
 
     def _execute_compute_task(self,
-                              time: int,
+                              time: Time,
                               task: ComputeTask,
                               process: int
-                              ) -> int:
+                              ) -> Time:
         """
         Evaluates the given compute model.
         """
@@ -461,7 +461,7 @@ class Machine(ABC):
         self._set_process_time(task.node, process, times.local)
 
         if self.draw_mode and task.drawable:
-            assert self._canvas is not None
+            assert self.canvas is not None
 
             if task.blocking:
                 self.canvas.draw_blocking_put_task(task.node,

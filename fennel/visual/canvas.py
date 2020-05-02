@@ -12,11 +12,11 @@ from collections import defaultdict
 # simulation, but cannot be used with drawing (pyx)
 PYPY_ENVIRONMENT = False
 try:
-    import __pypy__
+    import __pypy__  # type: ignore
     PYPY_ENVIRONMENT = True
 
 except ModuleNotFoundError:
-    import pyx
+    import pyx  # type: ignore
 
 
 class Canvas:

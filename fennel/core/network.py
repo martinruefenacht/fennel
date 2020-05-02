@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
+from fennel.core.time import Time
 from fennel.tasks.put import PutTask
 
 
@@ -20,8 +21,8 @@ class NetworkTime():
     and remote arrival time for a network operation.
     """
 
-    local: int
-    remote: int
+    local: Time
+    remote: Time
 
 
 class NetworkModel(ABC):
@@ -30,7 +31,7 @@ class NetworkModel(ABC):
     """
 
     @abstractmethod
-    def evaluate(self, time: int, task: PutTask) -> NetworkTime:
+    def evaluate(self, time: Time, task: PutTask) -> NetworkTime:
         """
         Evaluate this model.
         """

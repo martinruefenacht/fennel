@@ -26,14 +26,17 @@ class Program:
 
         self._metadata: MutableMapping[str, Task] = dict()
 
-    def get_task(self, name: str) -> Optional[Task]:
+    def get_task(self, name: str) -> Task:
         """
         Get a task by name.
         """
 
-        return self._metadata.get(name)
+        if name not in self._metadata:
+            raise KeyError(f"{name} not found in Program")
 
-    def __getitem__(self, key: str) -> Optional[Task]:
+        return self._metadata[name]
+
+    def __getitem__(self, key: str) -> Task:
         return self.get_task(key)
 
     def add_node(self, task: Task) -> None:

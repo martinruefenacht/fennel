@@ -25,28 +25,44 @@ def test_fixed_compute(model):
     assert model.evaluate(0, task) == delay
 
 
-def test_negative_time():
+def test_compute_input_exceptions():
     """
-    Tests if negative delay is an error.
-    """
-
-    with pytest.raises(AssertionError):
-        ComputeTask('c', 0, time=-100)
-
-
-def test_negative_size():
-    """
-    Tests if negative size is an error.
+    Tests the ComputeTask for the correct exception behaviour.
     """
 
-    with pytest.raises(AssertionError):
-        ComputeTask('c', 0, size=-100)
+    with pytest.raises(RuntimeError):
+        ComputeTask("test", 0)
+
+    with pytest.raises(ValueError):
+        ComputeTask("test", 0, size=0)
+
+    with pytest.raises(ValueError):
+        ComputeTask("test", 0, time=0)
+
+    with pytest.raises(ValueError):
+        ComputeTask("test", -1, 100)
 
 
-def test_negative_node():
+def test_compute_repr():
     """
-    Tests if negative node is an error.
+    Tests representation of a ComputeTask.
     """
 
-    with pytest.raises(AssertionError):
-        ComputeTask('c', -10, size=10)
+    assert repr(ComputeTask("test", 0, size=10)) == "compute test size 10"
+    assert repr(ComputeTask("test", 0, time=10)) == "compute test time 10"
+
+
+def test_setters():
+    """
+    Tests ComputeTask setters.
+    """
+
+    task = ComputeTask("test", 0, time=100)
+
+    task.time = 200
+    assert task.time == 200
+
+    task = ComputeTask("test", 0, size=100)
+
+    task.size = 200
+    assert task.size == 200

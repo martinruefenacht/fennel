@@ -52,13 +52,12 @@ class Task:
                  ) -> None:
         self._name = name
 
-        assert node >= 0
+        if node < 0:
+            raise ValueError("Task needs node >= 0")
+
         self._node = node
-
         self._concurrent = concurrent
-
         self._any = None
-
         self._drawable = drawable
 
         self._taskid = Task.task_counter

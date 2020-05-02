@@ -26,11 +26,11 @@ class ComputeTask(Task):
         if time is None and size is None:
             raise RuntimeError('ComputeTask needs either size or time.')
 
-        if size is not None:
-            assert size >= 0
+        if size is not None and size <= 0:
+            raise ValueError('ComputeTask needs size > 0')
 
-        if time is not None:
-            assert time >= 0
+        if time is not None and time <= 0:
+            raise ValueError('ComputeTask needs time > 0')
 
         self._size = size
         self._time = time
@@ -48,6 +48,14 @@ class ComputeTask(Task):
         """
 
         return self._size
+
+    @size.setter
+    def size(self, size: int) -> None:
+        """
+        Sets the size.
+        """
+
+        self._size = size
 
     @property
     def time(self) -> Optional:

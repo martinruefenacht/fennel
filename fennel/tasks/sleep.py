@@ -18,13 +18,21 @@ class SleepTask(Task):
             self,
             name: str,
             proc: int,
-            delay: int = None,
-            until: int = None):
-        # initialize Task
+            delay: Optional[int] = None,
+            until: Optional[int] = None) -> None:
         super().__init__(name, proc)
 
-        self._delay: Optional[int] = delay
-        self._until: Optional[int] = until
+        if delay is None and until is None:
+            raise RuntimeError("SleepTask requires either delay or until")
+
+        if delay is not None and delay <= 0:
+            raise ValueError("SleepTask requires delay > 0")
+
+        if until is not None and until <= 0:
+            raise ValueError("SleepTask requires until > 0")
+
+        self._delay = delay
+        self._until = until
 
     @property
     def delay(self) -> Optional[int]:

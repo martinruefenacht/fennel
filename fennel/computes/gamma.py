@@ -63,7 +63,7 @@ class NoisyGammaModel(GammaModel):
     def __init__(self, gamma: float, stdev: float):
         super().__init__(gamma)
 
-        self.noise: Sequence = betaprime.rvs(2.0, 3.0, stdev, size=100)
+        self._noise: Sequence = betaprime.rvs(2.0, 3.0, stdev, size=100)
 
     @property
     def noise(self) -> Sequence:
@@ -71,18 +71,12 @@ class NoisyGammaModel(GammaModel):
 
         return self._noise
 
-    @noise.setter
-    def noise(self, noise: Sequence) -> None:
-        """Set the noise set."""
-
-        self._noise = noise
-
     def _evaluate_independent(self, task: ComputeTask) -> int:
         """
         Evaluates the task independent of when.
         """
 
-        noise = random.choice(self.noise)
+        noise = random.choice(self._noise)
 
         if task.time is not None:
             return task.time + noise

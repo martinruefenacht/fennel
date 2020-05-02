@@ -249,8 +249,8 @@ class Machine(ABC):
             return [(earliest, task)]
 
         # execute instruments for EXECUTED event
-        # for instrument in self._registered_instruments[TaskEvent.EXECUTED]:
-        #     instrument.task_executed(task, program, earliest)
+        for instrument in self._registered_instruments[TaskEvent.EXECUTED]:
+            instrument.task_executed(task, program, earliest)
 
         # look up task handler and execute
         handler = self._task_handlers[task.__class__.__name__]

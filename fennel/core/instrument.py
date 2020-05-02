@@ -43,3 +43,11 @@ class Instrument:
         """
         This method is triggered when the TaskEvent COMPLETED happens.
         """
+
+    def task_executed(self,
+                      task: Task,
+                      program: Program,
+                      time: Time):
+        """
+        This method is triggered when the TaskEvent EXECUTED happens.
+        """

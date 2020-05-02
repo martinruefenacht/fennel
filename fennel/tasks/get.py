@@ -1,4 +1,5 @@
 """
+GetTask definition. One-sided fetch.
 """
 
 from fennel.core.task import Task

@@ -4,4 +4,4 @@ init-hook='import sys, os; sys.path.append(os.getcwd())'
 max-line-length=100
 
 [MESSAGES CONTROL]
-disable=W0511
+disable=W0511,too-many-arguments

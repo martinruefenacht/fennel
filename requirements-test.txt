@@ -1,7 +1,6 @@
 pytest
 pytest-ordering
 pytest-cov
-pytest-sugar
 pytest-picked
 pytest-instafail
 pytest-tldr

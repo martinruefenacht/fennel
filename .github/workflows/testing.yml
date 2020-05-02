@@ -13,7 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - uses: dante-ev/latex-action@master
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
@@ -28,4 +27,4 @@ jobs:
     - name: Test with pytest
       run: |
         pip3 install -r requirements-test.txt
-        python3 -m pytest
+        python3 -m pytest -m "not canvas"

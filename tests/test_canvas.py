@@ -6,6 +6,9 @@ from pathlib import Path
 import re
 
 
+import pytest
+
+
 from fennel.visual.canvas import Canvas
 from fennel.core.machine import Machine
 from fennel.networks.lbmodel import LBModel
@@ -16,6 +19,9 @@ import fennel.generators.p2p as p2p
 import fennel.generators.allreduce as allreduce
 import fennel.generators.allgather as allgather
 import fennel.generators.compute as compute
+
+
+pytestmark = pytest.mark.canvas
 
 
 def compare_eps_files(reference: Path, newest: Path) -> bool:

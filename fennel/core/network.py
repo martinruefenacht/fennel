@@ -30,9 +30,7 @@ class NetworkModel(ABC):
     """
 
     @abstractmethod
-    def evaluate(self, task: PutTask) -> NetworkTime:
+    def evaluate(self, time: int, task: PutTask) -> NetworkTime:
         """
         Evaluate this model.
         """
-
-        assert task

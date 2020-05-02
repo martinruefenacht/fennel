@@ -452,7 +452,7 @@ class Machine(ABC):
         """
 
         assert self._network_model is not None
-        times = self._network_model.evaluate(task)
+        times = self._network_model.evaluate(time, task)
 
         self._set_process_time(task.node, process, time + times.local)
 

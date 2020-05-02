@@ -25,14 +25,14 @@ class LBModel(NetworkModel):
         self._latency = latency
         self._bandwidth = bandwidth
 
-    def evaluate(self, task: PutTask) -> NetworkTime:
+    def evaluate(self, time: int, task: PutTask) -> NetworkTime:
         """
         Evaluate the latency-bandwidth network model.
         """
 
-        time = self._latency + int(task.message_size * self._bandwidth)
+        time_next = self._latency + int(task.message_size * self._bandwidth)
 
-        return NetworkTime(time, time)
+        return NetworkTime(time_next, time_next)
 
 
 class NoisyLBModel(LBModel):
@@ -58,12 +58,12 @@ class NoisyLBModel(LBModel):
 
         self._noise = noise
 
-    def evaluate(self, task: PutTask) -> NetworkTime:
+    def evaluate(self, time: int, task: PutTask) -> NetworkTime:
         """
         Evaluate the latency-bandwidth model with noise.
         """
 
-        time = self._latency + int(task.message_size * self._bandwidth)
-        time += random.choice(self.noise)
+        time_next = self._latency + int(task.message_size * self._bandwidth)
+        time_next += random.choice(self.noise)
 
-        return NetworkTime(time, time)
+        return NetworkTime(time_next, time_next)

@@ -22,7 +22,7 @@ class LBPModel(NetworkModel):
         self._bandwidth = bandwidth
         self._pipeline = pipeline
 
-    def evaluate(self, task: PutTask) -> NetworkTime:
+    def evaluate(self, time: int, task: PutTask) -> NetworkTime:
         """
         Evaluate the latency-bandwidth network model.
         """

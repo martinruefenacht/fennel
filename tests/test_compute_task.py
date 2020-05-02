@@ -5,7 +5,6 @@ Tests with respect to the compute task.
 
 import pytest
 
-
 from fennel.tasks.compute import ComputeTask
 from fennel.computes.gamma import GammaModel
 
@@ -33,6 +32,9 @@ def test_compute_input_exceptions():
     with pytest.raises(RuntimeError):
         ComputeTask("test", 0)
 
+    with pytest.raises(RuntimeError):
+        ComputeTask("test", 0, size=1, time=1)
+
     with pytest.raises(ValueError):
         ComputeTask("test", 0, size=0)
 
@@ -40,7 +42,7 @@ def test_compute_input_exceptions():
         ComputeTask("test", 0, time=0)
 
     with pytest.raises(ValueError):
-        ComputeTask("test", -1, 100)
+        ComputeTask("test", -10, 100)
 
 
 def test_compute_repr():

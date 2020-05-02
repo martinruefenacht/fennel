@@ -57,7 +57,7 @@ class Task:
 
         self._node = node
         self._concurrent = concurrent
-        self._any = None
+        self._any: Optional[int] = None
         self._drawable = drawable
 
         self._taskid = Task.task_counter

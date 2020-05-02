@@ -45,7 +45,7 @@ class ComputeTask(Task):
         return f'compute {self._name} time {self._time}'
 
     @property
-    def size(self) -> int:
+    def size(self) -> Optional[int]:
         """
         Get compute size.
         """
@@ -61,7 +61,7 @@ class ComputeTask(Task):
         self._size = size
 
     @property
-    def time(self) -> Optional:
+    def time(self) -> Optional[int]:
         """
         Get fixed compute time.
         """

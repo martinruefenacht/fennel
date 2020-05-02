@@ -3,7 +3,7 @@ Defines the Program class.
 """
 
 
-from typing import MutableMapping, Iterable, Optional, MutableSet, List
+from typing import MutableMapping, Iterable, Optional, MutableSet, List, AbstractSet
 from collections import defaultdict
 
 
@@ -25,11 +25,6 @@ class Program:
         self._edges_out = defaultdict(set)
 
         self._metadata: MutableMapping[str, Task] = dict()
-
-    def __eq__(self, program: 'Program') -> bool:
-        return (self._metadata == program._metadata and
-                self._edges_in == program._edges_in and
-                self._edges_out == program._edges_out)
 
     def get_task(self, name: str) -> Optional[Task]:
         """
@@ -78,23 +73,23 @@ class Program:
         return (task for task in self._metadata.values()
                 if isinstance(task, StartTask))
 
-    def get_successors(self, name: str) -> List[str]:
+    def get_successors(self, name: str) -> AbstractSet[str]:
         """
         Get all tasks dependent on this task.
         """
 
         if name not in self._edges_out:
-            return []
+            return set()
 
         return self._edges_out[name]
 
-    def get_predecessors(self, name: str) -> List[str]:
+    def get_predecessors(self, name: str) -> AbstractSet[str]:
         """
         Get all tasks who are predecessors.
         """
 
         if name not in self._edges_in:
-            return []
+            return set()
 
         return self._edges_in[name]
 

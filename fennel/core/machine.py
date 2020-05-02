@@ -43,6 +43,10 @@ class Machine(ABC):
                  processes: int,
                  compute: ComputeModel,
                  network: NetworkModel):
+
+        if nodes is not None and nodes < 1:
+            raise ValueError("Machine requires nodes > 0")
+
         self._nodes = nodes
         self._processes = processes
 

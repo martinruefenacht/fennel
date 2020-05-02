@@ -19,7 +19,7 @@ import fennel.generators.p2p as p2p
 import fennel.generators.allreduce as allreduce
 import fennel.generators.allgather as allgather
 import fennel.generators.compute as compute
-
+import fennel.generators.bsp as bsp
 
 pytestmark = pytest.mark.canvas
 
@@ -175,6 +175,30 @@ def test_simple_compute(shared_datadir):
     machine.canvas = Canvas()
 
     program = compute.simple_compute(msgsize, rounds)
+
+    machine.run(program)
+    machine.canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_bsp_single(shared_datadir):
+    """
+    Tests the BSP single compute + barriers.
+    """
+
+    name = "bsp_single.eps"
+    nodes = 4
+    msgsize = 1024
+    gamma = 0.1
+    rounds = 2
+
+    path = Path.cwd() / "tests" / name
+
+    machine = Machine(nodes, 1, GammaModel(gamma), LBModel(0, 0))
+    machine.canvas = Canvas()
+
+    program = bsp.single_superstep(nodes, msgsize, rounds)
 
     machine.run(program)
     machine.canvas.write(str(path))

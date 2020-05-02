@@ -25,7 +25,7 @@ def send(
     prog = Program()
 
     # generate start tasks for all procs
-    prog.add_node(StartTask(f's{sender}', sender))
+    prog.add_node(StartTask(f's{sender}', sender, skew=100))
     prog.add_node(StartTask(f's{receiver}', receiver))
 
     # generate single put task for rank 0

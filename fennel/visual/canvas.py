@@ -178,20 +178,16 @@ class Canvas:
         assert process >= 0
 
         triangle = pyx.path.path(
-            pyx.path.moveto(0, -0.4),
-            pyx.path.lineto(-0.1, -0.6),
-            pyx.path.lineto(0.1, -0.6),
+            pyx.path.moveto(time, -0.4),
+            pyx.path.lineto(time-4, -0.6),
+            pyx.path.lineto(time+4, -0.6),
             pyx.path.closepath())
 
         if not PYPY_ENVIRONMENT:
             attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(time, self._process_offset(process))]
+                     pyx.trafo.translate(0.0, self._process_offset(process))]
 
-            self._canvas.stroke(pyx.path.line(0.0, 0.0, 0.0, -0.5), attrs)
-
-            attrs = [pyx.trafo.scale(self.PROCESS_SCALE, -self.PROCESS_SCALE),
-                     pyx.trafo.translate(time, self._process_offset(process))]
-
+            self._canvas.stroke(pyx.path.line(time, 0.0, time, -0.5), attrs)
             self._canvas.fill(triangle, attrs)
 
             self._processes[process] = True

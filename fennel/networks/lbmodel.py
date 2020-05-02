@@ -31,6 +31,7 @@ class LBModel(NetworkModel):
         """
 
         time_next = self._latency + int(task.message_size * self._bandwidth)
+        time_next += time
 
         return NetworkTime(time_next, time_next)
 
@@ -65,5 +66,6 @@ class NoisyLBModel(LBModel):
 
         time_next = self._latency + int(task.message_size * self._bandwidth)
         time_next += random.choice(self.noise)
+        time_next += time
 
         return NetworkTime(time_next, time_next)

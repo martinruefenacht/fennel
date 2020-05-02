@@ -454,7 +454,7 @@ class Machine(ABC):
         assert self._network_model is not None
         times = self._network_model.evaluate(time, task)
 
-        self._set_process_time(task.node, process, time + times.local)
+        self._set_process_time(task.node, process, times.local)
 
         if self.draw_mode and task.drawable:
             assert self._canvas is not None
@@ -463,16 +463,16 @@ class Machine(ABC):
                 self.canvas.draw_blocking_put_task(task.node,
                                                    task.target,
                                                    time,
-                                                   time + times.remote)
+                                                   times.remote)
 
             else:
                 self.canvas.draw_non_blocking_put_task(task.node,
                                                        task.target,
                                                        time,
-                                                       time + times.local,
-                                                       time + times.remote)
+                                                       times.local,
+                                                       times.remote)
 
-        return time + times.remote
+        return times.remote
 
 
 # remove magic 1000, require some intelligent way of memory requirement

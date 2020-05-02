@@ -32,4 +32,4 @@ class LBPModel(NetworkModel):
                      self._latency +
                      self._bandwidth * task.message_size)
 
-        return NetworkTime(local, remote)
+        return NetworkTime(time + local, time + remote)

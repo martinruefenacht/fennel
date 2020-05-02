@@ -1,39 +1,40 @@
 """
+An abstraction of congestion.
 """
 
-from abc import ABC
+# from abc import ABC
 
 
-class CongestionModel(ABC):
-    """
-    """
+# class CongestionModel(ABC):
+#     """
+#     """
 
-    pass
-
-
-class NoCongestionModel(CongestionModel):
-    """
-    """
-
-    pass
+#     pass
 
 
-class UniformCongestionModel(CongestionModel):
-    """
-    """
+# class NoCongestionModel(CongestionModel):
+#     """
+#     """
 
-    pass
-
-
-class LinearCongestionModel(CongestionModel):
-    """
-    """
-
-    pass
+#     pass
 
 
-class ExponentialCongestionModel(CongestionModel):
-    """
-    """
+# class UniformCongestionModel(CongestionModel):
+#     """
+#     """
 
-    pass
+#     pass
+
+
+# class LinearCongestionModel(CongestionModel):
+#     """
+#     """
+
+#     pass
+
+
+# class ExponentialCongestionModel(CongestionModel):
+#     """
+#     """
+
+#     pass

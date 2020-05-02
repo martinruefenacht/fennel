@@ -3,7 +3,7 @@ Defines the Program class.
 """
 
 
-from typing import MutableMapping, Iterable, Optional, MutableSet, Generator, List
+from typing import MutableMapping, Iterable, Optional, MutableSet, List
 from collections import defaultdict
 
 
@@ -18,8 +18,12 @@ class Program:
     """
 
     def __init__(self):
-        self._edges_in: MutableMapping[str, MutableSet[str]] = defaultdict(lambda: set())
-        self._edges_out: MutableMapping[str, MutableSet[str]] = defaultdict(lambda: set())
+        self._edges_in: MutableMapping[str, MutableSet[str]]
+        self._edges_in = defaultdict(set)
+
+        self._edges_out: MutableMapping[str, MutableSet[str]]
+        self._edges_out = defaultdict(set)
+
         self._metadata: MutableMapping[str, Task] = dict()
 
     def __eq__(self, program: 'Program') -> bool:
@@ -71,7 +75,6 @@ class Program:
         Get all start tasks in the program.
         """
 
-        # TODO generator, relearn how to write them
         return (task for task in self._metadata.values()
                 if isinstance(task, StartTask))
 
@@ -83,17 +86,17 @@ class Program:
         if name not in self._edges_out:
             return []
 
-        return [task for task in self._edges_out[name]]
+        return self._edges_out[name]
 
     def get_predecessors(self, name: str) -> List[str]:
         """
-        Get all tasks who are predecessors. 
+        Get all tasks who are predecessors.
         """
 
         if name not in self._edges_in:
             return []
 
-        return [task for task in self._edges_in[name]]
+        return self._edges_in[name]
 
     def get_in_degree(self, name: str) -> int:
         """
@@ -108,14 +111,3 @@ class Program:
         """
 
         return len(self._edges_out[name])
-
-#    def convert_networkx(self):
-#        import networkx as nx
-#
-#        graph = nx.Graph()
-#
-#        graph.add_nodes_from(self.metadata)
-#
-#        graph.add_edges_from([(out, d) for out, inl in self.edges_out.items() for d in inl])
-#
-#        return graph

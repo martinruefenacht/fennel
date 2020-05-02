@@ -1,4 +1,5 @@
 """
+The base class for all tasks.
 """
 
 
@@ -13,6 +14,10 @@ PlannedTask = Tuple[Time, 'Task']
 
 
 class TaskEvent(Enum):
+    """
+    The TaskEvent are events which instruments can be registered for.
+    """
+
     # triggered when the task is taken from the priority
     # queue
     SCHEDULED = auto()
@@ -21,7 +26,7 @@ class TaskEvent(Enum):
     # process time
     DELAYED = auto()
 
-    # triggered during the execution function 
+    # triggered during the execution function
     EXECUTED = auto()
 
     # triggered when the task is completed before any

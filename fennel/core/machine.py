@@ -3,10 +3,12 @@ Defines the abstract class for machine models.
 """
 
 
+# pylint: disable=too-many-instance-attributes
+
+
 import logging
 from abc import ABC
-from typing import (Iterable, Tuple, Optional, MutableSet, MutableMapping,
-                    Callable, List, Union, Collection, NewType)
+from typing import Optional, MutableMapping, Callable, List, Union, NewType
 from collections import defaultdict
 
 
@@ -159,7 +161,7 @@ class Machine(ABC):
 
     def get_node_process_time(self, node: Node, process: int) -> Time:
         """
-
+        Get the time of a process in a node.
         """
 
         return self._node_times[node][process]
@@ -197,8 +199,6 @@ class Machine(ABC):
 
         # process entire queue
         while queue.is_not_empty():
-            logging.debug(queue._task_queue)
-
             # execute next task
             plannedtask = queue.pop()
 
@@ -425,7 +425,7 @@ class Machine(ABC):
         """
         Evaluates the given compute model.
         """
-        
+
         logging.debug('compute task @ %i on (%i, %i)', time,
                       task.node, process)
 

@@ -229,3 +229,28 @@ def test_allgather_ring(shared_datadir):
     machine.canvas.write(str(path))
 
     assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_fetch(shared_datadir):
+    """
+    Tests the GetTask and fetch generator.
+    """
+
+    name = "pm_fetch.eps"
+    nodes = 2
+    msgsize = 1024
+    gamma = 0.1
+    latency = 100
+    bandwidth = 0.1
+
+    path = Path.cwd() / "tests" / name
+
+    machine = Machine(nodes, 1, GammaModel(gamma), LBModel(latency, bandwidth))
+    machine.canvas = Canvas()
+
+    program = p2p.fetch(msgsize, False)
+
+    machine.run(program)
+    machine.canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)

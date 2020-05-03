@@ -6,6 +6,7 @@ Module for generators of point-to-point programs.
 from fennel.core.program import Program
 from fennel.tasks.start import StartTask
 from fennel.tasks.put import PutTask
+from fennel.tasks.get import GetTask
 from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.compute import ComputeTask
 
@@ -42,6 +43,38 @@ def send(
     # rank 1 dependencies
     prog.add_edge(f's{receiver}', f'x{receiver}')
     prog.add_edge('p', f'x{receiver}')
+
+    return prog
+
+
+def fetch(
+        message_size: int,
+        blocking: bool,
+        sender: int = 0,
+        receiver: int = 1
+        ) -> Program:
+    """
+    Generate a program which has a single get operation.
+    """
+
+    prog = Program()
+
+    prog.add_node(StartTask(f"s_{sender}", sender))
+    prog.add_node(StartTask(f"s_{receiver}", receiver))
+
+    prog.add_node(GetTask("g", sender, receiver, message_size, 8, blocking))
+
+    prog.add_node(ProxyTask(f"x_{sender}", sender))
+    prog.add_node(ProxyTask(f"x_{receiver}", receiver))
+
+    prog.add_edge(f"s_{sender}", f"x_{sender}")
+    prog.add_edge(f"s_{receiver}", f"x_{receiver}")
+
+    prog.add_edge(f"s_{sender}", "g")
+    prog.add_edge("g", f"x_{sender}")
+
+    # TODO problem! the get is only a dependency until half way though the op
+    prog.add_edge("g", f"x_{receiver}")
 
     return prog
 

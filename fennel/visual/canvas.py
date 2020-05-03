@@ -235,6 +235,33 @@ class Canvas:
             self._processes[process] = True
             self._minimum_time = max(self._minimum_time, end)
 
+    def draw_get_task(self,
+                      source: int,
+                      target: int,
+                      start: int,
+                      switch: int,
+                      end: int
+                      ) -> None:
+        """
+        Draw a GetTask.
+        """
+
+        if not PYPY_ENVIRONMENT:
+            attrs = [pyx.trafo.scale(self.TIME_SCALE, 1)]
+
+            source_offset = self._process_offset(source)
+            target_offset = self._process_offset(target)
+
+            self._canvas.stroke(pyx.path.line(start, source_offset,
+                                              switch, target_offset), attrs)
+
+            self._canvas.stroke(pyx.path.line(switch, target_offset,
+                                              end, source_offset), attrs)
+
+            self._processes[source] = True
+            self._processes[target] = True
+            self._minimum_time = max(self._minimum_time, end)
+
     def draw_blocking_put_task(self, source: int, target: int, start: int,
                                end: int) -> None:
         """

@@ -33,20 +33,20 @@ class GetTask(Task):
         return self._target
 
     @property
-    def retrieval_message_size(self) -> int:
-        """
-        Get the retrival message size.
-        """
-
-        return self._size_retrieve
-
-    @property
     def command_message_size(self) -> int:
         """
         Get the command message size.
         """
 
         return self._size_command
+
+    @property
+    def retrieval_message_size(self) -> int:
+        """
+        Get the retrival message size.
+        """
+
+        return self._size_retrieve
 
     @property
     def blocking(self) -> bool:

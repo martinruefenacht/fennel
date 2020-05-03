@@ -24,6 +24,7 @@ from fennel.visual.canvas import Canvas
 from fennel.core.instrument import Instrument
 from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.put import PutTask
+from fennel.tasks.get import GetTask
 from fennel.tasks.start import StartTask
 from fennel.tasks.sleep import SleepTask
 from fennel.tasks.compute import ComputeTask
@@ -77,6 +78,7 @@ class Machine(ABC):
                                                 Callable[[Time, SleepTask, int], Time],
                                                 Callable[[Time, ComputeTask, int], Time],
                                                 Callable[[Time, PutTask, int], Time],
+                                                Callable[[Time, GetTask, int], Time],
                                                 ]] = dict()
 
         self._task_handlers['ProxyTask'] = self._execute_proxy_task
@@ -84,6 +86,7 @@ class Machine(ABC):
         self._task_handlers['SleepTask'] = self._execute_sleep_task
         self._task_handlers['ComputeTask'] = self._execute_compute_task
         self._task_handlers['PutTask'] = self._execute_put_task
+        self._task_handlers['GetTask'] = self._execute_get_task
 
         self._canvas: Optional[Canvas] = None
 
@@ -477,6 +480,29 @@ class Machine(ABC):
                                                        times.remote)
 
         return times.remote
+
+    def _execute_get_task(self,
+                          time: Time,
+                          task: GetTask,
+                          process: int
+                          ) -> Time:
+        """
+        Execute the get task.
+        """
+
+        assert self._network_model is not None
+        times = self._network_model.evaluate(time, task)
+
+        # TODO this varies with blocking
+        self._set_process_time(task.node, process, times.local)
+
+        if self.draw_mode and task.drawable:
+            assert self.canvas is not None
+
+            self.canvas.draw_get_task(task.node, task.target, time, times.remote, times.local)
+
+        return times.remote
+
 
 
 # remove magic 1000, require some intelligent way of memory requirement

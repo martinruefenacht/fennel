@@ -204,3 +204,28 @@ def test_bsp_single(shared_datadir):
     machine.canvas.write(str(path))
 
     assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_allgather_ring(shared_datadir):
+    """
+    Tests whether the AllGather ring is correctly drawn.
+    """
+
+    name = "pm_allgather_ring.eps"
+    nodes = 4
+    msgsize = 1024
+    gamma = 0.1
+    latency = 100
+    bandwidth = 0.1
+
+    path = Path.cwd() / "tests" / name
+
+    machine = Machine(nodes, 1, GammaModel(gamma), LBModel(latency, bandwidth))
+    machine.canvas = Canvas()
+
+    program = allgather.ring(nodes, msgsize)
+
+    machine.run(program)
+    machine.canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)

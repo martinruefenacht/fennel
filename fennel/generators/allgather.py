@@ -15,6 +15,49 @@ from fennel.tasks.put import PutTask
 from fennel.tasks.compute import ComputeTask
 
 
+def ring(processes: int,
+         message_size: int
+         ) -> Program:
+    """
+    Generate AllGather using ring virtual topology.
+    """
+
+    prog = Program()
+
+    # add start nodes
+    for nidx in range(processes):
+        prog.add_node(StartTask(f"s_{nidx}", nidx))
+        prog.add_node(ProxyTask(f"x_{nidx}_0", nidx))
+
+        prog.add_edge(f"s_{nidx}", f"x_{nidx}_0")
+
+    # number of sends, N-1
+
+    for ridx in range(1, processes):
+        for nidx in range(processes):
+            # build nodes
+            put_name = f"p_{nidx}_{ridx}"
+            proxy_name = f"x_{nidx}_{ridx}"
+
+            target = (nidx + 1) % processes
+
+            prog.add_node(PutTask(put_name, nidx, target, message_size))
+            prog.add_node(ProxyTask(proxy_name, nidx))
+
+        for nidx in range(processes):
+            # build edges
+            put_name = f"p_{nidx}_{ridx}"
+            proxy_name = f"x_{nidx}_{ridx}"
+
+            target = (nidx + 1) % processes
+
+            prog.add_edge(f"x_{nidx}_{ridx-1}", put_name)
+            prog.add_edge(put_name, proxy_name)
+            prog.add_edge(put_name, f"x_{target}_{ridx}")
+
+    return prog
+
+
 def _target_rd(ridx: int, process: int) -> int:
     """
     """

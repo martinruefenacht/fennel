@@ -466,6 +466,8 @@ class Machine(ABC):
         if self.draw_mode and task.drawable:
             assert self.canvas is not None
 
+            # TODO need to get my head around blocking/pipelining models
+            #   this is the only place this is used!
             if task.blocking:
                 self.canvas.draw_blocking_put_task(task.node,
                                                    task.target,

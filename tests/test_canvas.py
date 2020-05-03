@@ -320,6 +320,7 @@ def test_rta(shared_datadir):
     machine = Machine(nodes, 1, GammaModel(gamma), LBModel(latency, bandwidth))
     machine.canvas = Canvas()
 
+    # program = p2p.request_transfer_ack(msgsize, sender=1, receiver=0)
     program = p2p.request_transfer_ack(msgsize)
 
     machine.run(program)

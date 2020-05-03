@@ -258,6 +258,18 @@ class Canvas:
             self._canvas.stroke(pyx.path.line(switch, target_offset,
                                               end, source_offset), attrs)
 
+            side = -1 if source < target else 1
+            triangle = pyx.path.path(
+                pyx.path.moveto(switch, 0.0),
+                pyx.path.lineto(switch-6, -0.25 * side),
+                pyx.path.lineto(switch+6, -0.25 * side),
+                pyx.path.closepath())
+
+            attrs = [pyx.trafo.scale(self.TIME_SCALE, -self.PROCESS_SCALE),
+                     pyx.trafo.translate(0.0, target_offset)]
+
+            self._canvas.fill(triangle, attrs)
+
             self._processes[source] = True
             self._processes[target] = True
             self._minimum_time = max(self._minimum_time, end)

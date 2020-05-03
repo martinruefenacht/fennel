@@ -26,7 +26,7 @@ def send(
     prog = Program()
 
     # generate start tasks for all procs
-    prog.add_node(StartTask(f's{sender}', sender, skew=100))
+    prog.add_node(StartTask(f's{sender}', sender))
     prog.add_node(StartTask(f's{receiver}', receiver))
 
     # generate single put task for rank 0
@@ -38,7 +38,6 @@ def send(
 
     # rank 0 dependencies
     prog.add_edge(f's{sender}', 'p')
-    prog.add_edge('p', f'x{sender}')
 
     # rank 1 dependencies
     prog.add_edge(f's{receiver}', f'x{receiver}')
@@ -305,10 +304,54 @@ def send_partitioned(
 
 
 def request_response_transfer_ack(
-    message_size: int,
-    rounds: int,
-    sender: int = 0,
-    receiver: int = 1
-    ) -> Program:
+        message_size: int,
+        sender: int = 0,
+        receiver: int = 1
+        ) -> Program:
+    """
+    Generate a Request-Ack-Transfer protocol.
+    """
 
-    raise NotImplementedError
+    prog = Program()
+
+    prog.add_node(StartTask(f"s_{sender}", sender))
+    prog.add_node(StartTask(f"s_{receiver}", receiver))
+
+    # request
+    prog.add_node(PutTask(f"p_{sender}", sender, receiver, 8))
+
+    # response
+    prog.add_node(PutTask(f"p_{receiver}", receiver, sender, 8))
+
+    # transfer
+    prog.add_node(PutTask(f"t_{sender}", sender, receiver, message_size))
+
+    # ack
+    prog.add_node(PutTask(f"a_{sender}", sender, receiver, 8))
+
+    # ends
+    prog.add_node(ProxyTask(f"x_{sender}", sender))
+    prog.add_node(ProxyTask(f"x_{receiver}", receiver))
+
+    prog.add_edge(f"s_{sender}", f"p_{sender}")
+    prog.add_edge(f"s_{receiver}", f"p_{receiver}")
+    prog.add_edge(f"p_{sender}", f"p_{receiver}")
+    prog.add_edge(f"p_{receiver}", f"t_{sender}")
+    prog.add_edge(f"t_{sender}", f"a_{sender}")
+
+    prog.add_edge(f"a_{sender}", f"x_{sender}")
+    prog.add_edge(f"a_{sender}", f"x_{receiver}")
+
+    return prog
+
+
+def request_transfer_ack(
+        message_size: int,
+        rounds: int,
+        sender: int = 0,
+        receiver: int = 0
+        ) -> Program:
+    """
+    """
+
+    raise NotImplementedError 

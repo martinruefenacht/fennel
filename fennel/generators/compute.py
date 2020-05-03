@@ -9,7 +9,7 @@ from fennel.tasks.proxy import ProxyTask
 from fennel.tasks.compute import ComputeTask
 
 
-def simple_compute(size: int, rounds: int, node: int = 0) -> Program:
+def simple_compute(size: int, rounds: int = 1, node: int = 0) -> Program:
     """
     Generate a single process with compute tasks.
     """
@@ -34,7 +34,7 @@ def parallel_compute(nodes: int,
                      count: int,
                      size: int,
                      concurrent: bool,
-                     rounds: int) -> Program:
+                     rounds: int = 1) -> Program:
     """
     Generate a multicast program.
     """

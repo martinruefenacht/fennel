@@ -109,7 +109,6 @@ def test_send_compute(shared_datadir):
     assert compare_eps_files(shared_datadir / name, path)
 
 
-
 def test_lbpmachine_multicast(shared_datadir):
     """
     Tests if the pipelining postal model is correct with two sends.
@@ -298,6 +297,30 @@ def test_rat(shared_datadir):
     machine.canvas = Canvas()
 
     program = p2p.request_response_transfer_ack(msgsize)
+
+    machine.run(program)
+    machine.canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_rta(shared_datadir):
+    """
+    """
+
+    name = "pm_rta.eps"
+    nodes = 2
+    msgsize = 1024
+    gamma = 0.1
+    latency = 100
+    bandwidth = 0.1
+
+    path = Path.cwd() / "tests" / name
+
+    machine = Machine(nodes, 1, GammaModel(gamma), LBModel(latency, bandwidth))
+    machine.canvas = Canvas()
+
+    program = p2p.request_transfer_ack(msgsize)
 
     machine.run(program)
     machine.canvas.write(str(path))

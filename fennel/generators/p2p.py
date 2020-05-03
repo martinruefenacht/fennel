@@ -347,11 +347,42 @@ def request_response_transfer_ack(
 
 def request_transfer_ack(
         message_size: int,
-        rounds: int,
+        rounds: int = 1,
         sender: int = 0,
-        receiver: int = 0
+        receiver: int = 1
         ) -> Program:
     """
+    Generate a Request-Ack-Transfer protocol.
     """
 
-    raise NotImplementedError 
+    if sender == receiver:
+        raise ValueError("Sender is the same as receiver.")
+
+    prog = Program()
+
+    prog.add_node(StartTask(f"s_{sender}", sender))
+    prog.add_node(StartTask(f"s_{receiver}", receiver))
+
+    # request
+    prog.add_node(PutTask(f"p_{sender}", sender, receiver, 8))
+
+    # transfer
+    prog.add_node(GetTask(f"t_{receiver}", receiver, sender, message_size))
+
+    # ack
+    prog.add_node(PutTask(f"a_{receiver}", receiver, sender, 8))
+
+    # ends
+    prog.add_node(ProxyTask(f"e_{sender}", sender))
+    prog.add_node(ProxyTask(f"e_{receiver}", receiver))
+
+    prog.add_edge(f"s_{sender}", f"p_{sender}")
+    prog.add_edge(f"s_{receiver}", f"t_{receiver}")
+    prog.add_edge(f"p_{sender}", f"t_{receiver}")
+
+    prog.add_edge(f"t_{receiver}", f"a_{receiver}")
+
+    prog.add_edge(f"a_{receiver}", f"e_{sender}")
+    prog.add_edge(f"a_{receiver}", f"e_{receiver}")
+
+    return prog

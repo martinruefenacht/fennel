@@ -327,3 +327,26 @@ def test_rta(shared_datadir):
     machine.canvas.write(str(path))
 
     assert compare_eps_files(shared_datadir / name, path)
+
+
+def test_pingpong_canvas(shared_datadir):
+    """
+    Draws a single pingpong program on a LBmachine.
+    """
+
+    name = "pingpong.eps"
+    latency = 100
+
+    path = Path().cwd() / "tests/" / name
+
+    program = p2p.pingpong(8, rounds=3)
+
+    canvas = Canvas()
+
+    machine = Machine(2, 1, GammaModel(0), LBModel(latency, 0))
+    machine.canvas = canvas
+    machine.run(program)
+
+    canvas.write(str(path))
+
+    assert compare_eps_files(shared_datadir / name, path)

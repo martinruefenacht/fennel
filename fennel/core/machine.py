@@ -264,6 +264,8 @@ class Machine(ABC):
         #      we should need to have a specific subclass type cast
         #      planned task is (Time, Task), cannot be cast to specific one
         time_successors = handler(time, task, process)  # type: ignore
+        # TODO this needs to return a list of planned tasks, this is for LogGOPS representation
+        #      or network simulations, tasks are not nessecarily the ones that happen in the program!
         # TODO branching tasks would require dependency mapping here
         #      instead of returning successors return dict mapping of:
         #      name: time
